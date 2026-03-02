@@ -20,7 +20,7 @@ dependencies = [
   "sciris>=3.2.1",
   "polars>=1.30.0",
   "pyarrow>=20.0.0",
-  "rastertoolkit==0.3.12",  # Pinned to 0.3.12 until rastertoolkit resolves pyshp 3.0 compatibility (see #121)
+  "rastertoolkit==0.4.6",  # Pinned to 0.3.12 until rastertoolkit resolves pyshp 3.0 compatibility (see #121)
   "typer>=0.12.0",
   "patito>=0.8.3",
   "pyvd>=1.0.1",
