@@ -94,11 +94,9 @@ def run_biweekly_model(
     if not isinstance(df, pl.DataFrame):
         df = pl.DataFrame(df)
 
-    # Expected columns: tick, group_id, cases  (same pattern you saw for ABM)
+    # Tracker returns tick, patch_id (string node id), cases
     df = df.with_columns(
-        pl.col("group_id").cast(pl.String).replace_strict(region_of)
-        #pl.col("group_id").map_elements(lambda x: region_of[str(x)], return_dtype=pl.Utf8)
-        .alias("region"),
+        pl.col("patch_id").replace_strict(region_of).alias("region"),
         pl.col("tick").alias("biweek"),
     )
 

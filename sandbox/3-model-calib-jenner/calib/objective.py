@@ -8,9 +8,6 @@ import math
 import polars as pl
 import optuna
 
-from .run_biweekly import run_biweekly_model
-
-
 @dataclass(frozen=True)
 class ObjectiveConfig:
     reference_csv: str = "truth_reference/biweekly_region_reference.csv"
@@ -19,8 +16,73 @@ class ObjectiveConfig:
     # A small noise floor (cases) so early near-zero periods don’t dominate
     sd_floor: float = 10.0
 
-    # Use a fixed seed for the biweekly model during calibration (fast + stable objective).
+    # Use a fixed seed for the model during calibration (fast + stable objective).
     model_seed: int = 202
+
+    # beta search range (log-scale); biweekly and compartmental need different scales
+    beta_lo: float = 0.1
+    beta_hi: float = 2.0
+
+    # import_rate search range; compartmental applies importation ~8-15x stronger than biweekly
+    # so a much tighter range is appropriate to prevent importation from dominating dynamics
+    import_rate_lo: float = 0.0
+    import_rate_hi: float = 2.0
+
+    # Progressive multi-seed ensemble: start with n_seeds for fast exploration, then switch to
+    # n_seeds_refined once the best-value improvement plateaus. Set both equal to disable.
+    n_seeds: int = 1
+    n_seeds_refined: int = 1
+    plateau_window: int = 30       # number of recent completed trials to inspect
+    plateau_min_improvement: float = 1.0  # loss must drop by at least this over the window
+
+
+def _detect_plateau(study: optuna.Study, window: int, min_improvement: float) -> bool:
+    """Return True if the best loss hasn't improved by min_improvement over the last `window` trials."""
+    completed = sorted(
+        [t for t in study.trials if t.state.name == "COMPLETE"],
+        key=lambda t: t.number,
+    )
+    if len(completed) < window:
+        return False
+    recent = completed[-window:]
+    half = window // 2
+    first_best = min(t.value for t in recent[:half])
+    second_best = min(t.value for t in recent[half:])
+    return (first_best - second_best) < min_improvement
+
+
+def _run_ensemble(run_model_fn, n_seeds: int, base_seed: int, **kwargs) -> pl.DataFrame:
+    """Run model n_seeds times and return the mean cases across seeds."""
+    dfs = [run_model_fn(seed=base_seed + i, **kwargs) for i in range(n_seeds)]
+    if n_seeds == 1:
+        return dfs[0]
+    return (
+        pl.concat(dfs)
+        .group_by(["region", "biweek"])
+        .agg(pl.col("cases").mean().alias("cases"))
+        .sort(["region", "biweek"])
+    )
+
+
+def _resolve_n_seeds(trial: optuna.Trial, cfg: ObjectiveConfig) -> int:
+    """
+    Determine how many seeds to use for this trial.
+    Once the plateau is detected the switch is stored permanently in study user_attrs
+    so it survives restarts and never reverts even if loss briefly improves again.
+    """
+    if cfg.n_seeds_refined <= cfg.n_seeds:
+        return cfg.n_seeds
+    # Already permanently switched?
+    if trial.study.user_attrs.get("refined_seeds_active", False):
+        return cfg.n_seeds_refined
+    # Check for plateau
+    if _detect_plateau(trial.study, cfg.plateau_window, cfg.plateau_min_improvement):
+        trial.study.set_user_attr("refined_seeds_active", True)
+        print(
+            f"[Trial {trial.number}] Plateau detected — switching to {cfg.n_seeds_refined} seeds permanently."
+        )
+        return cfg.n_seeds_refined
+    return cfg.n_seeds
 
 
 def _load_reference(cfg: ObjectiveConfig) -> pl.DataFrame:
@@ -143,7 +205,11 @@ def _harmonic_loss_per_region(ref_df, sim_df, weight_amp=1.0, weight_phase=0.0):
     ref_df: reference DataFrame with columns region, biweek, mean
     sim_df: simulation DataFrame with columns region, biweek, cases
     Returns averaged harmonic loss across regions.
-    loss_{region} = weight_amp * (amp_sim - amp_ref)^2 + weight_phase * circular_phase_diff^2
+    loss_{region} = weight_amp * ((amp_sim - amp_ref) / amp_ref)^2 + weight_phase * circular_phase_diff^2
+
+    Amplitude error is normalized by amp_ref so all regions contribute equally regardless
+    of their absolute case counts (prevents metro from dominating or periphery from being
+    crushed by absolute-scale differences).
     """
     regions = sorted(ref_df["region"].unique().to_list())
     losses = []
@@ -159,8 +225,9 @@ def _harmonic_loss_per_region(ref_df, sim_df, weight_amp=1.0, weight_phase=0.0):
         sim_series = joined["cases"].to_numpy()
         amp_ref, phase_ref = _fit_annual_amp_phase(ref_series)
         amp_sim, phase_sim = _fit_annual_amp_phase(sim_series)
-        # amplitude penalty (squared)
-        a_loss = (amp_sim - amp_ref) ** 2
+        # relative amplitude penalty: normalized by amp_ref so regions of all sizes contribute equally
+        denom = max(amp_ref, 1.0)  # floor at 1 to avoid div-by-zero for flat series
+        a_loss = ((amp_sim - amp_ref) / denom) ** 2
         # phase penalty (circular distance) if you want to include it
         if weight_phase > 0:
             dphi = np.angle(np.exp(1j*(phase_sim - phase_ref)))  # wrap to [-pi,pi]
@@ -170,22 +237,30 @@ def _harmonic_loss_per_region(ref_df, sim_df, weight_amp=1.0, weight_phase=0.0):
         losses.append(weight_amp * a_loss + weight_phase * p_loss)
     return float(np.mean(losses))
 
-def objective(trial: optuna.Trial, cfg: ObjectiveConfig | None = None) -> float:
+def objective(trial: optuna.Trial, cfg: ObjectiveConfig | None = None, run_model_fn=None) -> float:
     cfg = cfg or ObjectiveConfig()
+    if run_model_fn is None:
+        from .run_biweekly import run_biweekly_model
+        run_model_fn = run_biweekly_model
     ref = _load_reference(cfg)
 
-    # ---- search space (tweak as you like) ----
+    # ---- search space ----
     R0_init = trial.suggest_float("R0_init", 5.5, 10.0)
-    beta = trial.suggest_float("beta", 0.1, 2.0, log=True)
+    beta = trial.suggest_float("beta", cfg.beta_lo, cfg.beta_hi, log=True)
     seasonality = trial.suggest_float("seasonality", 0.0, 0.30)
-    season_start = trial.suggest_int("season_start", 0, 25)
+    # season_start=0: fixed to match the ABM that generated the reference data
+    season_start = 0
 
-    import_rate = trial.suggest_float("import_rate", 0.0, 2.0)  # per 1k per year
+    import_rate = trial.suggest_float("import_rate", cfg.import_rate_lo, cfg.import_rate_hi)  # per 1k per year
     L = trial.suggest_float("L", 0.5, 3.0)
     eps = trial.suggest_float("eps", 0.0, 0.10)
 
-    sim = run_biweekly_model(
-        seed=cfg.model_seed,
+    n_seeds = _resolve_n_seeds(trial, cfg)
+    trial.set_user_attr("n_seeds_used", n_seeds)
+    sim = _run_ensemble(
+        run_model_fn,
+        n_seeds=n_seeds,
+        base_seed=cfg.model_seed,
         years=cfg.years,
         R0_init=R0_init,
         beta=beta,
@@ -216,7 +291,7 @@ def objective(trial: optuna.Trial, cfg: ObjectiveConfig | None = None) -> float:
     # Combine (tune weights)
     #loss = ts_loss + 0.5 * scalar_loss
 
-    harmonic_loss = _harmonic_loss_per_region(ref, sim, weight_amp=10.0, weight_phase=0.0)
+    harmonic_loss = _harmonic_loss_per_region(ref, sim, weight_amp=1000.0, weight_phase=0.0)
 
     # combine (tune the multiplier)
     loss = ts_loss + 0.5 * scalar_loss + harmonic_loss

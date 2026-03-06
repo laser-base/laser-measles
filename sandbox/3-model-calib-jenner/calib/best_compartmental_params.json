@@ -1,0 +1,24 @@
+{
+  "study": "measles_compartmental_calib_v9",
+  "trial": 275,
+  "loss": 43.87857584742055,
+  "loss_breakdown": {
+    "harmonic_loss": 17.08401364843566,
+    "n_seeds_used": 3,
+    "scalar_loss": 50.3972710965498,
+    "ts_loss": 1.5959266507099872
+  },
+  "params": {
+    "R0_init": 6.4970874900471784,
+    "beta": 0.4341574712707787,
+    "seasonality": 0.2899823898085777,
+    "import_rate": 0.16985287502353605,
+    "L": 1.9603404112904028,
+    "eps": 0.02703478163247374
+  },
+  "fixed": {
+    "season_start": 0,
+    "exp_mu": 6.0,
+    "inf_mu": 8.0
+  }
+}
