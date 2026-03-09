@@ -15,12 +15,16 @@ def main():
     ap.add_argument("--storage-url", default=None, help="e.g. sqlite:///calib.db (or set STORAGE_URL)")
     ap.add_argument("--n-jobs", type=int, default=1)
     ap.add_argument(
-        "--model-type", default="biweekly", choices=["biweekly", "compartmental"],
+        "--model-type", default="biweekly", choices=["biweekly", "compartmental", "abm"],
         help="Which model to calibrate against",
     )
     ap.add_argument(
         "--warm-start-study", default=None,
         help="Load best params from this study and enqueue as first trial",
+    )
+    ap.add_argument(
+        "--import-rate-hi", type=float, default=None,
+        help="Override import_rate upper bound (e.g. 0.08 to constrain near truth=0.05)",
     )
     args = ap.parse_args()
 
@@ -31,19 +35,29 @@ def main():
     if args.model_type == "compartmental":
         from .run_compartmental import run_compartmental_model
         run_model_fn = run_compartmental_model
-        # beta must be re-fit (different effective scaling vs biweekly); use wide log range
-        # import_rate: compartmental applies importation ~8-15x stronger than biweekly,
-        # so tighten range to [0, 0.30] to prevent importation dominating transmission
-        # n_seeds_refined=3: switch to 3-seed ensemble after plateau to reduce stochastic noise
         cfg = ObjectiveConfig(
             beta_lo=0.05, beta_hi=2.0,
-            import_rate_hi=0.30,
+            import_rate_hi=args.import_rate_hi or 0.15,
             n_seeds=1, n_seeds_refined=3,
+        )
+    elif args.model_type == "abm":
+        from .run_abm import run_abm_model
+        run_model_fn = run_abm_model
+        # ABM is stochastic and expensive; switch to 3-seed ensemble after plateau.
+        # Lower harmonic_weight (100 vs default 1000) prevents stochastic amplitude noise
+        # from dominating the loss landscape on single-seed runs.
+        cfg = ObjectiveConfig(
+            beta_lo=0.05, beta_hi=2.0,
+            import_rate_hi=args.import_rate_hi or 0.3,
+            n_seeds=1, n_seeds_refined=3,
+            harmonic_weight=100.0,
         )
     else:
         from .run_biweekly import run_biweekly_model
         run_model_fn = run_biweekly_model
-        cfg = ObjectiveConfig()
+        cfg = ObjectiveConfig(
+            import_rate_hi=args.import_rate_hi or 0.3,
+        )
 
     study = optuna.create_study(
         study_name=args.study_name,
@@ -61,7 +75,10 @@ def main():
         prior = optuna.load_study(study_name=args.warm_start_study, storage=storage)
         best = prior.best_params
         exclude = {"beta"}
-        if args.model_type == "compartmental":
+        if args.model_type in ("compartmental", "abm"):
+            # import_rate has different mechanistic meaning across model types:
+            # biweekly/compartmental rely on it to spark epidemics (no seeding);
+            # ABM has InfectionSeedingProcess so import_rate is purely background noise.
             exclude.add("import_rate")
         warm_params = {k: v for k, v in best.items() if k not in exclude}
         study.enqueue_trial(warm_params)

@@ -11,7 +11,8 @@ import laser.measles as lm
 from laser.measles import create_component
 from laser.measles.abm import ABMModel, ABMParams
 from laser.measles.base import BasePhase
-from laser.measles.mixing.base import BaseMixing  # interface for mixers
+
+from calib.mixing import ExpKernelMixing, ExpKernelParams
 
 
 # ----------------------------
@@ -42,9 +43,9 @@ def assign_region(i: int, j: int) -> str:
 
 def build_population_map() -> Dict[str, int]:
     """
-    Deterministic pop map:
-      - Metro cross: big
-      - Quadrants: checkerboard small/medium
+    Deterministic pop map scaled to ~1M total (geometry unchanged).
+      - Metro cross: 160k center, 87k inner, 47k outer
+      - Quadrants: checkerboard 27k / 11k
     """
     pops: Dict[str, int] = {}
     for i, j in build_grid_nodes():
@@ -52,15 +53,13 @@ def build_population_map() -> Dict[str, int]:
 
         # Metro cross
         if i == 2 and j == 2:
-            pops[nid] = 1_200_000
+            pops[nid] = 160_000
         elif (i == 2 and j in (1, 3)) or (j == 2 and i in (1, 3)):
-            pops[nid] = 650_000
+            pops[nid] = 87_000
         elif (i == 2 and j in (0, 4)) or (j == 2 and i in (0, 4)):
-            pops[nid] = 350_000
+            pops[nid] = 47_000
         else:
-            # Quadrants: checkerboard assignment to avoid symmetry
-            # (i+j) even -> medium, odd -> small (within the 4x4 corners)
-            pops[nid] = 200_000 if ((i + j) % 2 == 0) else 80_000
+            pops[nid] = 27_000 if ((i + j) % 2 == 0) else 11_000
 
     return pops
 
@@ -127,69 +126,6 @@ def build_scenario() -> tuple[pl.DataFrame, Dict[str, str], Dict[str, float]]:
 
 
 # ----------------------------
-# Custom mixer: exp(-d/L) + eps
-# ----------------------------
-
-@dataclass
-class ExpKernelParams:
-    L: float = 1.5
-    eps: float = 0.05
-
-class ExpKernelMixing(BaseMixing):
-    """
-    exp(-d/L) + eps mixing model compatible with laser-measles.
-    """
-
-    def __init__(self, scenario=None, params=None):
-        self.params = params or ExpKernelParams()
-        self._scenario = None
-        self._mixing_matrix = None
-
-        if scenario is not None:
-            self.set_scenario(scenario)
-
-    def set_scenario(self, scenario):
-        self._scenario = scenario
-        self._mixing_matrix = None  # force recompute
-
-    def get_migration_matrix(self):
-        """
-        Required abstract method from BaseMixing.
-        Called lazily by InfectionProcess.
-        """
-        if self._mixing_matrix is not None:
-            return self._mixing_matrix
-
-        scenario = self._scenario
-        if scenario is None:
-            raise RuntimeError("Scenario not set on mixer.")
-
-        coords = np.column_stack(
-            [scenario["lat"].to_numpy(), scenario["lon"].to_numpy()]
-        )
-
-        n = coords.shape[0]
-
-        # pairwise Euclidean distance
-        d = np.sqrt(((coords[:, None, :] - coords[None, :, :]) ** 2).sum(axis=2))
-
-        K = np.exp(-d / self.params.L)
-
-        # normalize rows
-        K = K / K.sum(axis=1, keepdims=True)
-
-        # add background mixing
-        eps = self.params.eps
-        K = (1.0 - eps) * K + eps * (np.ones((n, n)) / n)
-
-        # final normalize
-        K = K / K.sum(axis=1, keepdims=True)
-
-        self._mixing_matrix = K.astype(np.float32)
-        return self._mixing_matrix
-
-
-# ----------------------------
 # Run one ABM replicate
 # ----------------------------
 def run_one(seed: int = 123, years: int = 3):
@@ -216,7 +152,7 @@ def run_one(seed: int = 123, years: int = 3):
         create_component(
             lm.abm.components.InitializeEquilibriumStatesProcess,
             lm.abm.components.InitializeEquilibriumStatesParams(
-                R0=8.0  # ~12.5% susceptible, ~87.5% immune
+                R0=5.0  # ~20% susceptible, ~80% immune
             ),
         )
     )
@@ -243,18 +179,18 @@ def run_one(seed: int = 123, years: int = 3):
         )
     )
 
-    # 4) Low background importation
+    # 4) Low background importation — just enough to prevent stochastic extinction
     model.add_component(
         create_component(
             lm.abm.components.ImportationPressureProcess,
             lm.abm.components.ImportationPressureParams(
-                crude_importation_rate=0.5  # yearly per 1k pop
+                crude_importation_rate=0.05  # yearly per 1k pop
             ),
         )
     )
 
-    # 5) Infection process with custom spatial mixing + seasonality
-    mixer = ExpKernelMixing(params=ExpKernelParams(L=1.5, eps=0.05))
+    # 5) Infection process with spatial mixing + seasonality
+    mixer = ExpKernelMixing(ExpKernelParams(L=1.5, eps=0.05))
 
     infection_params = lm.abm.components.InfectionParams(
         beta=0.8,
@@ -301,9 +237,7 @@ def run_one(seed: int = 123, years: int = 3):
     # Map patch → region
     # ----------------------------------------
     cases_df = cases_df.with_columns(
-        pl.col("group_id")
-        .map_elements(lambda x: region_of[str(x)], return_dtype=pl.Utf8)
-        .alias("region")
+        pl.col("patch_id").replace_strict(region_of).alias("region")
     )
 
     # ----------------------------------------

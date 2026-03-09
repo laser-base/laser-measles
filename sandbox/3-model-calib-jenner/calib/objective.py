@@ -23,10 +23,10 @@ class ObjectiveConfig:
     beta_lo: float = 0.1
     beta_hi: float = 2.0
 
-    # import_rate search range; compartmental applies importation ~8-15x stronger than biweekly
-    # so a much tighter range is appropriate to prevent importation from dominating dynamics
+    # import_rate search range; reference truth uses 0.05, allow 0 as lower bound
+    # so optimizer can distinguish transmission-driven from importation-dominated regimes
     import_rate_lo: float = 0.0
-    import_rate_hi: float = 2.0
+    import_rate_hi: float = 0.3
 
     # Progressive multi-seed ensemble: start with n_seeds for fast exploration, then switch to
     # n_seeds_refined once the best-value improvement plateaus. Set both equal to disable.
@@ -34,6 +34,10 @@ class ObjectiveConfig:
     n_seeds_refined: int = 1
     plateau_window: int = 30       # number of recent completed trials to inspect
     plateau_min_improvement: float = 1.0  # loss must drop by at least this over the window
+
+    # Weight for harmonic (seasonal amplitude) loss term.
+    # Use lower values (~100) for stochastic models (ABM) to prevent noise domination.
+    harmonic_weight: float = 1000.0
 
 
 def _detect_plateau(study: optuna.Study, window: int, min_improvement: float) -> bool:
@@ -245,7 +249,7 @@ def objective(trial: optuna.Trial, cfg: ObjectiveConfig | None = None, run_model
     ref = _load_reference(cfg)
 
     # ---- search space ----
-    R0_init = trial.suggest_float("R0_init", 5.5, 10.0)
+    R0_init = trial.suggest_float("R0_init", 3.0, 8.0)
     beta = trial.suggest_float("beta", cfg.beta_lo, cfg.beta_hi, log=True)
     seasonality = trial.suggest_float("seasonality", 0.0, 0.30)
     # season_start=0: fixed to match the ABM that generated the reference data
@@ -291,7 +295,7 @@ def objective(trial: optuna.Trial, cfg: ObjectiveConfig | None = None, run_model
     # Combine (tune weights)
     #loss = ts_loss + 0.5 * scalar_loss
 
-    harmonic_loss = _harmonic_loss_per_region(ref, sim, weight_amp=1000.0, weight_phase=0.0)
+    harmonic_loss = _harmonic_loss_per_region(ref, sim, weight_amp=cfg.harmonic_weight, weight_phase=0.0)
 
     # combine (tune the multiplier)
     loss = ts_loss + 0.5 * scalar_loss + harmonic_loss

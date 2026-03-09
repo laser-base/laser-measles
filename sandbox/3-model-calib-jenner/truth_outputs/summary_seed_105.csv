@@ -1,6 +1,6 @@
 region,peak_biweekly,cumulative_cases
-R0_metro,1064,42763
-R1_nw,152,3866
-R2_ne,217,3322
-R3_sw,109,2547
-R4_se,263,4840
+R0_metro,24158,444491
+R1_nw,2143,45128
+R2_ne,3488,52244
+R3_sw,4033,54506
+R4_se,6339,59068

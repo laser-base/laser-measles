@@ -28,20 +28,23 @@ def assign_region(i: int, j: int) -> str:
 
 
 def build_population_map() -> Dict[str, int]:
+    # Total ~1,000,000: scaled from original 7.44M to keep geometry identical.
+    # metro center 160k, inner cross 87k ×4, outer cross 47k ×4,
+    # medium quadrant 27k ×8, small quadrant 11k ×8 → sum = 1,000,000
     pops: Dict[str, int] = {}
     for i, j in build_grid_nodes():
         nid = node_id(i, j)
 
         # Metro cross
         if i == 2 and j == 2:
-            pops[nid] = 1_200_000
+            pops[nid] = 160_000
         elif (i == 2 and j in (1, 3)) or (j == 2 and i in (1, 3)):
-            pops[nid] = 650_000
+            pops[nid] = 87_000
         elif (i == 2 and j in (0, 4)) or (j == 2 and i in (0, 4)):
-            pops[nid] = 350_000
+            pops[nid] = 47_000
         else:
             # Quadrants: checkerboard medium/small to break symmetry
-            pops[nid] = 200_000 if ((i + j) % 2 == 0) else 80_000
+            pops[nid] = 27_000 if ((i + j) % 2 == 0) else 11_000
 
     return pops
 
