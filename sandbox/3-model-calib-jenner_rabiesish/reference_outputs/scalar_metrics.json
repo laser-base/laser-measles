@@ -1,0 +1,17 @@
+{
+  "n_seeds": 10,
+  "n_ticks": 1095,
+  "n_patches": 100,
+  "total_pop": 1000000,
+  "metro_idx": 55,
+  "total_attack_rate_mean": 1.0,
+  "total_attack_rate_sd": 0.0,
+  "peak_global_I_mean": 43199.9,
+  "peak_global_I_sd": 788.7366417252339,
+  "peak_day_mean": 28.0,
+  "peak_day_sd": 0.0,
+  "metro_attack_rate_mean": 1.0,
+  "metro_attack_rate_sd": 0.0,
+  "metro_onset_day_mean": 0.0,
+  "n_patches_reached_mean": 100.0
+}

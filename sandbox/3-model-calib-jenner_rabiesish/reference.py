@@ -10,8 +10,10 @@ Requires: laser-measles (ABMModel), polars, numpy, pydantic
 from __future__ import annotations
 
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Tuple
 
+import matplotlib.pyplot as plt
 import numpy as np
 import polars as pl
 from pydantic import BaseModel, Field
@@ -196,14 +198,14 @@ class GridPopulationInitProcess(BasePhase):
         super().__init__(model, verbose)
         self.params = params if params is not None else GridMeaslesParams()
 
-    def initialize(self, model: ABMModel):
+    def _initialize(self, model: ABMModel):
         scenario = model.scenario
         pop = scenario["pop"].to_numpy()
         total_pop = int(pop.sum())
         num_patches = pop.size
 
-        # Ensure people capacity == total_pop and count == total_pop
-        model.initialize_people_capacity(capacity=total_pop, initial_count=total_pop)
+        # Over-allocate 20% to accommodate births from VitalDynamicsProcess
+        model.initialize_people_capacity(capacity=int(total_pop * 1.2), initial_count=total_pop)
 
         people = model.people
 
@@ -258,7 +260,7 @@ class GridInfectionSeedingProcess(BasePhase):
         self.params = params if params is not None else GridMeaslesParams()
         self.target_patch_id = target_patch_id
 
-    def initialize(self, model: ABMModel):
+    def _initialize(self, model: ABMModel):
         people = model.people
         n = len(people)
 
@@ -308,7 +310,7 @@ class DiffusionPlusLongRangeTransmissionProcess(BasePhase):
         self.pop: np.ndarray | None = None
         self.patch_agent_indices: list[np.ndarray] | None = None  # constant membership per patch
 
-    def initialize(self, model: ABMModel):
+    def _initialize(self, model: ABMModel):
         scenario = model.scenario
         lat = scenario["lat"].to_numpy()
         lon = scenario["lon"].to_numpy()
@@ -332,8 +334,11 @@ class DiffusionPlusLongRangeTransmissionProcess(BasePhase):
         M = (1.0 - eps) * M_diff + eps * M_lr
         np.fill_diagonal(M, 0.0)
 
-        # Cap total outward mixing
+        # Cap off-diagonal mixing, then set diagonal = 1 - off-diag row sum
+        # so local infectious generate local force of infection.
         M = cap_rowsums(M, self.params.max_total_rowsum)
+        off_diag_rs = M.sum(axis=1)
+        np.fill_diagonal(M, np.maximum(0.0, 1.0 - off_diag_rs))
 
         self.M = M.astype(np.float32)
 
@@ -341,11 +346,9 @@ class DiffusionPlusLongRangeTransmissionProcess(BasePhase):
         people = model.people
         n_people = len(people)
         patch_ids = people.patch_id[:n_people].astype(np.int64)
-        """
         self.patch_agent_indices = [
             np.where(patch_ids == p)[0] for p in range(num_patches)
         ]
-        """
 
         if self.verbose:
             rs = self.M.sum(axis=1)
@@ -383,6 +386,8 @@ class DiffusionPlusLongRangeTransmissionProcess(BasePhase):
             M = (1.0 - eps) * M_diff + eps * M_lr
             np.fill_diagonal(M, 0.0)
             M = cap_rowsums(M, self.params.max_total_rowsum)
+            off_diag_rs = M.sum(axis=1)
+            np.fill_diagonal(M, np.maximum(0.0, 1.0 - off_diag_rs))
 
             self.M = M.astype(np.float32)
 
@@ -398,12 +403,13 @@ class DiffusionPlusLongRangeTransmissionProcess(BasePhase):
         n_people = len(people)
         num_patches = self.pop.size
 
-        # --- Lazy build patch membership once people exist ---
-        if self.patch_agent_indices is None:
+        # Rebuild patch membership if population size changed (births/deaths via VitalDynamics)
+        if self.patch_agent_indices is None or n_people != getattr(self, "_last_n_people", -1):
             patch_ids = people.patch_id[:n_people].astype(np.int64)
             self.patch_agent_indices = [
                 np.where(patch_ids == p)[0] for p in range(num_patches)
             ]
+            self._last_n_people = n_people
 
         # Count infectious by patch
         is_I = (people.state[:n_people] == 2)
@@ -466,6 +472,26 @@ class DiffusionPlusLongRangeTransmissionProcess(BasePhase):
 
         if self.verbose and (tick % 30 == 0):
             print(f"[Tx] Day {tick}: new E = {newly_exposed_total:,}")
+
+class PatchStateAggregator(BasePhase):
+    """
+    Aggregates agent-level states into model.patches.states each tick so that
+    StateTracker (which reads the patches frame) reflects the actual population.
+    """
+
+    def _initialize(self, model: ABMModel):
+        pass
+
+    def __call__(self, model: ABMModel, tick: int):
+        people = model.people
+        n = len(people)
+        num_patches = len(model.scenario)
+        patch_ids = people.patch_id[:n].astype(np.int64)
+        state_vals = people.state[:n].astype(np.int64)
+        for state_idx, attr in enumerate(("S", "E", "I", "R")):
+            counts = np.bincount(patch_ids[state_vals == state_idx], minlength=num_patches)
+            getattr(model.patches.states, attr)[:] = counts
+
 
 class DiseaseProgressionProcess(BasePhase):
     """
@@ -560,76 +586,70 @@ def run_grid_measles_abm(
         create_component(GridInfectionSeedingProcess, p)
     )
 
-    model.add_component(
-        create_component(DiseaseProgressionProcess, p)
-    )
-
-    # Assemble components (initialize() runs at model.run() start)
-    model.add_component(lm.abm.components.NoBirthsProcess)
-
-    model.add_component(lm.abm.components.StateTracker)
+    model.add_component(create_component(DiseaseProgressionProcess, p))
+    model.add_component(create_component(PatchStateAggregator, p))
 
     model.add_component(
         create_component(DiffusionPlusLongRangeTransmissionProcess, p)
     )
 
-    # Global tracker
+    model.add_component(
+        create_component(
+            lm.abm.components.VitalDynamicsProcess,
+            lm.abm.components.VitalDynamicsParams(
+                crude_birth_rate=30 / 1000 / 365.0,
+                crude_death_rate=30 / 1000 / 365.0,
+            ),
+        )
+    )
+
+    # Global tracker (index 0)
     model.add_component(lm.abm.components.StateTracker)
 
-    # Patch-level tracker
+    # Patch-level tracker (index 1)
     model.add_component(
         create_component(
             lm.abm.components.StateTracker,
             lm.abm.components.StateTrackerParams(aggregation_level=0),
         )
     )
-    # enable births/deaths so susceptibles replenish over time
-    model.add_component(
-        create_component(
-            lm.abm.components.VitalDynamicsProcess,
-            lm.abm.components.VitalDynamicsParams(
-                crude_birth_rate=30/1000/365.0,   # 30 per 1000 per year -> per capita per day
-                crude_death_rate=30/1000/365.0,   # keep balanced for stable pop
-            ),
-        )
-    )
 
-    # low continuous importations targeted at metro (keep it small)
-    # find metro id (largest-pop) dynamically:
-    metro_patch = int(np.argmax(scenario["pop"].to_numpy()))
-    metro_name = scenario["id"][metro_patch]
-    # Would prefer not to have to do this
-    """
-    model.add_component(
-        create_component(
-            lm.abm.components.ImportationPressureProcess,
-            lm.abm.components.ImportationPressureParams(
-                crude_importation_rate=0.2,   # yearly per 1000 pop; small but persistent
-                target_patches=[metro_name],  # importations land in metro
-            ),
-        )
-    )
-    """
     model.run()
 
-    global_tracker = model.get_instance("StateTracker")[0]
-    patch_tracker = model.get_instance("StateTracker")[1]
+    trackers = model.get_instance("StateTracker")
+    global_tracker = trackers[0]
+    patch_tracker = trackers[1]
 
-    # after model.run(), using patch_tracker if you have it
-    pt = model.get_instance("StateTracker")[1]  # patch tracker with aggregation_level=0
-    # pt.I is shape (num_ticks+1, num_patches) typically — check how tracker's arrays named in your version
-    I_ts = np.array(pt.I)  # or pt.incidence depending on tracker API
+    # patch_tracker.I shape: (num_ticks, num_patches)
+    I_ts = np.array(patch_tracker.I)
     metro_idx = int(np.argmax(scenario["pop"].to_numpy()))
+    print(f"I_ts shape: {I_ts.shape}, metro_idx: {metro_idx}")
 
-    # simple metric: number of months with I>0 in metro
-    monthly_I = I_ts.reshape(-1, 30, I_ts.shape[1]).sum(axis=1)  # crude monthly grouping if daily ticks
+    # crude monthly grouping (trim to multiple of 30)
+    n_full_months = I_ts.shape[0] // 30
+    I_ts_trim = I_ts[:n_full_months * 30]
+    monthly_I = I_ts_trim.reshape(-1, 30, I_ts.shape[1]).sum(axis=1)
     metro_monthly = monthly_I[:, metro_idx]
     print("Months with nonzero I in metro:", np.count_nonzero(metro_monthly))
-    # inspect incidence time series for metro
-    import matplotlib.pyplot as plt
-    plt.plot(I_ts[:, metro_idx])
-    plt.title("Metro infectious over time")
-    plt.show()
+    print("Peak monthly I in metro:", int(metro_monthly.max()))
+
+    # save plot to file
+    plotdir = Path("plots")
+    plotdir.mkdir(exist_ok=True)
+    plt.figure(figsize=(12, 4))
+    plt.plot(I_ts[:, metro_idx], label="metro")
+    # also plot a few neighbor patches for comparison
+    for pi in range(min(5, I_ts.shape[1])):
+        if pi != metro_idx:
+            plt.plot(I_ts[:, pi], alpha=0.4, lw=0.8)
+    plt.title("Infectious by patch over time")
+    plt.xlabel("Day")
+    plt.ylabel("Infectious agents")
+    plt.legend()
+    plt.tight_layout()
+    plt.savefig(plotdir / "infectious_timeseries.png")
+    plt.close()
+    print(f"Saved plot to {plotdir}/infectious_timeseries.png")
 
     return model, scenario, global_tracker, patch_tracker
 
