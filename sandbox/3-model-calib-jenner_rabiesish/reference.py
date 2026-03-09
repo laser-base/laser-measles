@@ -311,6 +311,13 @@ class DiffusionPlusLongRangeTransmissionProcess(BasePhase):
         self.patch_agent_indices: list[np.ndarray] | None = None  # constant membership per patch
 
     def _initialize(self, model: ABMModel):
+        # Ensure timer properties exist (may not be added by InitializeEquilibriumStatesProcess)
+        people = model.people
+        if not hasattr(people, "etimer"):
+            people.add_scalar_property("etimer", dtype=np.uint16, default=0)
+        if not hasattr(people, "itimer"):
+            people.add_scalar_property("itimer", dtype=np.uint16, default=0)
+
         scenario = model.scenario
         lat = scenario["lat"].to_numpy()
         lon = scenario["lon"].to_numpy()
@@ -473,6 +480,17 @@ class DiffusionPlusLongRangeTransmissionProcess(BasePhase):
         if self.verbose and (tick % 30 == 0):
             print(f"[Tx] Day {tick}: new E = {newly_exposed_total:,}")
 
+    def infect(self, model: ABMModel, indices: np.ndarray) -> None:
+        """Move agents at given indices S -> E (called by ImportationPressureProcess)."""
+        people = model.people
+        sus = indices[people.state[indices] == 0]
+        if sus.size == 0:
+            return
+        people.state[sus] = 1  # E
+        people.etimer[sus] = np.uint16(self.params.latent_days)
+        people.susceptibility[sus] = 0.0
+
+
 class PatchStateAggregator(BasePhase):
     """
     Aggregates agent-level states into model.patches.states each tick so that
@@ -486,8 +504,14 @@ class PatchStateAggregator(BasePhase):
         people = model.people
         n = len(people)
         num_patches = len(model.scenario)
-        patch_ids = people.patch_id[:n].astype(np.int64)
-        state_vals = people.state[:n].astype(np.int64)
+        # Filter to active agents only — VitalDynamicsProcess marks dead agents
+        # as inactive (active=False) but leaves them in the array.
+        if hasattr(people, "active"):
+            alive = people.active[:n]
+        else:
+            alive = np.ones(n, dtype=bool)
+        patch_ids = people.patch_id[:n][alive].astype(np.int64)
+        state_vals = people.state[:n][alive].astype(np.int64)
         for state_idx, attr in enumerate(("S", "E", "I", "R")):
             counts = np.bincount(patch_ids[state_vals == state_idx], minlength=num_patches)
             getattr(model.patches.states, attr)[:] = counts
@@ -573,32 +597,54 @@ def run_grid_measles_abm(
         long_range_eps=0.01,
         long_range_rowsum=0.03,
         long_range_decay=2.0,
-        initial_immune_frac=0.82,
+        initial_immune_frac=0.82,  # used only by GridPopulationInitProcess (fallback)
         seed_infections=50,
         max_total_rowsum=0.6,
     )
 
+    R0_init = 15.0   # used by InitializeEquilibriumStatesProcess to set S≈1/R0
+
+    # 1. Equilibrium initialization: sets S≈1/R0, R≈1-1/R0 per patch,
+    #    assigns patch_id and state to every agent.
     model.add_component(
-        create_component(GridPopulationInitProcess, p)
+        create_component(
+            lm.abm.components.InitializeEquilibriumStatesProcess,
+            lm.abm.components.InitializeEquilibriumStatesParams(R0=R0_init),
+        )
     )
 
-    model.add_component(
-        create_component(GridInfectionSeedingProcess, p)
-    )
-
-    model.add_component(create_component(DiseaseProgressionProcess, p))
-    model.add_component(create_component(PatchStateAggregator, p))
-
-    model.add_component(
-        create_component(DiffusionPlusLongRangeTransmissionProcess, p)
-    )
-
+    # 2. Vital dynamics: births replenish susceptibles; crude rates in per-1000-per-year.
+    #    Use 30/365 (the correct per-1000-per-year form for this component).
     model.add_component(
         create_component(
             lm.abm.components.VitalDynamicsProcess,
             lm.abm.components.VitalDynamicsParams(
-                crude_birth_rate=30 / 1000 / 365.0,
-                crude_death_rate=30 / 1000 / 365.0,
+                crude_birth_rate=30,   # 30 per 1000 per year
+                crude_death_rate=30,
+            ),
+        )
+    )
+
+    # 3. Custom disease progression (E->I->R timers)
+    model.add_component(create_component(DiseaseProgressionProcess, p))
+
+    # 4. Sync agent states -> patches.states so StateTracker reads correctly
+    model.add_component(create_component(PatchStateAggregator, p))
+
+    # 5. Spatial transmission (diffusion + long-range mixing)
+    model.add_component(
+        create_component(DiffusionPlusLongRangeTransmissionProcess, p)
+    )
+
+    # 6. Small importation into metro to spark waves after inter-epidemic troughs
+    metro_patch = int(np.argmax(scenario["pop"].to_numpy()))
+    metro_name = scenario["id"][metro_patch]
+    model.add_component(
+        create_component(
+            lm.abm.components.ImportationPressureProcess,
+            lm.abm.components.ImportationPressureParams(
+                crude_importation_rate=1.0,   # per 1000 per year into metro
+                target_patches=[metro_name],
             ),
         )
     )
