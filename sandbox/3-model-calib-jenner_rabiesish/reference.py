@@ -589,7 +589,7 @@ def run_grid_measles_abm(
 
     model = ABMModel(scenario=scenario, params=abm_params)
     p = GridMeaslesParams(
-        beta=50.0,
+        beta=10.0,
         seasonality=0.05,
         latent_days=8,
         infectious_days=6,
