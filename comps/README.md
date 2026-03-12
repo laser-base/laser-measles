@@ -21,7 +21,10 @@ combines all simulations into `all_outputs.csv`.
 ## Prerequisites
 
 - Singularity installed locally
-- `python3.11` with `idmtools` and `COMPS` packages installed
+- `python3.11` with orchestration dependencies installed:
+  ```bash
+  pip install -r requirements.txt
+  ```
 - COMPS credentials (log in once interactively to cache the auth token):
   ```bash
   python3.11 -c "from COMPS import Client; Client.login('https://comps.idmod.org')"

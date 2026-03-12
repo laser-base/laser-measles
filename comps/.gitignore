@@ -11,4 +11,5 @@ assets/
 
 # Logs
 *.log
-*.txt
+build_pdf.txt
+createac_output.txt
