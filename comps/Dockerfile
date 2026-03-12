@@ -31,5 +31,5 @@ ARG CACHE_BREAKER=1
 # Upgrade pip + install dependencies
 RUN pip install --upgrade pip setuptools wheel
 
-# Install laser-measles (pre-release) and its dependencies from PyPI
-RUN pip install --upgrade --pre laser_measles
+COPY requirements.txt .
+RUN pip install --pre -r requirements.txt

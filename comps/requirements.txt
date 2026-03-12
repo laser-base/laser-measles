@@ -1,10 +1,10 @@
-# Local orchestration dependencies for COMPS submission workflow.
-# These are NOT installed inside the container (see Dockerfile for that).
-# Install with: pip install -r requirements.txt
+# Dependencies for the COMPS workflow — installed both locally and inside the container.
+# Install with: pip install --pre -r requirements.txt  (--pre needed for laser_measles)
 
-idmtools==3.0.8
-idmtools-platform-comps==3.0.8
-idm_pycomps==2.11.0
-polars>=1.30.0
-matplotlib>=3.8.0
-numpy>=2.0.0
+# Model 
+laser_measles
+
+# COMPS orchestration (version-sensitive — pin tightly)
+idmtools~=3.0
+idmtools-platform-comps~=3.0
+idm_pycomps~=2.11
