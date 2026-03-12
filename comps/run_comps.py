@@ -30,9 +30,9 @@ from idmtools.entities.experiment import Experiment
 from idmtools.entities.templated_simulation import TemplatedSimulations
 
 # --- sweep values ---
-# beta ≈ R0 / (inf_mu) where inf_mu=8 days → R0 = beta * 8
-# R0=3 → beta≈0.375, R0=5 → beta≈0.625, R0=8 → beta≈1.0, R0=12 → beta≈1.5, R0=16 → beta≈2.0
-BETA_VALUES = [0.375, 0.625, 1.0, 1.5, 2.0]
+# beta ≈ R0 / inf_mu where inf_mu=8 days → R0 = beta * 8
+# Range: R0 ≈ 2 (beta=0.25) to R0 ≈ 20 (beta=2.5), 20 evenly-spaced values
+BETA_VALUES = [round(v, 3) for v in [0.25 + i * (2.25 / 19) for i in range(20)]]
 SEED = 42
 
 
@@ -43,7 +43,7 @@ def set_beta(simulation, beta):
 
 
 if __name__ == "__main__":
-    platform = Platform("CALCULON")
+    platform = Platform("CALCULON", priority="AboveNormal")
 
     # Base task — command will be overridden per simulation by set_beta
     base_cmd = f"singularity exec ./Assets/laser-measles.sif python3 ./Assets/main_measles.py --beta 0.8 --seed {SEED}"

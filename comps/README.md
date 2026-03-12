@@ -109,6 +109,7 @@ Writes `beta_sweep.png` — a 2×2 panel of S/E/I/R time series, one line per be
 | `run_comps.py` | Submits the beta sweep experiment to COMPS |
 | `retrieve_outputs.py` | Downloads simulation outputs and combines into `all_outputs.csv` |
 | `plot_outputs.py` | Plots SEIR time series from `all_outputs.csv` |
+| `requirements-container.txt` | Minimal deps baked into the Docker image (`laser_measles` only) |
 | `assets/` | Staging directory for SIF + script (gitignored, built locally) |
 
 ## Extending the sweep

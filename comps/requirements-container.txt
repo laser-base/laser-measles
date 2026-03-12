@@ -1,0 +1,4 @@
+# Minimal dependencies for running laser-measles inside the COMPS container.
+# Does NOT include local orchestration tools (idmtools, matplotlib, etc.) —
+# see requirements.txt for those.
+laser_measles
