@@ -68,7 +68,6 @@ def update_parameter_callback(simulation, beta, seed, pop_scale, num_ticks):
         NodeGroupName=NODE_GROUP,
         NumNodes=1,
         NumCores=NUM_CORES,
-        Exclusive=True,
         Environment={"OMP_NUM_THREADS": str(NUM_CORES), "NUMBA_NUM_THREADS": str(NUM_CORES)},
     )
     return {"beta": beta, "seed": seed, "pop_scale": pop_scale, "num_ticks": num_ticks}

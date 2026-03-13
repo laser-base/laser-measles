@@ -109,6 +109,9 @@ Validated experiments (Calculon, `idm_abcd` node group, `priority=Highest`,
 | `36aea492-f21e-f111-92e0-000d3af5294c` | 50 | 1.0 | ~1.2M | 1095 | ~1 min |
 | `727183cc-f21e-f111-92e0-000d3af5294c` | 100 | 1.0 | ~1.2M | 1095 | ~1 min |
 
+All experiments used `NumCores=4`, `OMP_NUM_THREADS=4`, `NUMBA_NUM_THREADS=4`.
+`Exclusive=True` is listed in the idmtools docstring but rejected at runtime — do not use it.
+
 **Key result**: 100 full-scale ABM simulations (1.2M agents × 3 years) complete in
 ~1 minute wall time once nodes are warm.  COMPS runs all simulations in parallel on
 separate nodes, so wall time is determined by the slowest single sim, not the total.
@@ -246,19 +249,18 @@ fighting for 4 physical cores — massive context-switching overhead.  Worse, if
 the system is managing hundreds of threads simultaneously.  This is the scenario
 most likely to produce wall times of 10–20 min for a sim that should take 1 min.
 
-**The safe recipe** (what `run_comps2.py` uses):
+**The safe recipe** (what `run_comps.py` uses):
 ```python
 NumCores = 4
-Exclusive = True
 Environment = {"OMP_NUM_THREADS": "4", "NUMBA_NUM_THREADS": "4"}
 ```
-This ensures: one sim per node, exactly 4 threads, no contention.
+This ensures exactly 4 threads with no contention.  (`Exclusive=True` is listed in
+the idmtools docstring but rejected at runtime — omit it.)
 
 **If you want to use more cores per sim** (e.g. for larger populations), increase
-all three values together:
+both values together:
 ```python
 NumCores = 8
-Exclusive = True
 Environment = {"OMP_NUM_THREADS": "8", "NUMBA_NUM_THREADS": "8"}
 ```
 Note: laser-measles ABM parallelism is limited to the Numba-parallel sections
