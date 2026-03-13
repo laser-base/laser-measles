@@ -7,4 +7,5 @@ laser_measles
 # COMPS orchestration (version-sensitive — pin tightly)
 idmtools~=3.0
 idmtools-platform-comps~=3.0
+idmtools-models~=3.0
 idm_pycomps~=2.11

@@ -1,67 +1,106 @@
-"""
-COMPS submission script for laser-measles beta (R0) parameter sweep.
-
-Prerequisites:
-    1. Build the Docker image and SIF:
-           docker build -t laser-measles .
-           singularity build laser-measles.sif docker-daemon://laser-measles:latest
-
-    2. Copy assets and create an AssetCollection (requires python3.11 + COMPS auth):
-           cp main_measles.py assets/
-           cp laser-measles.sif assets/
-           python3.11 -m COMPS create_asset_collection assets --name laser-measles-assets
-       This prints an AC UUID. Write it to laser-measles.id:
-           echo "<uuid>" > laser-measles.id
-
-    3. Run this script:
-           python3.11 run_comps.py
-       Outputs: experiment.id (used by retrieve_outputs.py)
-"""
-
+import argparse
 import os
 import sys
 
-from idmtools.assets import AssetCollection
+from idmtools.assets import Asset, AssetCollection
 from idmtools.core.platform_factory import Platform
 from idmtools.entities import CommandLine
 from idmtools.entities.command_task import CommandTask
 from idmtools.builders import SimulationBuilder
 from idmtools.entities.experiment import Experiment
 from idmtools.entities.templated_simulation import TemplatedSimulations
+from idmtools_platform_comps.utils.scheduling import add_schedule_config
 
-# --- sweep values ---
-# beta ≈ R0 / inf_mu where inf_mu=8 days → R0 = beta * 8
-# Range: R0 ≈ 2 (beta=0.25) to R0 ≈ 20 (beta=2.5), 20 evenly-spaced values
-BETA_VALUES = [round(v, 3) for v in [0.25 + i * (2.25 / 19) for i in range(20)]]
+# --- fixed parameters ---
 SEED = 42
+BETA_MIN, BETA_MAX = 0.25, 2.5
+
+NODE_GROUP = "idm_abcd"
+NUM_CORES = 8
+NUM_THREADS = 8
 
 
-def set_beta(simulation, beta):
-    cmd = f"singularity exec ./Assets/laser-measles.sif python3 ./Assets/main_measles.py --beta {beta} --seed {SEED}"
-    simulation.task.command = CommandLine(cmd)
-    return {"beta": beta, "seed": SEED}
+def make_beta_values(n: int):
+    if n <= 1:
+        return [0.8]
+    return [
+        round(BETA_MIN + i * (BETA_MAX - BETA_MIN) / (n - 1), 3)
+        for i in range(n)
+    ]
 
 
 if __name__ == "__main__":
-    platform = Platform("CALCULON", priority="AboveNormal")
 
-    # Base task — command will be overridden per simulation by set_beta
-    base_cmd = f"singularity exec ./Assets/laser-measles.sif python3 ./Assets/main_measles.py --beta 0.8 --seed {SEED}"
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--num-sims", type=int, default=20)
+    parser.add_argument("--pop-scale", type=float, default=1.0)
+    parser.add_argument("--num-ticks", type=int, default=365 * 3)
+    args = parser.parse_args()
+
+    betas = make_beta_values(args.num_sims)
+
+    print(f"Submitting {len(betas)} sims: beta={betas}")
+
+    platform = Platform("CALCULON", priority="AboveNormal", max_workers=1)
+
+    # Base command WITHOUT beta (we will inject per sim)
+    base_cmd = (
+        "singularity exec ./Assets/laser-measles.sif "
+        "python3 ./Assets/main_measles.py "
+        f"--seed {SEED} "
+        f"--pop-scale {args.pop_scale} "
+        f"--num-ticks {args.num_ticks}"
+    )
+
     task = CommandTask(command=CommandLine(base_cmd))
 
-    # SIF + script as shared assets (from laser-measles.id created by createac)
-    task.common_assets.add_assets(AssetCollection.from_id_file("laser-measles.id"))
+    task.common_assets.add_assets(
+        AssetCollection.from_id_file("laser-measles.id")
+    )
+    task.common_assets.add_asset(
+        Asset(absolute_path=os.path.abspath("main_measles.py"))
+    )
 
     ts = TemplatedSimulations(base_task=task)
+
+    # --- scheduling (SLURM schema for CALCULON) ---
+    add_schedule_config(
+        ts,
+        command=base_cmd,
+        NodeGroupName=NODE_GROUP,
+        NumNodes=1,
+        NumProcesses=1,
+        NumCores=NUM_CORES,
+        Environment={
+            "OMP_NUM_THREADS": str(NUM_THREADS),
+            "NUMBA_NUM_THREADS": str(NUM_THREADS),
+            "OMP_PLACES": "cores",
+            "OMP_PROC_BIND": "close",
+        },
+    )
+
+    # Sweep only modifies task.command (no WorkOrder hacking)
+    def set_beta(simulation, beta):
+        cmd = base_cmd + f" --beta {beta}"
+        simulation.task.command = CommandLine(cmd)
+        return {"beta": beta}
+
     sb = SimulationBuilder()
-    sb.add_sweep_definition(set_beta, BETA_VALUES)
+    sb.add_sweep_definition(set_beta, betas)
     ts.add_builder(sb)
 
-    experiment = Experiment.from_template(ts, name=os.path.split(sys.argv[0])[1], tags={"model": "laser-measles", "sweep": "beta"})
-    experiment.run(wait_until_done=True)
+    experiment = Experiment.from_template(
+        ts,
+        name="laser_measles_beta_sweep",
+        tags={"model": "laser-measles"},
+    )
+
+    with platform:
+        experiment.run(wait_until_done=True, scheduling=True)
+
     if experiment.succeeded:
         experiment.to_id_file("experiment.id")
-        print(f"Experiment succeeded. ID saved to experiment.id")
+        print("Experiment succeeded.")
     else:
-        print("Experiment failed or partially failed.")
+        print("Experiment failed.")
         sys.exit(1)

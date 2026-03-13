@@ -1,6 +1,7 @@
 # Large binary assets — build locally, do not commit
 *.sif
 assets/
+assets-sif/
 
 # COMPS-generated ID files — machine-specific, regenerate as needed
 *.id
@@ -13,3 +14,6 @@ assets/
 *.log
 build_pdf.txt
 createac_output.txt
+
+# Compressed reference scripts (originals kept for reference, not tracked)
+*.gz

@@ -1,88 +1,83 @@
 # laser-measles on COMPS
 
-This directory contains everything needed to run `laser-measles` simulations on the
-[COMPS](https://comps.idmod.org) HPC platform using Singularity containers.
+Run `laser-measles` ABM simulations on the [COMPS](https://comps.idmod.org) HPC
+platform using Singularity containers and the idmtools submission library.
 
 ## Overview
 
-The workflow has four steps:
-
 ```
-Build image → Upload assets → Submit sweep → Retrieve & plot
-  Dockerfile      createac       run_comps.py    retrieve_outputs.py
-                                                 plot_outputs.py
+Build image → Upload SIF → Submit sweep → Retrieve & plot
+  Dockerfile    createac    run_comps2.py   retrieve_outputs.py
+                                            plot_outputs.py
 ```
 
-The demo runs a compartmental SEIR model on a synthetic 8-patch linear scenario
-(total population ~810k), sweeping `beta` across 5 values corresponding to R0 ≈ 3–16.
-Each simulation writes `output.csv` with per-tick SEIR counts; the retrieval script
-combines all simulations into `all_outputs.csv`.
+The demo sweeps `beta` (transmission rate) across a range of values on a synthetic
+10-patch spatial scenario with ~1.2M total agents, running 3-year ABM simulations.
+Each simulation writes `output.csv`; the retrieval script concatenates them into
+`all_outputs.csv`.
+
+## Quick start
+
+```bash
+# One-time setup
+docker build -t laser-measles .
+singularity build laser-measles.sif docker-daemon://laser-measles:latest
+mkdir -p assets-sif && cp laser-measles.sif assets-sif/
+python3.11 -m COMPS create_asset_collection assets-sif --name laser-measles-sif
+echo "<uuid-from-above>" > laser-measles.id
+
+# Each run
+python3.11 run_comps2.py --num-sims 100
+python3.11 retrieve_outputs.py
+python3.11 plot_outputs.py
+```
 
 ## Prerequisites
 
 - Singularity installed locally
-- `python3.11` with orchestration dependencies installed:
+- Docker installed locally (to build the image before converting to SIF)
+- `python3.11` with orchestration deps:
   ```bash
   pip install -r requirements.txt
   ```
-- COMPS credentials (log in once interactively to cache the auth token):
+- COMPS credentials (login once interactively to cache the auth token):
   ```bash
   python3.11 -c "from COMPS import Client; Client.login('https://comps.idmod.org')"
   ```
 
 ## Step-by-step
 
-### 1. Build the Docker image and SIF
+### 1. Build the Docker image and Singularity SIF
 
 ```bash
 docker build -t laser-measles .
 singularity build laser-measles.sif docker-daemon://laser-measles:latest
 ```
 
-The `Dockerfile` installs `laser_measles` (pre-release) from PyPI into an Ubuntu 22.04
-image with Python 3.11. The resulting SIF is ~1 GB — it is gitignored and must be built
+The `Dockerfile` installs `laser_measles` (pre-release) from PyPI into Ubuntu 22.04
+with Python 3.11.  The resulting SIF is ~1 GB — it is gitignored and must be built
 locally.
 
-### 2. Upload assets to COMPS
-
-Copy the model script alongside the SIF, then create an AssetCollection:
+### 2. Upload the SIF to COMPS (one-time)
 
 ```bash
-cp main_measles.py assets/
-cp laser-measles.sif assets/
-python3.11 -m COMPS create_asset_collection assets --name laser-measles-assets
-```
-
-This uploads any new files and prints the AssetCollection UUID. Save it:
-
-```bash
+mkdir -p assets-sif && cp laser-measles.sif assets-sif/
+python3.11 -m COMPS create_asset_collection assets-sif --name laser-measles-sif
 echo "<uuid-from-above>" > laser-measles.id
 ```
 
-The SIF is content-addressed, so re-uploading it on subsequent runs is a no-op as long
-as the file hasn't changed.
+Only redo this when you rebuild the SIF.  `main_measles.py` is **not** in the
+AssetCollection — it is re-uploaded from the local filesystem on every
+`run_comps2.py` invocation, so you can edit the model script without touching the
+SIF.
 
 ### 3. Submit the sweep
 
 ```bash
-python3.11 run_comps.py
+python3.11 run_comps2.py [--num-sims N] [--pop-scale F] [--num-ticks T]
 ```
 
-This submits 5 simulations (one per beta value), waits for them to finish, and saves
-the experiment UUID to `experiment.id`.
-
-Sweep values and their approximate R0 (R0 = beta × inf_mu, inf_mu = 8 days):
-
-| beta  | R0 ≈ |
-|-------|-------|
-| 0.375 | 3     |
-| 0.625 | 5     |
-| 1.0   | 8     |
-| 1.5   | 12    |
-| 2.0   | 16    |
-
-Each simulation starts with a naive (fully susceptible) population seeded with
-10 infections in the largest patch. Runtime is ~1–2 minutes for the full sweep.
+Default: 20 beta values, pop_scale=1.0 (~1.2M agents), 1095 ticks (3 years).
 
 ### 4. Retrieve outputs
 
@@ -90,7 +85,7 @@ Each simulation starts with a naive (fully susceptible) population seeded with
 python3.11 retrieve_outputs.py
 ```
 
-Downloads `output.csv` from each simulation and concatenates them into `all_outputs.csv`.
+Downloads `output.csv` from each simulation and concatenates into `all_outputs.csv`.
 
 ### 5. Plot
 
@@ -98,32 +93,204 @@ Downloads `output.csv` from each simulation and concatenates them into `all_outp
 python3.11 plot_outputs.py
 ```
 
-Writes `beta_sweep.png` — a 2×2 panel of S/E/I/R time series, one line per beta value.
+Writes `beta_sweep.png` — 2×2 SEIR panel, one curve per beta value.
+
+---
+
+## Performance
+
+Validated experiments (Calculon, `idm_abcd` node group, `priority=Highest`,
+`NumCores=4`, `Exclusive=True`):
+
+| Experiment ID | Sims | pop_scale | Agents | Ticks | Wall time |
+|---------------|------|-----------|--------|-------|-----------|
+| `620a9ef5-ed1e-f111-92e0-000d3af5294c` | 10 | 1.0 | ~1.2M | 1095 | ~11 min (cold nodes) |
+| `10b15e22-f21e-f111-92e0-000d3af5294c` | 20 | 1.0 | ~1.2M | 1095 | ~1 min |
+| `36aea492-f21e-f111-92e0-000d3af5294c` | 50 | 1.0 | ~1.2M | 1095 | ~1 min |
+| `727183cc-f21e-f111-92e0-000d3af5294c` | 100 | 1.0 | ~1.2M | 1095 | ~1 min |
+
+**Key result**: 100 full-scale ABM simulations (1.2M agents × 3 years) complete in
+~1 minute wall time once nodes are warm.  COMPS runs all simulations in parallel on
+separate nodes, so wall time is determined by the slowest single sim, not the total.
+
+**Why the first experiment is slow (~11 min)**:
+Numba JIT-compiles all `@njit`-decorated functions the first time the SIF executes
+on a given node.  Cold node warmup adds ~60s per node.  Subsequent experiments on
+warm nodes see ~1 min wall time.
+
+---
+
+## Hard-won lessons
+
+These are the non-obvious things that took significant debugging to discover.
+Read this section before making changes to the submission workflow.
+
+### 1. The WorkOrder.json bug — the main pitfall
+
+**Symptom**: All 100 simulations ran with `beta=0.8` (the default) even though
+the sweep callback appeared to set a unique beta per sim.
+
+**Root cause**: COMPS executes simulations using the command in `WorkOrder.json`,
+not `simulation.task.command` directly.  `WorkOrder.json` is generated by
+`add_schedule_config()`.
+
+When `add_schedule_config(ts, ...)` is called on a `TemplatedSimulations` object,
+it writes `WorkOrder.json` to the **base simulation only** (this is what the
+idmtools source code does).  When idmtools builds the experiment, each simulation
+is created by `copy.deepcopy(base_simulation)` — they all inherit the same
+`WorkOrder.json` with the base command.  Per-sim overrides to
+`simulation.task.command` happen after the deepcopy and are never reflected in
+`WorkOrder.json`.
+
+**Fix**: Call `add_schedule_config(simulation, command=cmdline, ...)` **inside the
+sweep callback**, once per simulation, after setting `simulation.task.command`.
+The idmtools `_process_simulation()` function reads `simulation.task.command.cmd`
+at call time and embeds the correct per-sim command in that simulation's
+`WorkOrder.json`.
+
+```python
+# WRONG — WorkOrder.json written once to base sim; all sims inherit it
+ts = TemplatedSimulations(base_task=task)
+...
+add_schedule_config(ts, NodeGroupName=..., NumCores=...)   # <-- DON'T do this
+
+# RIGHT — WorkOrder.json written per sim with the correct command
+def update_parameter_callback(simulation, beta, ...):
+    cmdline = f"singularity exec ... --beta {beta} ..."
+    simulation.task.command = CommandLine(cmdline)
+    add_schedule_config(simulation, command=cmdline, ...)   # <-- do this
+    return {"beta": beta, ...}
+```
+
+### 2. `scheduling=True` is required
+
+`experiment.run(wait_until_done=True, scheduling=True)` — the `scheduling=True`
+flag tells COMPS to use `WorkOrder.json` for command dispatch and HPC scheduling.
+Without it, `WorkOrder.json` is ignored and scheduling options (node group, core
+count) have no effect.
+
+### 3. `laser_task.PyConfiguredSingularityTask` is not available here
+
+The reference script `run_laser_with_sif.py` (cholera model) uses
+`PyConfiguredSingularityTask` (PCST) from the `laser_task` package.  PCST provides
+a `set_parameter()` method that writes per-sim config files, avoiding the need to
+bake parameters into the command string.
+
+`laser_task` is not installed in this environment.  The workaround is to use plain
+`CommandTask` and encode all sweep parameters directly in the per-sim command line,
+then call `add_schedule_config(simulation, ...)` in the callback as described above.
+
+### 4. `Environment` dict in `add_schedule_config`
+
+`add_schedule_config(..., Environment={"OMP_NUM_THREADS": "4"})` works correctly —
+the dict is serialized into `WorkOrder.json` as JSON data and COMPS sets those
+environment variables at runtime.
+
+An earlier attempt to pass `Environment` via `add_schedule_config` on the
+`TemplatedSimulations` base hit `'CommandTask' object has no attribute 'environment'`.
+This error came from a different code path (not `_process_simulation`); it does not
+occur when calling per-sim as described above.
+
+### 5. Don't deepcopy `simulation.task` in the callback
+
+An earlier version of the callback did:
+```python
+simulation.task = copy.deepcopy(simulation.task)
+simulation.task.command = CommandLine(cmd)
+```
+
+The deepcopy is unnecessary (idmtools already deepcopies `base_simulation` for each
+sim) and may break idmtools' internal object tracking.  Just set
+`simulation.task.command` directly.
+
+### 6. Numba JIT warmup on cold nodes
+
+The SIF contains Numba-jit-compiled ABM code.  The first time the SIF runs on a
+given COMPS worker node, Numba compiles all `@njit` functions from scratch (~60s).
+Subsequent runs on warm nodes skip compilation.
+
+This manifests as: first experiment takes ~11 min, all subsequent ones take ~1 min.
+It is not a bug.  If you need fast cold-start, pre-warming the cache or using the
+`--pop-scale 0.1` flag for test runs avoids the wait.
+
+### 7. Thread and core allocation — what goes wrong if you get it wrong
+
+> **Optional nerdy deep-dive** — skip if you just want things to work.
+
+`run_comps2.py` requests `NumCores=4`, `Exclusive=True`, and sets
+`OMP_NUM_THREADS=4` / `NUMBA_NUM_THREADS=4`.  These three settings work together,
+and getting any of them wrong silently degrades performance or correctness.
+
+**`NumCores`** tells the COMPS scheduler how many physical cores to reserve on the
+node for this simulation.  If you request fewer cores than your code tries to use,
+the OS will still schedule those threads — but they will compete with other
+simulations or system processes on the same node, causing random slowdowns and
+high variance in runtimes.  If you request more cores than exist, you're wasting
+allocation.
+
+**`Exclusive=True`** reserves the entire node for this simulation, preventing other
+COMPS jobs from being co-scheduled on the same hardware.  Without this flag, COMPS
+may bin-pack multiple simulations onto the same multi-core node.  Each simulation
+thinks it has N cores available, but they share the physical hardware.  The result
+is that Numba's parallel loops and OpenMP threads all compete with each other,
+each running at a fraction of expected speed.  Observed effect: a sim that takes
+~1 min in isolation can take 5–10× longer and return noisier results when
+co-scheduled with 3–4 other Numba-heavy sims.
+
+**`OMP_NUM_THREADS` / `NUMBA_NUM_THREADS`** tell the runtime libraries how many
+threads to spawn per simulation.  If these are not set, OpenMP and Numba default
+to the total number of logical CPUs on the node (often 32–64 on Calculon nodes).
+With `Exclusive=True` and `NumCores=4`, spawning 32 threads means 28 of them are
+fighting for 4 physical cores — massive context-switching overhead.  Worse, if
+`Exclusive=False`, multiple sims each spawning 32 threads on a 32-core node means
+the system is managing hundreds of threads simultaneously.  This is the scenario
+most likely to produce wall times of 10–20 min for a sim that should take 1 min.
+
+**The safe recipe** (what `run_comps2.py` uses):
+```python
+NumCores = 4
+Exclusive = True
+Environment = {"OMP_NUM_THREADS": "4", "NUMBA_NUM_THREADS": "4"}
+```
+This ensures: one sim per node, exactly 4 threads, no contention.
+
+**If you want to use more cores per sim** (e.g. for larger populations), increase
+all three values together:
+```python
+NumCores = 8
+Exclusive = True
+Environment = {"OMP_NUM_THREADS": "8", "NUMBA_NUM_THREADS": "8"}
+```
+Note: laser-measles ABM parallelism is limited to the Numba-parallel sections
+(mainly the inner infection loop).  At ~1.2M agents, 4 cores is close to the
+sweet spot; beyond 8 the parallel efficiency drops due to memory bandwidth
+saturation.
+
+### 8. COMPS credentials caching
+
+COMPS credentials are session-scoped.  You must run this interactively once to
+cache the auth token before running submission scripts non-interactively:
+
+```bash
+python3.11 -c "from COMPS import Client; Client.login('https://comps.idmod.org')"
+```
+
+If you get auth errors mid-run, re-run the login command above.
+
+---
 
 ## File reference
 
 | File | Purpose |
 |------|---------|
 | `Dockerfile` | Builds the container image with `laser_measles` from PyPI |
-| `main_measles.py` | Model entry point — accepts `--beta` and `--seed`, writes `output.csv` |
-| `run_comps.py` | Submits the beta sweep experiment to COMPS |
-| `retrieve_outputs.py` | Downloads simulation outputs and combines into `all_outputs.csv` |
-| `plot_outputs.py` | Plots SEIR time series from `all_outputs.csv` |
-| `requirements-container.txt` | Minimal deps baked into the Docker image (`laser_measles` only) |
-| `assets/` | Staging directory for SIF + script (gitignored, built locally) |
-
-## Extending the sweep
-
-To sweep different parameters, edit the constants at the top of `run_comps.py` and the
-corresponding `argparse` arguments in `main_measles.py`. The `set_beta` callback in
-`run_comps.py` shows the pattern for injecting per-simulation command-line arguments.
-
-## Notes
-
-- **First run is slow**: the first time a SIF is used on a COMPS worker node, there is
-  extra setup time (~minutes). Subsequent runs with the same SIF are faster.
-- **Auth token expiry**: COMPS tokens are session-scoped. If you get auth errors, re-run
-  the login command above.
-- **Asset reuse**: COMPS deduplicates assets by checksum. Updating only `main_measles.py`
-  (without rebuilding the SIF) requires only a new `create_asset_collection` call — the
-  SIF upload is skipped automatically.
+| `main_measles.py` | ABM model entry point — `--beta`, `--seed`, `--pop-scale`, `--num-ticks` |
+| `run_comps2.py` | **Working** sweep submission script (use this) |
+| `run_comps.py` | Earlier submission script (work in progress — do not use) |
+| `run_laser_with_sif.py` | Reference implementation from cholera model (uses PCST) |
+| `retrieve_outputs.py` | Downloads simulation outputs → `all_outputs.csv` |
+| `plot_outputs.py` | Plots SEIR time series from `all_outputs.csv` → `beta_sweep.png` |
+| `requirements.txt` | Orchestration deps for the local Python 3.11 environment |
+| `requirements-container.txt` | Deps baked into the Docker image |
+| `laser-measles.id` | COMPS AssetCollection UUID for the SIF (gitignored, generate locally) |
+| `experiment.id` | Most recent experiment UUID (gitignored, written by run_comps2.py) |
