@@ -160,6 +160,7 @@ linkcheck_ignore = [
     r"https://chatgpt.com/g/g-678ae681f5b48191b3e91619e649e598-jenner-measles",  # 404 error
     r"https://chatgpt.com/g/g-674f5fd33aec8191bcdc1a2736fb7c8d-laser-gpt-jenner",  # likely restricted
     r"https://laser.idmod.org/laser-generic/",  # likely restricted
+    r"https://codecov\.io/.*",  # External service, may return 502
 ]
 
 # HTTP status codes that should be considered as "working" (not broken)
