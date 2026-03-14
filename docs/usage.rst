@@ -300,3 +300,133 @@ The component system provides a uniform interface for disease dynamics with inte
 
     # Add to model
     model.components = [MyInfectionProcess]
+
+----------
+
+Gotchas & FAQ
+-------------
+
+This section documents the most common mistakes when working with laser-measles.
+
+**1. Where does ``create_component`` come from?**
+
+``create_component`` is always imported from ``laser.measles.components``, regardless of which
+model type you are using.  It is **not** exported from ``laser.measles.abm``,
+``laser.measles.biweekly``, or ``laser.measles.compartmental``.
+
+.. code-block:: python
+
+    # CORRECT
+    from laser.measles.components import create_component
+
+    # WRONG — ImportError
+    from laser.measles.abm import create_component
+    from laser.measles.biweekly import create_component
+    from laser.measles.compartmental import create_component
+
+**2. How do I access component classes and their parameter classes?**
+
+Each model package exports a ``components`` module.  All component classes *and* their
+corresponding parameter (Pydantic) classes are accessed through that module — not via
+deep individual imports.
+
+.. code-block:: python
+
+    # CORRECT — import the components namespace, then use dot-access
+    from laser.measles.abm import ABMModel, ABMParams, components
+    from laser.measles.components import create_component
+
+    model.components = [
+        components.NoBirthsProcess,
+        create_component(components.InfectionSeedingProcess,
+                         params=components.InfectionSeedingParams(target_patches=["patch_0"])),
+        components.InfectionProcess,
+        create_component(components.StateTracker,
+                         params=components.StateTrackerParams(aggregation_level=0)),
+    ]
+
+    # WRONG — individual deep imports often fail or miss the params class
+    from laser.measles.abm.components import InfectionSeedingProcess   # fragile
+    from laser.measles.abm.params import InfectionSeedingParams        # does not exist
+
+The same pattern applies to the biweekly and compartmental models:
+
+.. code-block:: python
+
+    from laser.measles.biweekly import BiweeklyModel, BiweeklyParams, components
+    from laser.measles.compartmental import CompartmentalModel, CompartmentalParams, components
+
+**3. ``model.components`` is assigned *after* construction — it is not a constructor argument**
+
+The model constructors only accept ``scenario`` and ``params``.  Components must be
+attached by assigning to ``model.components`` after the model object is created.
+
+.. code-block:: python
+
+    # CORRECT
+    model = BiweeklyModel(scenario=scenario, params=params)
+    model.components = [
+        components.InitializeEquilibriumStatesProcess,
+        components.ImportationPressureProcess,
+        components.InfectionProcess,
+        components.VitalDynamicsProcess,
+        components.StateTracker,
+    ]
+
+    # WRONG — TypeError: unexpected keyword argument 'components'
+    model = BiweeklyModel(scenario=scenario, params=params, components=[...])
+
+This applies to all three model types (``ABMModel``, ``BiweeklyModel``, ``CompartmentalModel``).
+
+**4. There is no ``lm`` object in ``laser.measles``**
+
+The top-level ``laser.measles`` package does not export a convenience object called ``lm``
+(or similar).  Import the model class and params class directly from their sub-package.
+
+.. code-block:: python
+
+    # WRONG — ImportError
+    from laser.measles import lm
+
+    # CORRECT
+    from laser.measles.abm import ABMModel, ABMParams, components
+
+**5. StateTracker output shape depends on ``aggregation_level``**
+
+The ``StateTracker`` component stores time-series data differently depending on how it is
+configured:
+
+* **Default (global sum)**: ``tracker.S``, ``tracker.I``, ``tracker.R`` (and ``tracker.E``
+  for SEIR models) are 1-D arrays of shape ``(num_ticks,)`` — the sum across all patches.
+* **Patch-level** (ABM only, ``aggregation_level=0``): arrays are 2-D with shape
+  ``(num_ticks, n_patches)``.
+
+.. code-block:: python
+
+    # Global tracker (biweekly / compartmental default)
+    tracker = model.get_instance("StateTracker")[0]
+    peak_I = int(tracker.I.max())       # scalar — peak across all ticks and patches
+
+    # Patch-level tracker (ABM with aggregation_level=0)
+    tracker = model.get_instance("StateTracker")[0]
+    peak_patch_0 = int(tracker.I[:, 0].max())   # peak for patch 0 across all ticks
+
+Retrieve the tracker instance after ``model.run()`` with:
+
+.. code-block:: python
+
+    tracker = model.get_instance("StateTracker")[0]
+
+**6. Cast numpy scalars to Python types before building a polars DataFrame**
+
+Tracker arrays are NumPy arrays, so operations like ``.max()`` return NumPy scalar objects.
+Polars raises an error when these appear in a row-oriented list-of-lists DataFrame constructor.
+Cast them explicitly:
+
+.. code-block:: python
+
+    # WRONG — TypeError or DataOrientationWarning → error under strict pytest settings
+    rows.append([patch_id, tracker.I[:, p].max(), ...])
+
+    # CORRECT
+    rows.append([patch_id, int(tracker.I[:, p].max()), ...])
