@@ -304,8 +304,8 @@ The component system provides a uniform interface for disease dynamics with inte
 ----------
 
 
-5.2.6 Gotchas & FAQ
-===================
+Gotchas & FAQ
+-------------
 
 This section documents common pitfalls when writing ``laser-measles`` models.
 If you encounter unexpected ``ImportError``, tracker shape mismatches, or
@@ -315,7 +315,7 @@ These issues occur frequently when users are learning the component system
 or adapting code between the ABM, biweekly, and compartmental models.
 
 1. Where does ``create_component`` come from?
----------------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 ``create_component`` is always imported from
 ``laser.measles.components``, regardless of which model type you are using.
@@ -335,7 +335,7 @@ types** (ABM, biweekly, and compartmental).
 
 
 2. How do I access component classes and their parameter classes?
-------------------------------------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Each model package exports a ``components`` module. All component classes
 and their corresponding parameter (Pydantic) classes should be accessed
@@ -382,7 +382,7 @@ The same pattern applies to the biweekly and compartmental models:
 
 
 3. ``model.components`` is assigned *after* construction
---------------------------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The model constructors only accept ``scenario`` and ``params``.
 
@@ -422,7 +422,7 @@ This applies to all three model types:
 
 
 4. There is no ``lm`` object in ``laser.measles``
-------------------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The top-level ``laser.measles`` package does **not** export a convenience
 object such as ``lm``.
@@ -440,7 +440,7 @@ of the package API.
 
 
 5. ``StateTracker`` output shape depends on ``aggregation_level``
-------------------------------------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The ``StateTracker`` component stores time-series data differently depending
 on how it is configured.
@@ -485,7 +485,7 @@ Retrieve the tracker instance after ``model.run()``:
 
 
 6. Cast NumPy scalars before building a Polars DataFrame
---------------------------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Tracker arrays are NumPy arrays, so operations like ``.max()`` return
 NumPy scalar types (``np.int64``, ``np.float64``).
@@ -510,7 +510,7 @@ An alternative is to use ``.item()``:
 
 
 7. Components are classes, not instances
-----------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Components should be passed as **classes**, not instantiated objects.
 
@@ -542,7 +542,7 @@ If parameters are needed, use ``create_component``:
 
 
 8. Scenario DataFrame must contain required columns
----------------------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 All models expect the scenario DataFrame to contain at least the following
 columns:
