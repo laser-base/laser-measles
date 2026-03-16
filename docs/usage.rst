@@ -564,5 +564,3 @@ Missing columns will trigger a validation error when constructing the model.
        "pop": [50000],
        "mcv1": [0.8],
    })
-
-
