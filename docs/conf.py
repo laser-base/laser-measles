@@ -14,7 +14,7 @@ project = "laser-measles"
 copyright = f"2024 - {sc.now().year}, Bill & Melinda Gates Foundation. All rights reserved."
 
 # The short X.Y version
-version = release = "0.9.1-dev0"
+version = release = "0.9.2"
 
 
 # -- General configuration ---------------------------------------------------
@@ -155,6 +155,12 @@ linkcheck_ignore = [
     r"https://chatgpt\.com/g/g-674f5fd33aec8191bcdc1a2736fb7c8d-laser-gpt-jenner",  # Requires authentication
     r"https://.*\.idmod\.org/.*",  # Internal IDM links that may require auth
     r"https://.*\.gatesfoundation\.org/.*",  # Gates Foundation internal links
+    r"https://example.com/restricted-path",
+    r"https://github.com/InstituteforDiseaseModeling/laser-mcp/blob/main/README.md",  # 404 error
+    r"https://chatgpt.com/g/g-678ae681f5b48191b3e91619e649e598-jenner-measles",  # 404 error
+    r"https://chatgpt.com/g/g-674f5fd33aec8191bcdc1a2736fb7c8d-laser-gpt-jenner",  # likely restricted
+    r"https://laser.idmod.org/laser-generic/",  # likely restricted
+    r"https://codecov\.io/.*",  # External service, may return 502
 ]
 
 # HTTP status codes that should be considered as "working" (not broken)

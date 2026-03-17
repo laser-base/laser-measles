@@ -1,6 +1,6 @@
-=========================================
-Installation and Development Instructions
-=========================================
+============
+Installation
+============
 
 At the command line:
 

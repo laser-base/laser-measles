@@ -1,4 +1,4 @@
-name: Manual major/minor version bump and build
+name: Manual major/minor version bump
 
 on:
     workflow_dispatch:
@@ -47,8 +47,8 @@ jobs:
         run: |
           pytest
 
-  bump-and-build:
-    name: Bump version and build package
+  bump-version:
+    name: Bump version
     permissions:
       contents: write
     needs: test
@@ -69,12 +69,12 @@ jobs:
         with:
           python-version: '3.12'
 
-      - name: Install bump-my-version and build tools
+      - name: Install bump-my-version
         run: |
           python -m pip install --upgrade pip
-          pip install bump-my-version build twine
+          pip install bump-my-version
 
-      - name: Bump patch version
+      - name: Bump version
         run: |
           git config user.name "${{ github.actor }}"
           git config user.email "${{ github.actor }}@users.noreply.github.com"
@@ -82,37 +82,9 @@ jobs:
           bump-my-version bump ${{ github.event.inputs.version_type }} $DRY_FLAG
 
       - name: Push changes and tag
+        if: github.event.inputs.dry_run != 'true'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           git push origin HEAD:main
           git push origin v$(bump-my-version show current_version)
-
-      - name: Build package
-        run: python -m build
-
-      - name: Upload artifacts to release
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          tag_name=v$(bump-my-version show current_version)
-          gh release create "$tag_name" dist/* --title "$tag_name" --notes "Automated release for $tag_name" || \
-          gh release upload "$tag_name" dist/*
-
-  publish-to-pypi:
-    name: Publish to PyPI
-    needs: bump-and-build
-    runs-on: ubuntu-latest
-    environment: pypi
-    steps:
-      - name: Download artifacts
-        uses: actions/download-artifact@v4
-        with:
-          path: dist
-
-      - name: Publish to PyPI
-        env:
-          TWINE_USERNAME: ${{ secrets.PYPI_USERNAME }}
-          TWINE_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
-        run: |
-          python3 -m twine upload --verbose --repository-url https://upload.pypi.org/legacy/ dist/*.whl

@@ -305,7 +305,6 @@ The component system provides a uniform interface for disease dynamics with inte
 
 
 5.2.6 Gotchas & FAQ
-===================
 
 This section documents common pitfalls when writing ``laser-measles`` models.
 If you encounter unexpected ``ImportError``, tracker shape mismatches, or
