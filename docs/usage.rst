@@ -317,18 +317,23 @@ or adapting code between the ABM, biweekly, and compartmental models.
 1. Where does ``create_component`` come from?
 ---------------------------------------------
 
-``create_component`` is always imported from
-``laser.measles.components``, regardless of which model type you are using.
+``create_component`` is available from both the top-level
+``laser.measles`` namespace and the shared ``laser.measles.components``
+package, regardless of which model type you are using.
 
 It lives in the shared components package because it works with **all model
-types** (ABM, biweekly, and compartmental).
+types** (ABM, biweekly, and compartmental), and is re-exported at the
+top level for convenience.
 
 .. code-block:: python
 
-   # CORRECT
+   # PREFERRED (flattened public API)
+   from laser.measles import create_component
+
+   # ALSO SUPPORTED (direct components package)
    from laser.measles.components import create_component
 
-   # WRONG — ImportError
+   # WRONG — ImportError or inconsistent with the public API
    from laser.measles.abm import create_component
    from laser.measles.biweekly import create_component
    from laser.measles.compartmental import create_component
