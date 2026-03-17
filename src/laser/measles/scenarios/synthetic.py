@@ -30,7 +30,7 @@ All scenario DataFrames **must** contain exactly these five columns:
 | Column | Dtype    | Description                                      |
 +========+==========+==================================================+
 | id     | Utf8/str | Unique string identifier for the patch.          |
-|        |          | Examples: ``"patch_0"``, ``"cluster_1:node_3"`` |
+|        |          | Examples: ``"patch_0"``, ``"cluster_1:node_3"``  |
 +--------+----------+--------------------------------------------------+
 | pop    | Int64    | Total population of the patch (integer).         |
 +--------+----------+--------------------------------------------------+

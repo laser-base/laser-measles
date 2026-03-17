@@ -13,6 +13,7 @@ from . import demographics
 from . import migration
 from . import mixing
 from . import scenarios
+from .scenarios import synthetic
 
 __all__.extend(
     [
@@ -25,6 +26,7 @@ __all__.extend(
         "migration",
         "mixing",
         "scenarios",
+        "synthetic",
     ]
 )
 

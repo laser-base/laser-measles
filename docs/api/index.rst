@@ -6,6 +6,10 @@ API reference
 
 This page lists laser-measles's API.
 
+.. contents:: Contents
+   :local:
+   :depth: 2
+
 Base Components
 ===============
 
@@ -387,3 +391,54 @@ Specific mixing model implementations for different types of population movement
    stouffer.StoufferMixing
    radiation.RadiationMixing
    competing_destinations.CompetingDestinationsMixing
+
+----
+
+Scenarios
+=========
+
+.. currentmodule:: laser.measles.scenarios
+
+Pre-built synthetic scenario factories for quickly constructing common spatial configurations.
+Each function returns a :class:`polars.DataFrame` suitable for passing directly to a model.
+
+**Import paths:**
+
+.. code-block:: python
+
+   # Functions are re-exported at the scenarios package level
+   from laser.measles.scenarios import single_patch_scenario, two_patch_scenario
+   from laser.measles.scenarios import two_cluster_scenario, satellites_scenario
+
+   # Access via the synthetic submodule directly
+   from laser.measles.scenarios import synthetic
+   scenario = synthetic.single_patch_scenario(population=50_000)
+
+   # synthetic is also re-exported at the top level
+   from laser.measles import synthetic
+
+synthetic module
+----------------
+
+The ``synthetic`` module contains all scenario-builder functions and a detailed reference
+for the scenario DataFrame schema. Its documentation is reproduced below:
+
+.. autosummary::
+   :toctree: _autosummary
+   :template: custom-module-template.rst
+   :nosignatures:
+
+   synthetic
+
+Scenario Functions
+------------------
+
+.. autosummary::
+   :toctree: _autosummary
+   :template: custom-function-template.rst
+   :nosignatures:
+
+   single_patch_scenario
+   two_patch_scenario
+   two_cluster_scenario
+   satellites_scenario
