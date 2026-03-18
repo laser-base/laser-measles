@@ -11,7 +11,7 @@ It provides a flexible, component-based architecture for disease simulation with
 Key features include:
 
 * **Spatial modeling**: Support for geographic regions with administrative boundaries and population distributions
-* **Multiple model types**: Biweekly and Generic models for different use cases
+* **Multiple model types**: ABM, Biweekly, and Compartmental models for different use cases
 * **Component-based architecture**: Interchangeable disease dynamics components
 * **High-performance computing**: Optimized data structures and Numba JIT compilation
 * **Type-safe parameters**: Pydantic-based configuration management
@@ -449,10 +449,10 @@ of the package API.
 The ``StateTracker`` component stores time-series data differently depending
 on how it is configured.
 
-Default behavior (global aggregation)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Default behavior (global aggregation, ``aggregation_level=-1``)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The default configuration aggregates across all patches.
+The default ``aggregation_level=-1`` sums across all patches.
 
 Arrays are **1-D** with shape::
 
@@ -468,7 +468,8 @@ Arrays are **1-D** with shape::
 Patch-level tracking
 ^^^^^^^^^^^^^^^^^^^^
 
-If ``aggregation_level=0`` is used, the tracker stores values **per patch**.
+If ``aggregation_level=0`` is used, the tracker stores values **per patch**
+(for flat patch IDs with no ``":"`` hierarchy).
 
 Arrays become **2-D** with shape::
 
@@ -568,5 +569,45 @@ Missing columns will trigger a validation error when constructing the model.
        "pop": [50000],
        "mcv1": [0.8],
    })
+
+
+9. Use ``laser.measles.scenarios.synthetic`` for test scenarios
+---------------------------------------------------------------
+
+The ``synthetic`` module provides ready-made scenario DataFrames for
+testing and development. It is available via several import paths:
+
+.. code-block:: python
+
+   # Functions re-exported at the scenarios package level
+   from laser.measles.scenarios import single_patch_scenario, two_patch_scenario
+   from laser.measles.scenarios import two_cluster_scenario, satellites_scenario
+
+   # Access via the synthetic submodule
+   from laser.measles.scenarios import synthetic
+   scenario = synthetic.single_patch_scenario(population=50_000, mcv1_coverage=0.85)
+
+   # synthetic is also re-exported at the top level
+   from laser.measles import synthetic
+
+   # WRONG — laser_measles (underscore) does not exist
+   from laser_measles.scenarios import synthetic
+
+Each function returns a :class:`polars.DataFrame` with all required columns
+(``id``, ``lat``, ``lon``, ``pop``, ``mcv1``) already populated. Pass it
+directly to any model constructor:
+
+.. code-block:: python
+
+   from laser.measles.abm import ABMModel, ABMParams
+   from laser.measles.scenarios import single_patch_scenario
+
+   scenario = single_patch_scenario(population=50_000, mcv1_coverage=0.85)
+   params = ABMParams(num_ticks=365, seed=42)
+   model = ABMModel(scenario, params)
+
+Available helpers: ``single_patch_scenario``, ``two_patch_scenario``,
+``two_cluster_scenario``, ``satellites_scenario``. See the
+:ref:`Scenarios API <api/index:Scenarios Package>` for full parameter details.
 
 
