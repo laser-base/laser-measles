@@ -609,5 +609,3 @@ directly to any model constructor:
 Available helpers: ``single_patch_scenario``, ``two_patch_scenario``,
 ``two_cluster_scenario``, ``satellites_scenario``. See the
 :ref:`Scenarios API <api/index:Scenarios Package>` for full parameter details.
-
-
