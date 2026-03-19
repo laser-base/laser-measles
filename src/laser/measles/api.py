@@ -132,19 +132,19 @@ from .components import __all__ as _components_all
 __all__.extend(_components_all)
 
 # ----- Demographics -----
+from .demographics import WPP
 from .demographics import GADMShapefile
 from .demographics import RasterPatchGenerator
 from .demographics import RasterPatchParams
-from .demographics import WPP
 from .demographics import get_shapefile_dataframe
 from .demographics import plot_shapefile_dataframe
 
 __all__.extend(
     [
+        "WPP",
         "GADMShapefile",
         "RasterPatchGenerator",
         "RasterPatchParams",
-        "WPP",
         "get_shapefile_dataframe",
         "plot_shapefile_dataframe",
     ]

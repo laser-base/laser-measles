@@ -38,7 +38,7 @@ All scenario DataFrames **must** contain exactly these five columns:
 +--------+----------+--------------------------------------------------+
 | lon    | Float64  | Longitude of the patch centroid (degrees).       |
 +--------+----------+--------------------------------------------------+
-| mcv1   | Float64  | Routine MCV1 vaccination coverage, 0.0–1.0.      |
+| mcv1   | Float64  | Routine MCV1 vaccination coverage, 0.0-1.0.      |
 +--------+----------+--------------------------------------------------+
 
 Critical schema notes:
