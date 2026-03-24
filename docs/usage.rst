@@ -1208,7 +1208,9 @@ Polars comparison error at runtime.
        coverage=0.80,
    )
 
-   # WRONG — string date causes runtime Polars comparison error
+   # WRONG — string date causes runtime Polars comparison error:
+   #   polars.exceptions.InvalidOperationError: cannot compare
+   #   'date/datetime/time' to a string value
    sia_schedule = pl.DataFrame({
        "id":   ["patch_0"],
        "date": ["2001-06-01"],   # string, not datetime.date
@@ -1287,3 +1289,41 @@ one at ``detection_rate=1.0``:
    df["detected_cases"]
    df["true_infections"]
    df["reported_cases"]
+
+
+20. Custom components need a ``name`` class attribute for ``get_instance``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+``model.get_instance("MyTracker")`` looks up instances by their ``.name``
+attribute. Built-in components define this automatically. Custom component
+classes must define it explicitly, or ``get_instance`` will raise
+``AttributeError: 'MyTracker' object has no attribute 'name'``.
+
+.. code-block:: python
+
+   # CORRECT — define name as a class attribute
+   class WavefrontTracker:
+       name = "WavefrontTracker"   # required for get_instance()
+
+       def __init__(self, model, verbose=False):
+           ...
+
+       def __call__(self, model, tick):
+           ...
+
+   model.add_component(WavefrontTracker)
+   model.run()
+   tracker = model.get_instance("WavefrontTracker")[0]
+
+.. code-block:: python
+
+   # WRONG — missing name attribute raises AttributeError at get_instance()
+   class WavefrontTracker:
+       def __init__(self, model, verbose=False):   # no name = "..."
+           ...
+
+   tracker = model.get_instance("WavefrontTracker")[0]
+   # AttributeError: 'WavefrontTracker' object has no attribute 'name'
+
+This applies to any custom tracker, process, or component class passed to
+``model.add_component()`` when you later need to retrieve it by name.
