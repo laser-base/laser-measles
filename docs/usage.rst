@@ -611,3 +611,317 @@ directly to any model constructor:
 Available helpers: ``single_patch_scenario``, ``two_patch_scenario``,
 ``two_cluster_scenario``, ``satellites_scenario``. See the
 :ref:`Scenarios API <api/index:Scenarios Package>` for full parameter details.
+
+10. Retrieving results from ``StateTracker``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The ``StateTracker`` component does **not** expose a ``.data``, ``.results``,
+or ``.to_polars()`` attribute. These names do not exist.
+
+After ``model.run()``, retrieve the tracker instance with
+``model.get_instance("StateTracker")[0]`` and access the time-series arrays
+directly as properties.
+
+**Global tracker** (default, ``aggregation_level=-1``):
+
+.. code-block:: python
+
+   # CORRECT — add the class, retrieve via get_instance, access .I
+   model.add_component(components.StateTracker)
+   model.run()
+
+   tracker = model.get_instance("StateTracker")[0]
+   peak_I = int(tracker.I.max())          # global infectious peak
+   peak_day = int(tracker.I.argmax())     # day of peak
+
+**Per-patch tracker** (``aggregation_level=0``):
+
+.. code-block:: python
+
+   from laser.measles import create_component
+
+   model.add_component(
+       create_component(
+           components.StateTracker,
+           params=components.StateTrackerParams(aggregation_level=0),
+       )
+   )
+   model.run()
+
+   tracker = model.get_instance("StateTracker")[0]
+   st = tracker.state_tracker   # shape: (n_states, n_ticks, n_patches)
+   # State index order: S=0, E=1, I=2, R=3
+   peak_I_patch0 = int(st[2, :, 0].max())   # patch 0 infectious peak
+
+**Global + per-patch together** (add both, retrieve by index):
+
+.. code-block:: python
+
+   model.add_component(components.StateTracker)           # index [0] — global
+   model.add_component(
+       create_component(
+           components.StateTracker,
+           params=components.StateTrackerParams(aggregation_level=0),
+       )
+   )                                                      # index [1] — per-patch
+   model.run()
+
+   global_tracker = model.get_instance("StateTracker")[0]
+   patch_tracker  = model.get_instance("StateTracker")[1]
+
+.. code-block:: python
+
+   # WRONG — these attributes do not exist
+   tracker.data
+   tracker.results
+   tracker.to_polars()
+   tracker.df
+
+
+11. ``VitalDynamicsProcess`` must be the first component
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+When using vital dynamics (births and deaths), ``VitalDynamicsProcess`` must
+be the **first** component added to the model.
+
+This is because ``VitalDynamicsProcess`` calls ``calculate_capacity`` to
+pre-allocate the ``LaserFrame`` with enough headroom for the births that will
+occur over the simulation. If any other component is added first, the
+``LaserFrame`` is already initialized at the wrong size, which causes a crash.
+
+.. code-block:: python
+
+   # CORRECT
+   model.add_component(components.VitalDynamicsProcess)        # FIRST
+   model.add_component(components.InitializeEquilibriumStatesProcess)
+   model.add_component(components.ImportationPressureProcess)
+   model.add_component(components.InfectionProcess)
+   model.add_component(components.StateTracker)
+
+.. code-block:: python
+
+   # WRONG — VitalDynamicsProcess is not first; LaserFrame is already
+   # initialized at the wrong capacity and will crash at runtime
+   model.add_component(components.InitializeEquilibriumStatesProcess)
+   model.add_component(components.VitalDynamicsProcess)   # too late
+
+
+12. ``lat`` and ``lon`` columns must be ``Float64``, not ``Int64``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The scenario schema requires ``lat`` and ``lon`` to be floating-point.
+Using Python's ``range()`` or integer literals produces ``Int64`` columns,
+which fail Polars schema validation when the model is constructed.
+
+.. code-block:: python
+
+   # WRONG — list(range(N)) produces Int64; schema validation will fail
+   scenario = pl.DataFrame({
+       "id":   [f"patch_{i}" for i in range(5)],
+       "pop":  [10_000] * 5,
+       "lat":  [0] * 5,            # Int64
+       "lon":  list(range(5)),     # Int64
+       "mcv1": [0.0] * 5,
+   })
+
+   # CORRECT — explicit float literals
+   scenario = pl.DataFrame({
+       "id":   [f"patch_{i}" for i in range(5)],
+       "pop":  [10_000] * 5,
+       "lat":  [0.0] * 5,
+       "lon":  [float(i) for i in range(5)],
+       "mcv1": [0.0] * 5,
+   })
+
+
+13. Tick granularity: daily vs biweekly
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+``ABMModel`` and ``CompartmentalModel`` use **daily** ticks (1 tick = 1 day).
+``BiweeklyModel`` uses **14-day** ticks (1 tick = 2 weeks, 26 ticks = 1 year).
+
+Quick reference:
+
+=================  ==================  ====================
+Duration           ABM / Compartmental  Biweekly
+=================  ==================  ====================
+1 month            ``num_ticks=30``    ``num_ticks=2``
+6 months           ``num_ticks=180``   ``num_ticks=13``
+1 year             ``num_ticks=365``   ``num_ticks=26``
+5 years            ``num_ticks=1825``  ``num_ticks=130``
+10 years           ``num_ticks=3650``  ``num_ticks=260``
+=================  ==================  ====================
+
+.. code-block:: python
+
+   # WRONG — 6 ticks in ABMModel is 6 days, not 6 months
+   params = ABMParams(num_ticks=6)
+
+   # CORRECT — 6 months of daily ticks
+   params = ABMParams(num_ticks=180)
+
+   # CORRECT — 6 months of biweekly ticks
+   params = BiweeklyParams(num_ticks=13)
+
+
+14. Component availability by model type
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Not all components exist in all three model namespaces. Using a component
+from the wrong namespace raises ``ImportError`` or ``AttributeError``.
+
+**Components available in ABM only** (``laser.measles.abm.components``):
+
+- ``NoBirthsProcess``
+- ``VitalDynamicsProcess``
+- ``ConstantPopProcess``
+- ``WPPVitalDynamicsProcess``
+- ``InitializeEquilibriumStatesProcess``
+- ``InfectionSeedingProcess``
+- ``SIACalendarProcess`` / ``SIACalendarParams``
+- ``StateTracker`` / ``StateTrackerParams``
+- ``CaseSurveillanceTracker`` / ``CaseSurveillanceParams``
+- ``AgePyramidTracker``
+- ``FadeOutTracker``
+
+**Components available in Biweekly only** (``laser.measles.biweekly.components``):
+
+- ``InfectionSeedingProcess``
+- ``InfectionProcess`` / ``InfectionParams``
+- ``VitalDynamicsProcess``
+- ``ImportationPressureProcess``
+- ``InitializeEquilibriumStatesProcess``
+- ``StateTracker`` (global only — ``StateTrackerParams`` with ``aggregation_level`` does **not** exist in biweekly)
+
+**Components available in Compartmental only** (``laser.measles.compartmental.components``):
+
+- ``InfectionSeedingProcess``
+- ``InfectionProcess`` / ``InfectionParams``
+- ``VitalDynamicsProcess``
+- ``ImportationPressureProcess``
+- ``InitializeEquilibriumStatesProcess``
+- ``StateTracker`` / ``StateTrackerParams``
+- ``CaseSurveillanceTracker`` / ``CaseSurveillanceParams``
+
+In particular: ``NoBirthsProcess`` **does not exist** in Biweekly or
+Compartmental. ``StateTrackerParams`` (for per-patch tracking) **does not
+exist** in Biweekly. These are among the most common cross-model mistakes.
+
+
+15. ``SIACalendarParams`` field names and date type
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+``SIACalendarParams`` uses ``sia_schedule`` and ``sia_efficacy`` — not
+``schedule`` and ``coverage``.
+
+The ``date`` column in the schedule DataFrame must contain **Python
+``datetime.date`` objects**, not strings. Passing a string date causes a
+Polars comparison error at runtime.
+
+.. code-block:: python
+
+   from datetime import date
+   from laser.measles import create_component
+   from laser.measles.abm import components
+
+   sia_schedule = pl.DataFrame({
+       "id":   ["patch_0", "patch_1"],
+       "date": [date(2001, 6, 1), date(2001, 6, 1)],   # datetime.date, not str
+   })
+
+   sia = create_component(
+       components.SIACalendarProcess,
+       params=components.SIACalendarParams(
+           sia_schedule=sia_schedule,   # NOT schedule=
+           sia_efficacy=0.80,           # NOT coverage=
+       ),
+   )
+   model.add_component(sia)
+
+.. code-block:: python
+
+   # WRONG — wrong field names and string date
+   components.SIACalendarParams(
+       schedule=sia_schedule,
+       coverage=0.80,
+   )
+
+   # WRONG — string date causes runtime Polars comparison error
+   sia_schedule = pl.DataFrame({
+       "id":   ["patch_0"],
+       "date": ["2001-06-01"],   # string, not datetime.date
+   })
+
+
+16. Setting transmission rate (``beta``) in ``InfectionParams``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+To change the effective R0, pass ``beta`` directly to ``InfectionParams``.
+The default ``beta`` is approximately ``0.5714`` (tuned for R0 ≈ 8 with
+default measles parameters). Scale it proportionally to reach other R0 values.
+
+.. code-block:: python
+
+   from laser.measles import create_component
+   from laser.measles.compartmental import components
+
+   R0_DEFAULT = 8.0
+   BETA_DEFAULT = 0.5714285714285714   # default beta for R0_DEFAULT
+
+   # Example: run at R0=16
+   target_r0 = 16.0
+   beta = target_r0 * (BETA_DEFAULT / R0_DEFAULT)   # = 1.1429
+
+   inf_params = components.InfectionParams(beta=beta)
+   model.add_component(create_component(components.InfectionProcess, inf_params))
+
+Other ``InfectionParams`` fields (ABM):
+
+- ``seasonality_amplitude`` — amplitude of seasonal forcing (0 = none, 0.3 = 30%)
+- ``season_start`` — tick offset for the start of the high season
+
+.. code-block:: python
+
+   # WRONG — 'beta_scale' is not a valid field name
+   components.InfectionParams(beta_scale=2.0)
+
+
+17. ``CaseSurveillanceTracker`` output schema
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+``CaseSurveillanceTracker.get_dataframe()`` returns a DataFrame with exactly
+three columns: ``tick``, ``patch_id``, and ``cases``. There is no separate
+column for "true infections" — ``cases`` always contains the **detected**
+count (i.e., infections sampled at ``detection_rate``).
+
+To measure both detected and true infections simultaneously, add two
+``CaseSurveillanceTracker`` instances — one at ``detection_rate=0.30`` and
+one at ``detection_rate=1.0``:
+
+.. code-block:: python
+
+   from laser.measles import create_component
+   from laser.measles.abm import components
+
+   model.add_component(create_component(
+       components.CaseSurveillanceTracker,
+       params=components.CaseSurveillanceParams(detection_rate=0.30),
+   ))
+   model.add_component(create_component(
+       components.CaseSurveillanceTracker,
+       params=components.CaseSurveillanceParams(detection_rate=1.00),
+   ))
+   model.run()
+
+   detected_tracker = model.get_instance("CaseSurveillanceTracker")[0]
+   true_tracker     = model.get_instance("CaseSurveillanceTracker")[1]
+
+   total_detected = int(detected_tracker.get_dataframe()["cases"].sum())
+   total_true     = int(true_tracker.get_dataframe()["cases"].sum())
+
+.. code-block:: python
+
+   # WRONG — these columns do not exist
+   df["detected_cases"]
+   df["true_infections"]
+   df["reported_cases"]
