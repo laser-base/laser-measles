@@ -24,7 +24,7 @@ The package is always ``laser.measles`` (dot, not underscore).
 
 Scenario DataFrame schema
 --------------------------
-All scenario DataFrames **must** contain exactly these five columns:
+All scenario DataFrames **must** contain at least these five columns:
 
 +--------+----------+--------------------------------------------------+
 | Column | Dtype    | Description                                      |
