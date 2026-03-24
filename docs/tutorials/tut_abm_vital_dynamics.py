@@ -10,7 +10,7 @@
 #
 # We start with some basic imports
 # %%
-from laser.measles.abm import ABMModel, ABMParams, components
+from laser.measles.abm import ABMModel, ABMParams, VitalDynamicsProcess, ConstantPopProcess, VitalDynamicsParams, ConstantPopParams, PopulationTracker, WPPVitalDynamicsProcess, AgePyramidTracker
 from laser.measles.scenarios import synthetic
 from laser.measles import create_component
 import matplotlib.pyplot as plt
@@ -41,13 +41,13 @@ class PeopleLengthTracker(BasePhase):
 # %%
 with plt.style.context('sciris.simple'):
     fig, axs = plt.subplots(1,2,figsize=(10, 5))
-    for i, process in enumerate([components.VitalDynamicsProcess, components.ConstantPopProcess]):
+    for i, process in enumerate([VitalDynamicsProcess, ConstantPopProcess]):
         model = ABMModel(scenario, params)
-        if issubclass(process, components.VitalDynamicsProcess):
-            vd_params = components.VitalDynamicsParams(crude_birth_rate=10, crude_death_rate=5)
+        if issubclass(process, VitalDynamicsProcess):
+            vd_params = VitalDynamicsParams(crude_birth_rate=10, crude_death_rate=5)
         else:
-            vd_params = components.ConstantPopParams(crude_birth_rate=0)
-        model.components = [create_component(process, vd_params), components.PopulationTracker, PeopleLengthTracker]
+            vd_params = ConstantPopParams(crude_birth_rate=0)
+        model.components = [create_component(process, vd_params), PopulationTracker, PeopleLengthTracker]
         model.run()
         kwargs = {'color': f'C{i}'}
         axs[i].plot(model.get_component("PopulationTracker")[0].population_tracker.sum(axis=0), label='Population Size')
@@ -66,7 +66,7 @@ with plt.style.context('sciris.simple'):
 
 # %%
 model = ABMModel(scenario, params = ABMParams(num_ticks=5*365+3))
-model.components = [components.WPPVitalDynamicsProcess, components.AgePyramidTracker]
+model.components = [WPPVitalDynamicsProcess, AgePyramidTracker]
 model.run()
 year = 2005
 tracker = model.get_component("AgePyramidTracker")[0]

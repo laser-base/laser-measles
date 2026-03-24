@@ -31,7 +31,7 @@ import numpy as np
 from laser.measles.compartmental import BaseScenario
 from laser.measles.compartmental import CompartmentalParams
 from laser.measles.compartmental import Model
-from laser.measles.compartmental import components
+from laser.measles.compartmental import InitializeEquilibriumStatesParams, InitializeEquilibriumStatesProcess, InfectionParams, ImportationPressureProcess, InfectionProcess, VitalDynamicsProcess, StateTracker, SIACalendarParams, SIACalendarProcess
 from laser.measles.components import create_component
 from laser.measles.scenarios import synthetic
 
@@ -67,14 +67,14 @@ for label, r0 in r0_values.items():
     params = CompartmentalParams(num_ticks=num_ticks, seed=42, start_time="2000-01")
 
     model = Model(scenario, params, name="preexisting_immunity")
-    init_params = components.InitializeEquilibriumStatesParams(R0=r0)
-    infection_params = components.InfectionParams(seasonality=0.15)
+    init_params = InitializeEquilibriumStatesParams(R0=r0)
+    infection_params = InfectionParams(seasonality=0.15)
     model.components = [
-        create_component(components.InitializeEquilibriumStatesProcess, params=init_params),
-        components.ImportationPressureProcess,
-        create_component(components.InfectionProcess, params=infection_params),
-        components.VitalDynamicsProcess,
-        components.StateTracker,
+        create_component(InitializeEquilibriumStatesProcess, params=init_params),
+        ImportationPressureProcess,
+        create_component(InfectionProcess, params=infection_params),
+        VitalDynamicsProcess,
+        StateTracker,
     ]
     model.run()
 
@@ -142,13 +142,13 @@ for label, mcv1_cov in mcv1_levels.items():
     params = CompartmentalParams(num_ticks=num_ticks_long, seed=42, start_time="2000-01")
 
     model = Model(scenario, params, name="routine_immunization")
-    infection_params = components.InfectionParams(seasonality=0.15)
+    infection_params = InfectionParams(seasonality=0.15)
     model.components = [
-        components.InitializeEquilibriumStatesProcess,
-        components.ImportationPressureProcess,
-        create_component(components.InfectionProcess, params=infection_params),
-        components.VitalDynamicsProcess,
-        components.StateTracker,
+        InitializeEquilibriumStatesProcess,
+        ImportationPressureProcess,
+        create_component(InfectionProcess, params=infection_params),
+        VitalDynamicsProcess,
+        StateTracker,
     ]
     model.run()
 
@@ -216,21 +216,21 @@ sia_schedule = pl.DataFrame(
     }
 )
 
-sia_params = components.SIACalendarParams(
+sia_params = SIACalendarParams(
     sia_schedule=sia_schedule,
     sia_efficacy=0.9,
     aggregation_level=1,
 )
 
 model = Model(scenario, params, name="sia_campaigns")
-infection_params = components.InfectionParams(seasonality=0.15)
+infection_params = InfectionParams(seasonality=0.15)
 model.components = [
-    components.InitializeEquilibriumStatesProcess,
-    components.ImportationPressureProcess,
-    create_component(components.InfectionProcess, params=infection_params),
-    components.VitalDynamicsProcess,
-    create_component(components.SIACalendarProcess, params=sia_params),
-    components.StateTracker,
+    InitializeEquilibriumStatesProcess,
+    ImportationPressureProcess,
+    create_component(InfectionProcess, params=infection_params),
+    VitalDynamicsProcess,
+    create_component(SIACalendarProcess, params=sia_params),
+    StateTracker,
 ]
 model.run()
 

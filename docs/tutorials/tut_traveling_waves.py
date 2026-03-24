@@ -30,6 +30,9 @@ import polars as pl
 from scipy import stats
 
 import laser.measles as lm
+from laser.measles import create_component
+from laser.measles.compartmental import BaseScenario, CompartmentalParams, CompartmentalModel
+from laser.measles.compartmental import InfectionParams, ImportationPressureParams, ImportationPressureProcess, InfectionProcess, InitializeEquilibriumStatesProcess, StateTracker, CaseSurveillanceTracker, CaseSurveillanceParams
 
 # Set random seed for reproducibility
 np.random.seed(42)
@@ -180,16 +183,16 @@ def run_traveling_wave_simulation(scenario_df, mixing_scale=0.005, num_ticks=365
         Tuple of (model, state_results, case_results)
     """
     # Convert to scenario object
-    scenario = lm.compartmental.BaseScenario(scenario_df)
+    scenario = BaseScenario(scenario_df)
 
     # Model parameters
-    params = lm.compartmental.CompartmentalParams(num_ticks=num_ticks, verbose=False, seed=42)
+    params = CompartmentalParams(num_ticks=num_ticks, verbose=False, seed=42)
 
     # Create model
-    model = lm.compartmental.CompartmentalModel(scenario, params)
+    model = CompartmentalModel(scenario, params)
 
     # Configure infection parameters with spatial mixing
-    infection_params = lm.compartmental.components.InfectionParams(
+    infection_params = InfectionParams(
         beta=0.4,  # Base transmission rate
         exp_mu=8.0,  # 8-day incubation period
         inf_mu=6.0,  # 6-day infectious period
@@ -200,7 +203,7 @@ def run_traveling_wave_simulation(scenario_df, mixing_scale=0.005, num_ticks=365
     )
 
     # Configure importation (seeding) to start in central city only
-    importation_params = lm.compartmental.components.ImportationPressureParams(
+    importation_params = ImportationPressureParams(
         crude_importation_rate=5.0,  # Import rate per 1k population per year
         importation_start=30,  # Start after 30 days
         importation_end=60,  # End after 60 days
@@ -209,16 +212,16 @@ def run_traveling_wave_simulation(scenario_df, mixing_scale=0.005, num_ticks=365
     # Model components
     components = [
         # Initialize population in susceptible state
-        lm.compartmental.components.InitializeEquilibriumStatesProcess,
+        InitializeEquilibriumStatesProcess,
         # Seed infection in central city
-        lm.create_component(lm.compartmental.components.ImportationPressureProcess, importation_params),
+        create_component(ImportationPressureProcess, importation_params),
         # Disease transmission with spatial mixing
-        lm.create_component(lm.compartmental.components.InfectionProcess, infection_params),
+        create_component(InfectionProcess, infection_params),
         # Track states over time
-        lm.compartmental.components.StateTracker,
+        StateTracker,
         # Track incident cases
-        lm.create_component(
-            lm.compartmental.components.CaseSurveillanceTracker, lm.compartmental.components.CaseSurveillanceParams(detection_rate=1.0)
+        create_component(
+            CaseSurveillanceTracker, CaseSurveillanceParams(detection_rate=1.0)
         ),
     ]
 
@@ -229,8 +232,8 @@ def run_traveling_wave_simulation(scenario_df, mixing_scale=0.005, num_ticks=365
     model.run()
 
     # Extract results
-    state_tracker = model.get_instance(lm.compartmental.components.StateTracker)[0]
-    case_tracker = model.get_instance(lm.compartmental.components.CaseSurveillanceTracker)[0]
+    state_tracker = model.get_instance(StateTracker)[0]
+    case_tracker = model.get_instance(CaseSurveillanceTracker)[0]
 
     state_results = state_tracker.get_dataframe()
     case_results = case_tracker.get_dataframe()

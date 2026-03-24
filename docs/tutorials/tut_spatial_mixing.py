@@ -63,7 +63,8 @@ import polars as pl
 import seaborn as sns
 
 from laser.measles.scenarios import synthetic
-from laser.measles.compartmental import CompartmentalParams, Model, components
+from laser.measles.compartmental import CompartmentalParams, Model
+from laser.measles.compartmental import InfectionParams, InitializeEquilibriumStatesProcess, ImportationPressureProcess, InfectionProcess, VitalDynamicsProcess, StateTracker
 from laser.measles.components import create_component
 from laser.measles.mixing.gravity import GravityMixing, GravityParams
 from laser.measles.mixing.radiation import RadiationMixing, RadiationParams
@@ -186,25 +187,25 @@ gravity_params = GravityParams(
 gravity_mixer = GravityMixing(params=gravity_params)
 
 # Create infection parameters with gravity mixing
-infection_params = components.InfectionParams(
+infection_params = InfectionParams(
     beta=0.8,           # Transmission rate
     seasonality=0.2,    # Seasonal variation
     mixer=gravity_mixer
 )
 
 # Create patch-level state tracking parameters
-from laser.measles.components.base_tracker_state import BaseStateTrackerParams
-patch_tracker_params = BaseStateTrackerParams(aggregation_level=0)  # Track by patch
+from laser.measles.abm import StateTrackerParams
+patch_tracker_params = StateTrackerParams(aggregation_level=0)  # Track by patch
 
 # Create and configure the model
 gravity_model = Model(scenario, params, name="gravity_mixing_demo")
 gravity_model.components = [
-    components.InitializeEquilibriumStatesProcess,
-    components.ImportationPressureProcess,
-    create_component(components.InfectionProcess, params=infection_params),
-    components.VitalDynamicsProcess,
-    components.StateTracker,  # Overall tracker
-    create_component(components.StateTracker, params=patch_tracker_params)  # Patch-level tracker
+    InitializeEquilibriumStatesProcess,
+    ImportationPressureProcess,
+    create_component(InfectionProcess, params=infection_params),
+    VitalDynamicsProcess,
+    StateTracker,  # Overall tracker
+    create_component(StateTracker, params=patch_tracker_params)  # Patch-level tracker
 ]
 
 print("Running gravity model simulation...")
@@ -232,7 +233,7 @@ radiation_params = RadiationParams(
 radiation_mixer = RadiationMixing(params=radiation_params)
 
 # Create infection parameters with radiation mixing
-infection_params_rad = components.InfectionParams(
+infection_params_rad = InfectionParams(
     beta=0.8,              # Same transmission rate
     seasonality=0.2,       # Same seasonal variation
     mixer=radiation_mixer
@@ -241,12 +242,12 @@ infection_params_rad = components.InfectionParams(
 # Create new model instance for radiation
 radiation_model = Model(scenario, params, name="radiation_mixing_demo")
 radiation_model.components = [
-    components.InitializeEquilibriumStatesProcess,
-    components.ImportationPressureProcess,
-    create_component(components.InfectionProcess, params=infection_params_rad),
-    components.VitalDynamicsProcess,
-    components.StateTracker,  # Overall tracker
-    create_component(components.StateTracker, params=patch_tracker_params)  # Patch-level tracker
+    InitializeEquilibriumStatesProcess,
+    ImportationPressureProcess,
+    create_component(InfectionProcess, params=infection_params_rad),
+    VitalDynamicsProcess,
+    StateTracker,  # Overall tracker
+    create_component(StateTracker, params=patch_tracker_params)  # Patch-level tracker
 ]
 
 print("Running radiation model simulation...")

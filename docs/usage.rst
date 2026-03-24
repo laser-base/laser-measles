@@ -444,9 +444,10 @@ This is the minimal correct ABM script.
 
    import numpy as np
    import polars as pl
-   from laser.measles.abm import ABMModel, ABMParams, components
+   from laser.measles.abm import ABMModel, ABMParams
+   from laser.measles.abm import NoBirthsProcess, InitializeEquilibriumStatesProcess
+   from laser.measles.abm import InfectionSeedingProcess, InfectionProcess, StateTracker
    from laser.measles.scenarios import single_patch_scenario
-   from laser.measles import create_component
 
    # ── 1. Scenario ─────────────────────────────────────────────────────────────
    # single_patch_scenario returns a polars DataFrame with the required columns:
@@ -470,22 +471,22 @@ This is the minimal correct ABM script.
    #
    # NoBirthsProcess: keeps population fixed (use instead of VitalDynamicsProcess
    # for short runs where demographics don't matter).
-   model.add_component(components.NoBirthsProcess)
+   model.add_component(NoBirthsProcess)
 
    # InitializeEquilibriumStatesProcess: sets the initial S/E/I/R split to
    # the endemic equilibrium for the scenario's mcv1 coverage and default R0.
-   model.add_component(components.InitializeEquilibriumStatesProcess)
+   model.add_component(InitializeEquilibriumStatesProcess)
 
    # InfectionSeedingProcess: introduces a small number of infectious individuals
    # at the start of the simulation to spark an outbreak.
-   model.add_component(components.InfectionSeedingProcess)
+   model.add_component(InfectionSeedingProcess)
 
    # InfectionProcess: drives daily S→E→I→R transitions using stochastic ABM rules.
-   model.add_component(components.InfectionProcess)
+   model.add_component(InfectionProcess)
 
    # StateTracker without params → global (summed-across-all-patches) tracker.
    # Access results via tracker.I (1-D array of length num_ticks).
-   model.add_component(components.StateTracker)
+   model.add_component(StateTracker)
 
    # ── 5. Run ───────────────────────────────────────────────────────────────────
    model.run()
@@ -513,8 +514,10 @@ Five communities, births/deaths, importation, 5 years. Uses
 
    import numpy as np
    import polars as pl
-   from laser.measles.biweekly import BiweeklyModel, BiweeklyParams, components
-   from laser.measles.abm import components as abm_components   # StateTrackerParams lives here
+   from laser.measles.biweekly import BiweeklyModel, BiweeklyParams
+   from laser.measles.biweekly import InitializeEquilibriumStatesProcess, ImportationPressureProcess
+   from laser.measles.biweekly import InfectionProcess, VitalDynamicsProcess, StateTracker
+   from laser.measles.abm import StateTrackerParams   # not in biweekly — import from abm
    from laser.measles import create_component
 
    # ── 1. Scenario ─────────────────────────────────────────────────────────────
@@ -540,29 +543,28 @@ Five communities, births/deaths, importation, 5 years. Uses
 
    # ── 4. Components ────────────────────────────────────────────────────────────
    # InitializeEquilibriumStatesProcess: set initial S/I/R near endemic equilibrium.
-   model.add_component(components.InitializeEquilibriumStatesProcess)
+   model.add_component(InitializeEquilibriumStatesProcess)
 
    # ImportationPressureProcess: steady background importation that sustains
    # endemic transmission.  Required when starting near equilibrium.
-   model.add_component(components.ImportationPressureProcess)
+   model.add_component(ImportationPressureProcess)
 
    # InfectionProcess: biweekly transmission (SIR, no explicit E compartment).
-   model.add_component(components.InfectionProcess)
+   model.add_component(InfectionProcess)
 
    # VitalDynamicsProcess: births and deaths using the scenario's mcv1 coverage
    # to vaccinate newborns.
    # NOTE: in BiweeklyModel, VitalDynamicsProcess can appear after InfectionProcess.
    # (The "VitalDynamics must be first" rule applies to ABMModel only.)
-   model.add_component(components.VitalDynamicsProcess)
+   model.add_component(VitalDynamicsProcess)
 
    # StateTracker with aggregation_level=0 → per-patch tracker.
    # Results are in tracker.I with shape (num_ticks, n_patches).
-   # IMPORTANT: StateTrackerParams is NOT in laser.measles.biweekly.components.
-   # Import it from laser.measles.abm.components (abm_components above).
+   # IMPORTANT: StateTrackerParams is not in biweekly — imported from laser.measles.abm above.
    model.add_component(
        create_component(
-           components.StateTracker,
-           params=abm_components.StateTrackerParams(aggregation_level=0),
+           StateTracker,
+           params=StateTrackerParams(aggregation_level=0),
        )
    )
 
@@ -593,7 +595,9 @@ to scale ``beta`` from the default to reach a target R0, using
 
    import numpy as np
    import polars as pl
-   from laser.measles.compartmental import CompartmentalModel, CompartmentalParams, components
+   from laser.measles.compartmental import CompartmentalModel, CompartmentalParams
+   from laser.measles.compartmental import InitializeEquilibriumStatesProcess, InfectionSeedingProcess
+   from laser.measles.compartmental import InfectionProcess, InfectionParams, StateTracker, StateTrackerParams
    from laser.measles.scenarios import single_patch_scenario
    from laser.measles import create_component
 
@@ -617,23 +621,23 @@ to scale ``beta`` from the default to reach a target R0, using
        model = CompartmentalModel(scenario, params)
 
        # ── 4. Components ────────────────────────────────────────────────────────
-       model.add_component(components.InitializeEquilibriumStatesProcess)
-       model.add_component(components.InfectionSeedingProcess)
+       model.add_component(InitializeEquilibriumStatesProcess)
+       model.add_component(InfectionSeedingProcess)
 
        # Scale beta to reach the desired R0.
        # InfectionParams accepts 'beta' directly — there is no 'beta_scale' field.
        scaled_beta = target_r0 * (BETA_DEFAULT / R0_DEFAULT)
        model.add_component(
            create_component(
-               components.InfectionProcess,
-               params=components.InfectionParams(beta=scaled_beta),
+               InfectionProcess,
+               params=InfectionParams(beta=scaled_beta),
            )
        )
 
        model.add_component(
            create_component(
-               components.StateTracker,
-               params=components.StateTrackerParams(aggregation_level=0),
+               StateTracker,
+               params=StateTrackerParams(aggregation_level=0),
            )
        )
 
@@ -690,48 +694,37 @@ top level for convenience.
 2. How do I access component classes and their parameter classes?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Each model package exports a ``components`` module. All component classes
-and their corresponding parameter (Pydantic) classes should be accessed
-through that module using **dot access**, rather than through deep imports.
+Import component classes and their parameter classes directly from the
+subpackage. Each subpackage's ``__init__`` re-exports everything from its
+``components`` module, so all concrete components are available at the
+top level.
 
 .. code-block:: python
 
-   # CORRECT — import the components namespace
-   from laser.measles.abm import ABMModel, ABMParams, components
-   from laser.measles.components import create_component
+   # PREFERRED — import directly from the subpackage
+   from laser.measles.abm import ABMModel, ABMParams
+   from laser.measles.abm import NoBirthsProcess, InfectionSeedingProcess, InfectionSeedingParams
+   from laser.measles.abm import InfectionProcess, StateTracker, StateTrackerParams
+   from laser.measles import create_component
 
    model.components = [
-       components.NoBirthsProcess,
+       NoBirthsProcess,
 
        create_component(
-           components.InfectionSeedingProcess,
-           params=components.InfectionSeedingParams(target_patches=["patch_0"])
+           InfectionSeedingProcess,
+           params=InfectionSeedingParams(target_patches=["patch_0"])
        ),
 
-       components.InfectionProcess,
+       InfectionProcess,
 
        create_component(
-           components.StateTracker,
-           params=components.StateTrackerParams(aggregation_level=0)
+           StateTracker,
+           params=StateTrackerParams(aggregation_level=0)
        ),
    ]
 
-Deep imports are discouraged because parameter classes may not exist in the
-same module or may move between versions.
-
-.. code-block:: python
-
-   # DISCOURAGED — fragile deep imports
-   from laser.measles.abm.components import InfectionSeedingProcess
-   from laser.measles.abm.params import InfectionSeedingParams
-
-
-The same pattern applies to the biweekly and compartmental models:
-
-.. code-block:: python
-
-   from laser.measles.biweekly import BiweeklyModel, BiweeklyParams, components
-   from laser.measles.compartmental import CompartmentalModel, CompartmentalParams, components
+The same pattern applies to biweekly and compartmental — import directly from
+``laser.measles.biweekly`` or ``laser.measles.compartmental``.
 
 
 3. ``model.components`` is assigned *after* construction
@@ -748,11 +741,11 @@ the model object is created.
    model = BiweeklyModel(scenario=scenario, params=params)
 
    model.components = [
-       components.InitializeEquilibriumStatesProcess,
-       components.ImportationPressureProcess,
-       components.InfectionProcess,
-       components.VitalDynamicsProcess,
-       components.StateTracker,
+       InitializeEquilibriumStatesProcess,
+       ImportationPressureProcess,
+       InfectionProcess,
+       VitalDynamicsProcess,
+       StateTracker,
    ]
 
 The model internally instantiates the component classes when the list is
@@ -789,7 +782,7 @@ of the package API.
    from laser.measles import lm
 
    # CORRECT
-   from laser.measles.abm import ABMModel, ABMParams, components
+   from laser.measles.abm import ABMModel, ABMParams
 
 
 5. ``StateTracker`` output shape depends on ``aggregation_level``
@@ -874,12 +867,12 @@ The model constructs the component instances internally.
 
    # CORRECT
    model.components = [
-       components.InfectionProcess
+       InfectionProcess
    ]
 
    # WRONG
    model.components = [
-       components.InfectionProcess()
+       InfectionProcess()
    ]
 
 
@@ -889,8 +882,8 @@ If parameters are needed, use ``create_component``:
 
    model.components = [
        create_component(
-           components.InfectionProcess,
-           params=components.InfectionParams(beta=0.8)
+           InfectionProcess,
+           params=InfectionParams(beta=0.8)
        )
    ]
 
@@ -974,7 +967,7 @@ directly as properties.
 .. code-block:: python
 
    # CORRECT — add the class, retrieve via get_instance, access .I
-   model.add_component(components.StateTracker)
+   model.add_component(StateTracker)
    model.run()
 
    tracker = model.get_instance("StateTracker")[0]
@@ -989,12 +982,12 @@ regardless of model type (ABM, biweekly, or compartmental).
 .. code-block:: python
 
    from laser.measles import create_component
-   from laser.measles.abm import components as abm_components  # StateTrackerParams is here
+   from laser.measles.abm import StateTracker, StateTrackerParams
 
    model.add_component(
        create_component(
-           components.StateTracker,
-           params=abm_components.StateTrackerParams(aggregation_level=0),
+           StateTracker,
+           params=StateTrackerParams(aggregation_level=0),
        )
    )
    model.run()
@@ -1008,13 +1001,13 @@ regardless of model type (ABM, biweekly, or compartmental).
 
 .. code-block:: python
 
-   from laser.measles.abm import components as abm_components  # for StateTrackerParams
+   from laser.measles.abm import StateTracker, StateTrackerParams
 
-   model.add_component(components.StateTracker)           # index [0] — global
+   model.add_component(StateTracker)           # index [0] — global
    model.add_component(
        create_component(
-           components.StateTracker,
-           params=abm_components.StateTrackerParams(aggregation_level=0),
+           StateTracker,
+           params=StateTrackerParams(aggregation_level=0),
        )
    )                                                      # index [1] — per-patch
    model.run()
@@ -1045,18 +1038,18 @@ occur over the simulation. If any other component is added first, the
 .. code-block:: python
 
    # CORRECT
-   model.add_component(components.VitalDynamicsProcess)        # FIRST
-   model.add_component(components.InitializeEquilibriumStatesProcess)
-   model.add_component(components.ImportationPressureProcess)
-   model.add_component(components.InfectionProcess)
-   model.add_component(components.StateTracker)
+   model.add_component(VitalDynamicsProcess)        # FIRST
+   model.add_component(InitializeEquilibriumStatesProcess)
+   model.add_component(ImportationPressureProcess)
+   model.add_component(InfectionProcess)
+   model.add_component(StateTracker)
 
 .. code-block:: python
 
    # WRONG — VitalDynamicsProcess is not first; LaserFrame is already
    # initialized at the wrong capacity and will crash at runtime
-   model.add_component(components.InitializeEquilibriumStatesProcess)
-   model.add_component(components.VitalDynamicsProcess)   # too late
+   model.add_component(InitializeEquilibriumStatesProcess)
+   model.add_component(VitalDynamicsProcess)   # too late
 
 
 12. ``lat`` and ``lon`` columns must be ``Float64``, not ``Int64``
@@ -1150,14 +1143,14 @@ from the wrong namespace raises ``ImportError`` or ``AttributeError``.
 
   .. code-block:: python
 
-     from laser.measles.biweekly import BiweeklyModel, BiweeklyParams, components
-     from laser.measles.abm import components as abm_components  # for StateTrackerParams
+     from laser.measles.biweekly import BiweeklyModel, BiweeklyParams, StateTracker
+     from laser.measles.abm import StateTrackerParams   # not in biweekly
      from laser.measles import create_component
 
      model.add_component(
          create_component(
-             components.StateTracker,
-             params=abm_components.StateTrackerParams(aggregation_level=0),
+             StateTracker,
+             params=StateTrackerParams(aggregation_level=0),
          )
      )
 
@@ -1191,7 +1184,7 @@ Polars comparison error at runtime.
 
    from datetime import date
    from laser.measles import create_component
-   from laser.measles.abm import components
+   from laser.measles.abm import SIACalendarProcess, SIACalendarParams
 
    sia_schedule = pl.DataFrame({
        "id":   ["patch_0", "patch_1"],
@@ -1199,8 +1192,8 @@ Polars comparison error at runtime.
    })
 
    sia = create_component(
-       components.SIACalendarProcess,
-       params=components.SIACalendarParams(
+       SIACalendarProcess,
+       params=SIACalendarParams(
            sia_schedule=sia_schedule,   # NOT schedule=
            sia_efficacy=0.80,           # NOT coverage=
        ),
@@ -1210,7 +1203,7 @@ Polars comparison error at runtime.
 .. code-block:: python
 
    # WRONG — wrong field names and string date
-   components.SIACalendarParams(
+   SIACalendarParams(
        schedule=sia_schedule,
        coverage=0.80,
    )
@@ -1232,7 +1225,7 @@ default measles parameters). Scale it proportionally to reach other R0 values.
 .. code-block:: python
 
    from laser.measles import create_component
-   from laser.measles.compartmental import components
+   from laser.measles.compartmental import InfectionProcess, InfectionParams
 
    R0_DEFAULT = 8.0
    BETA_DEFAULT = 0.5714285714285714   # default beta for R0_DEFAULT
@@ -1241,8 +1234,8 @@ default measles parameters). Scale it proportionally to reach other R0 values.
    target_r0 = 16.0
    beta = target_r0 * (BETA_DEFAULT / R0_DEFAULT)   # = 1.1429
 
-   inf_params = components.InfectionParams(beta=beta)
-   model.add_component(create_component(components.InfectionProcess, inf_params))
+   inf_params = InfectionParams(beta=beta)
+   model.add_component(create_component(InfectionProcess, inf_params))
 
 Other ``InfectionParams`` fields (ABM):
 
@@ -1252,7 +1245,7 @@ Other ``InfectionParams`` fields (ABM):
 .. code-block:: python
 
    # WRONG — 'beta_scale' is not a valid field name
-   components.InfectionParams(beta_scale=2.0)
+   InfectionParams(beta_scale=2.0)
 
 
 17. ``CaseSurveillanceTracker`` output schema
@@ -1270,15 +1263,15 @@ one at ``detection_rate=1.0``:
 .. code-block:: python
 
    from laser.measles import create_component
-   from laser.measles.abm import components
+   from laser.measles.abm import CaseSurveillanceTracker, CaseSurveillanceParams
 
    model.add_component(create_component(
-       components.CaseSurveillanceTracker,
-       params=components.CaseSurveillanceParams(detection_rate=0.30),
+       CaseSurveillanceTracker,
+       params=CaseSurveillanceParams(detection_rate=0.30),
    ))
    model.add_component(create_component(
-       components.CaseSurveillanceTracker,
-       params=components.CaseSurveillanceParams(detection_rate=1.00),
+       CaseSurveillanceTracker,
+       params=CaseSurveillanceParams(detection_rate=1.00),
    ))
    model.run()
 
