@@ -108,11 +108,18 @@ class BaseModelParams(BaseModel):
     @field_validator("start_time")
     @classmethod
     def validate_start_time(cls, v: str) -> str:
+        # Accept "YYYY-MM" (canonical) or "YYYY-MM-DD" (strip the day).
         try:
             datetime.strptime(v, "%Y-%m")  # noqa DTZ007
-        except ValueError as err:
-            raise ValueError(f"start_time must be in 'YYYY-MM' format, got '{v}'") from err
-        return v
+            return v
+        except ValueError:
+            pass
+        try:
+            datetime.strptime(v, "%Y-%m-%d")  # noqa DTZ007
+            return v[:7]  # truncate to "YYYY-MM"
+        except ValueError:
+            pass
+        raise ValueError(f"start_time must be in 'YYYY-MM' or 'YYYY-MM-DD' format, got '{v}'")
 
     @property
     def time_step_days(self) -> int:
