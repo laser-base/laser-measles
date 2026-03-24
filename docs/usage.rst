@@ -158,6 +158,35 @@ The Compartmental Model provides population-level SEIR dynamics with daily times
     model = CompartmentalModel(scenario_data, params)
     model.run()
 
+.. warning::
+
+   **All three model constructors require both** ``scenario`` **and** ``params``.
+   There is no default — omitting ``params`` raises ``TypeError`` immediately:
+
+   .. code-block:: python
+
+      # WRONG — raises TypeError: missing 1 required positional argument: 'params'
+      model = ABMModel(scenario=scenario)
+      model = BiweeklyModel(scenario=scenario)
+      model = CompartmentalModel(scenario=scenario)
+
+   Always create the ``*Params`` object first, then pass both to the constructor:
+
+   .. code-block:: python
+
+      # CORRECT — both arguments are required
+      params = ABMParams(num_ticks=365, seed=42, start_time="2000-01")
+      model  = ABMModel(scenario=scenario, params=params)
+
+      params = BiweeklyParams(num_ticks=130, seed=42, start_time="2000-01")
+      model  = BiweeklyModel(scenario=scenario, params=params)
+
+      params = CompartmentalParams(num_ticks=730, seed=42, start_time="2000-01")
+      model  = CompartmentalModel(scenario=scenario, params=params)
+
+   Components are added **after** construction via ``model.add_component()``.
+   ``params`` configures duration, seed, and start date — not components.
+
 ----------
 
 Demographics Package
@@ -359,8 +388,19 @@ Import them from their respective subpackages:
 
 .. warning::
 
-   Passing simulation settings directly to the model constructor raises
-   ``TypeError``. **None of the following work:**
+   **params is not optional.** Calling the constructor with only a scenario
+   raises ``TypeError`` immediately, before the simulation runs:
+
+   .. code-block:: python
+
+      ABMModel(scenario=scenario)                   # TypeError: missing 1 required positional argument: 'params'
+      BiweeklyModel(scenario=scenario)              # TypeError: missing 1 required positional argument: 'params'
+      CompartmentalModel(scenario=scenario)         # TypeError: missing 1 required positional argument: 'params'
+
+   The ``*Params`` object is always the **second positional argument**.
+   It is mandatory — there is no default and no shortcut.
+
+   Passing simulation settings directly as keyword arguments also fails:
 
    .. code-block:: python
 
@@ -474,6 +514,7 @@ Five communities, births/deaths, importation, 5 years. Uses
    import numpy as np
    import polars as pl
    from laser.measles.biweekly import BiweeklyModel, BiweeklyParams, components
+   from laser.measles.abm import components as abm_components   # StateTrackerParams lives here
    from laser.measles import create_component
 
    # ── 1. Scenario ─────────────────────────────────────────────────────────────
@@ -516,10 +557,12 @@ Five communities, births/deaths, importation, 5 years. Uses
 
    # StateTracker with aggregation_level=0 → per-patch tracker.
    # Results are in tracker.I with shape (num_ticks, n_patches).
+   # IMPORTANT: StateTrackerParams is NOT in laser.measles.biweekly.components.
+   # Import it from laser.measles.abm.components (abm_components above).
    model.add_component(
        create_component(
            components.StateTracker,
-           params=components.StateTrackerParams(aggregation_level=0),
+           params=abm_components.StateTrackerParams(aggregation_level=0),
        )
    )
 
@@ -940,14 +983,18 @@ directly as properties.
 
 **Per-patch tracker** (``aggregation_level=0``):
 
+``StateTrackerParams`` always lives in ``laser.measles.abm.components``,
+regardless of model type (ABM, biweekly, or compartmental).
+
 .. code-block:: python
 
    from laser.measles import create_component
+   from laser.measles.abm import components as abm_components  # StateTrackerParams is here
 
    model.add_component(
        create_component(
            components.StateTracker,
-           params=components.StateTrackerParams(aggregation_level=0),
+           params=abm_components.StateTrackerParams(aggregation_level=0),
        )
    )
    model.run()
@@ -961,11 +1008,13 @@ directly as properties.
 
 .. code-block:: python
 
+   from laser.measles.abm import components as abm_components  # for StateTrackerParams
+
    model.add_component(components.StateTracker)           # index [0] — global
    model.add_component(
        create_component(
            components.StateTracker,
-           params=components.StateTrackerParams(aggregation_level=0),
+           params=abm_components.StateTrackerParams(aggregation_level=0),
        )
    )                                                      # index [1] — per-patch
    model.run()
@@ -1095,7 +1144,22 @@ from the wrong namespace raises ``ImportError`` or ``AttributeError``.
 - ``VitalDynamicsProcess``
 - ``ImportationPressureProcess``
 - ``InitializeEquilibriumStatesProcess``
-- ``StateTracker`` (global only — ``StateTrackerParams`` with ``aggregation_level`` does **not** exist in biweekly)
+- ``StateTracker`` — the global tracker lives in ``laser.measles.biweekly.components``,
+  but ``StateTrackerParams`` (for per-patch ``aggregation_level=0`` tracking) is
+  **not** in biweekly's components. Import it from ``laser.measles.abm``:
+
+  .. code-block:: python
+
+     from laser.measles.biweekly import BiweeklyModel, BiweeklyParams, components
+     from laser.measles.abm import components as abm_components  # for StateTrackerParams
+     from laser.measles import create_component
+
+     model.add_component(
+         create_component(
+             components.StateTracker,
+             params=abm_components.StateTrackerParams(aggregation_level=0),
+         )
+     )
 
 **Components available in Compartmental only** (``laser.measles.compartmental.components``):
 
@@ -1108,8 +1172,9 @@ from the wrong namespace raises ``ImportError`` or ``AttributeError``.
 - ``CaseSurveillanceTracker`` / ``CaseSurveillanceParams``
 
 In particular: ``NoBirthsProcess`` **does not exist** in Biweekly or
-Compartmental. ``StateTrackerParams`` (for per-patch tracking) **does not
-exist** in Biweekly. These are among the most common cross-model mistakes.
+Compartmental. ``StateTrackerParams`` for biweekly must come from
+``laser.measles.abm.components``, not from ``laser.measles.biweekly.components``.
+These are among the most common cross-model mistakes.
 
 
 15. ``SIACalendarParams`` field names and date type
