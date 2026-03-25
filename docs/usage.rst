@@ -1087,4 +1087,3 @@ which fail Polars schema validation when the model is constructed.
 ``BiweeklyModel`` uses **14-day** ticks (1 tick = 2 weeks, 26 ticks = 1 year).
 
 Quick reference:
-
