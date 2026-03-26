@@ -213,7 +213,7 @@ def test_negative_importation_rates_raise_validation_error(bad_rate):
 # 6b. Invalid types raise a useful error
 # -----------------------------------------------------------------------------
 def test_invalid_importation_rate_type_raises():
-    with pytest.raises((ValidationError, TypeError), match="(?i)(float|sequence|dict|type)"):
+    with pytest.raises((ValidationError, TypeError), match=r"(?i)(float|sequence|dict|type)"):
         components.process_importation_pressure.ImportationPressureParams(crude_importation_rate="fast")
 
 
@@ -264,7 +264,7 @@ def test_importation_draws_from_susceptibles_in_partially_immune_patch():
     n_susceptible = 100  # leave only 10% susceptible
 
     # Set 90% of agents to recovered (immune)
-    model.people.state[:n - n_susceptible] = R_idx
+    model.people.state[: n - n_susceptible] = R_idx
     model.patches.states.S[0] = n_susceptible
     model.patches.states.R[0] = n - n_susceptible
 
