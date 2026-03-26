@@ -45,7 +45,6 @@ These tutorials are designed to show you how to use the library to solve a probl
     :maxdepth: 1
 
     tutorials/tut_vaccination.ipynb
-    tutorials/tut_traveling_waves.ipynb
 
 AI Assistance
 --------------
