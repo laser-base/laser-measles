@@ -1,10 +1,14 @@
 import importlib
 
 import numpy as np
+import polars as pl
 import pytest
+from pydantic import ValidationError
 
 import laser.measles as lm
 from laser.measles import MEASLES_MODULES
+from laser.measles.abm import components
+from laser.measles.components import create_component
 
 VERBOSE = False
 SEED = 42
@@ -76,6 +80,157 @@ def test_importation_with_vital_dynamics(measles_module):
     active_count = model.people.active[: model.people.count].sum()
     state_total = np.sum(model.patches.states)
     assert state_total == active_count, f"State total {state_total} != active count {active_count}"
+
+
+def _four_patch_scenario():
+    return pl.DataFrame(
+        {
+            "id": ["patch_0", "patch_1", "patch_2", "patch_3"],
+            "lat": [0.0, 0.0, 0.0, 0.0],
+            "lon": [0.0, 1.0, 2.0, 3.0],
+            "pop": [1000, 1000, 1000, 1000],
+            "mcv1": [0.0, 0.0, 0.0, 0.0],
+        }
+    )
+
+
+def _build_abm_model(measles_module, importation_rate, num_ticks=1, seed=123):
+    module = importlib.import_module(measles_module)
+    scenario = _four_patch_scenario()
+
+    model = module.ABMModel(
+        scenario,
+        module.ABMParams(num_ticks=num_ticks, seed=seed, start_time="2000-01"),
+    )
+
+    imp_params = module.components.process_importation_pressure.ImportationPressureParams(crude_importation_rate=importation_rate)
+
+    model.components = [
+        module.components.NoBirthsProcess,
+        create_component(module.components.ImportationPressureProcess, imp_params),
+        module.components.InfectionProcess,
+        module.components.StateTracker,
+    ]
+    return model
+
+
+def _run_and_get_importation_instance(model):
+    model.run()
+    return model.get_instance("ImportationPressureProcess")[0]
+
+
+def _count_non_susceptible_by_patch(model):
+    susceptible_state = model.params.states.index("S")
+    people = model.people
+    return [int(((people.patch_id == i) & (people.state != susceptible_state)).sum()) for i in range(4)]
+
+
+# -----------------------------------------------------------------------------
+# 1. Scalar rate applies to all patches
+# -----------------------------------------------------------------------------
+@pytest.mark.parametrize("measles_module", ["laser.measles.abm"])
+def test_scalar_importation_rate_applies_to_all_patches(measles_module):
+    model = _build_abm_model(measles_module, 5.0, num_ticks=1)
+    imp = _run_and_get_importation_instance(model)
+    assert imp.patch_rates_per_year_per_1k.tolist() == [5.0, 5.0, 5.0, 5.0]
+
+
+# -----------------------------------------------------------------------------
+# 2. List rate resolves by patch order
+# -----------------------------------------------------------------------------
+@pytest.mark.parametrize("measles_module", ["laser.measles.abm"])
+def test_list_importation_rate_resolves_by_patch_order(measles_module):
+    model = _build_abm_model(measles_module, [1.0, 2.0, 3.0, 4.0], num_ticks=1)
+    imp = _run_and_get_importation_instance(model)
+    assert imp.patch_rates_per_year_per_1k.tolist() == [1.0, 2.0, 3.0, 4.0]
+
+
+# -----------------------------------------------------------------------------
+# 3. Dict rate resolves by patch id
+# -----------------------------------------------------------------------------
+@pytest.mark.parametrize("measles_module", ["laser.measles.abm"])
+def test_dict_importation_rate_resolves_by_patch_id(measles_module):
+    model = _build_abm_model(measles_module, {"patch_0": 1.0, "patch_2": 3.0}, num_ticks=1)
+    imp = _run_and_get_importation_instance(model)
+    assert imp.patch_rates_per_year_per_1k.tolist() == [1.0, 0.0, 3.0, 0.0]
+
+
+# -----------------------------------------------------------------------------
+# 4. Wrong list length raises
+# -----------------------------------------------------------------------------
+@pytest.mark.parametrize("measles_module", ["laser.measles.abm"])
+def test_importation_rate_list_wrong_length_raises(measles_module):
+    model = _build_abm_model(measles_module, [1.0, 2.0, 3.0], num_ticks=1)
+    with pytest.raises(ValueError, match="does not match number of patches"):
+        model.run()
+
+
+# -----------------------------------------------------------------------------
+# 5. Unknown dict patch id raises
+# -----------------------------------------------------------------------------
+@pytest.mark.parametrize("measles_module", ["laser.measles.abm"])
+def test_importation_rate_dict_unknown_patch_id_raises(measles_module):
+    model = _build_abm_model(measles_module, {"patch_999": 5.0}, num_ticks=1)
+    with pytest.raises(ValueError, match="Unknown patch ids"):
+        model.run()
+
+
+# -----------------------------------------------------------------------------
+# 6. Negative values raise
+# -----------------------------------------------------------------------------
+@pytest.mark.parametrize(
+    "bad_rate",
+    [
+        -1.0,
+        [1.0, -1.0, 0.0, 0.0],
+        {"patch_0": 1.0, "patch_1": -1.0},
+    ],
+)
+def test_negative_importation_rates_raise_validation_error(bad_rate):
+    with pytest.raises(ValidationError):
+        components.process_importation_pressure.ImportationPressureParams(crude_importation_rate=bad_rate)
+
+
+# -----------------------------------------------------------------------------
+# 7. Only one nonzero patch gets imports
+# -----------------------------------------------------------------------------
+@pytest.mark.parametrize("measles_module", ["laser.measles.abm"])
+def test_patch_specific_importation_targets_only_first_patch(measles_module):
+    model = _build_abm_model(measles_module, [1000.0, 0.0, 0.0, 0.0], num_ticks=1, seed=123)
+    imp = _run_and_get_importation_instance(model)
+
+    assert imp.patch_rates_per_year_per_1k.tolist() == [1000.0, 0.0, 0.0, 0.0]
+
+    non_susceptible_by_patch = _count_non_susceptible_by_patch(model)
+    assert non_susceptible_by_patch[0] > 0
+    assert non_susceptible_by_patch[1] == 0
+    assert non_susceptible_by_patch[2] == 0
+    assert non_susceptible_by_patch[3] == 0
+
+
+# -----------------------------------------------------------------------------
+# 8. Each node can be targeted individually
+# -----------------------------------------------------------------------------
+@pytest.mark.parametrize("measles_module", ["laser.measles.abm"])
+@pytest.mark.parametrize("target_patch", [0, 1, 2, 3])
+def test_each_patch_can_be_targeted_individually(measles_module, target_patch):
+    rates = [0.0, 0.0, 0.0, 0.0]
+    rates[target_patch] = 1000.0
+
+    model = _build_abm_model(measles_module, rates, num_ticks=1, seed=123)
+    imp = _run_and_get_importation_instance(model)
+
+    expected = [0.0, 0.0, 0.0, 0.0]
+    expected[target_patch] = 1000.0
+    assert imp.patch_rates_per_year_per_1k.tolist() == expected
+
+    non_susceptible_by_patch = _count_non_susceptible_by_patch(model)
+
+    for i in range(4):
+        if i == target_patch:
+            assert non_susceptible_by_patch[i] > 0
+        else:
+            assert non_susceptible_by_patch[i] == 0
 
 
 if __name__ == "__main__":
