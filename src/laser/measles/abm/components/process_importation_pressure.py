@@ -130,14 +130,13 @@ class ImportationPressureProcess(BasePhase):
                 imported_cases[patch_idx] = 0
                 continue
 
-            n_draw = min(num_imported_cases, len(idx))
-            idx = model.prng.choice(idx, size=n_draw, replace=False)
-            idx = idx[model.people.state[idx] == susceptible_state]
-
-            if len(idx) > 0:
-                infection_component.infect(model, idx)
-
-            imported_cases[patch_idx] = len(idx)
+            susceptible_idx = idx[model.people.state[idx] == susceptible_state]
+            if len(susceptible_idx) == 0:
+                continue
+            n_draw = min(num_imported_cases, len(susceptible_idx))
+            chosen = model.prng.choice(susceptible_idx, size=n_draw, replace=False)
+            infection_component.infect(model, chosen)
+            imported_cases[patch_idx] = n_draw
 
     def _initialize(self, model: ABMModel) -> None:
         n_patches = model.patches.count

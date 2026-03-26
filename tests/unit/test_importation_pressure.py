@@ -235,6 +235,51 @@ def test_tuple_importation_rate(measles_module):
 
 
 # -----------------------------------------------------------------------------
+# 6d. Importation draws from susceptibles first (not all agents)
+#
+# Regression: old code sampled from all agents then filtered to S, so a
+# 90%-immune patch would only receive ~10% of the intended importation even
+# when enough susceptibles existed to fill the quota.  The fix filters to
+# susceptibles before sampling.
+# -----------------------------------------------------------------------------
+def test_importation_draws_from_susceptibles_in_partially_immune_patch():
+    m = importlib.import_module("laser.measles.abm")
+    scenario = pl.DataFrame({"id": ["p0"], "lat": [0.0], "lon": [0.0], "pop": [1000], "mcv1": [0.0]})
+    # Rate chosen so the binomial draw (~550 from 1000 agents) exceeds n_susceptible (100)
+    # but is well below n_total (1000).  Old code would sample from all agents and infect
+    # ~55 susceptibles; the fix samples from susceptibles first and infects all 100.
+    imp_params = m.components.process_importation_pressure.ImportationPressureParams(crude_importation_rate=200_000.0)
+    model = m.ABMModel(scenario, m.ABMParams(num_ticks=0, seed=42, start_time="2000-01"))
+    model.components = [
+        m.components.NoBirthsProcess,
+        create_component(m.components.ImportationPressureProcess, imp_params),
+        m.components.InfectionProcess,
+    ]
+    model.run()
+
+    S_idx = model.params.states.index("S")
+    E_idx = model.params.states.index("E")
+    R_idx = model.params.states.index("R")
+    n = model.people.count
+    n_susceptible = 100  # leave only 10% susceptible
+
+    # Set 90% of agents to recovered (immune)
+    model.people.state[:n - n_susceptible] = R_idx
+    model.patches.states.S[0] = n_susceptible
+    model.patches.states.R[0] = n - n_susceptible
+
+    imp = model.get_instance("ImportationPressureProcess")[0]
+    imp(model, 0)
+
+    exposed = int((model.people.state[:n] == E_idx).sum())
+    remaining_s = int((model.people.state[:n] == S_idx).sum())
+
+    # All susceptibles should have been infected — none left behind
+    assert remaining_s == 0, f"Expected 0 susceptibles remaining, got {remaining_s}"
+    assert exposed == n_susceptible, f"Expected {n_susceptible} exposed, got {exposed}"
+
+
+# -----------------------------------------------------------------------------
 # 7. Only one nonzero patch gets imports
 # -----------------------------------------------------------------------------
 @pytest.mark.parametrize("measles_module", ["laser.measles.abm"])
