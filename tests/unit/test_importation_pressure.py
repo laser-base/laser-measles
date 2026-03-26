@@ -200,11 +200,38 @@ def test_importation_rate_dict_unknown_patch_id_raises(measles_module):
         -1.0,
         [1.0, -1.0, 0.0, 0.0],
         {"patch_0": 1.0, "patch_1": -1.0},
+        np.array([-1.0, 0.0, 0.0, 0.0]),
+        (-1.0, 0.0, 0.0, 0.0),
     ],
 )
 def test_negative_importation_rates_raise_validation_error(bad_rate):
     with pytest.raises(ValidationError):
         components.process_importation_pressure.ImportationPressureParams(crude_importation_rate=bad_rate)
+
+
+# -----------------------------------------------------------------------------
+# 6b. Invalid types raise a useful error
+# -----------------------------------------------------------------------------
+def test_invalid_importation_rate_type_raises():
+    with pytest.raises((ValidationError, TypeError), match="(?i)(float|sequence|dict|type)"):
+        components.process_importation_pressure.ImportationPressureParams(crude_importation_rate="fast")
+
+
+# -----------------------------------------------------------------------------
+# 6c. Numpy arrays and tuples are valid sequence inputs
+# -----------------------------------------------------------------------------
+@pytest.mark.parametrize("measles_module", ["laser.measles.abm"])
+def test_numpy_array_importation_rate(measles_module):
+    model = _build_abm_model(measles_module, np.array([1.0, 2.0, 3.0, 4.0]), num_ticks=1)
+    imp = _run_and_get_importation_instance(model)
+    assert imp.patch_rates_per_year_per_1k.tolist() == [1.0, 2.0, 3.0, 4.0]
+
+
+@pytest.mark.parametrize("measles_module", ["laser.measles.abm"])
+def test_tuple_importation_rate(measles_module):
+    model = _build_abm_model(measles_module, (1.0, 2.0, 3.0, 4.0), num_ticks=1)
+    imp = _run_and_get_importation_instance(model)
+    assert imp.patch_rates_per_year_per_1k.tolist() == [1.0, 2.0, 3.0, 4.0]
 
 
 # -----------------------------------------------------------------------------
@@ -297,12 +324,30 @@ def test_importation_rate_dict_unknown_patch_id_raises_non_abm(measles_module):
         -1.0,
         [1.0, -1.0, 0.0, 0.0],
         {"patch_0": 1.0, "patch_1": -1.0},
+        np.array([-1.0, 0.0, 0.0, 0.0]),
+        (-1.0, 0.0, 0.0, 0.0),
     ],
 )
 def test_negative_importation_rates_raise_validation_error_non_abm(measles_module, bad_rate):
     module = importlib.import_module(measles_module)
     with pytest.raises(ValidationError):
         module.components.process_importation_pressure.ImportationPressureParams(crude_importation_rate=bad_rate)
+
+
+@pytest.mark.parametrize("measles_module", NON_ABM_MODULES)
+def test_numpy_array_importation_rate_non_abm(measles_module):
+    model = _build_model(measles_module, np.array([1.0, 2.0, 3.0, 4.0]), num_ticks=1)
+    model.run()
+    imp = model.get_instance("ImportationPressureProcess")[0]
+    assert imp.patch_rates_per_year_per_1k.tolist() == [1.0, 2.0, 3.0, 4.0]
+
+
+@pytest.mark.parametrize("measles_module", NON_ABM_MODULES)
+def test_tuple_importation_rate_non_abm(measles_module):
+    model = _build_model(measles_module, (1.0, 2.0, 3.0, 4.0), num_ticks=1)
+    model.run()
+    imp = model.get_instance("ImportationPressureProcess")[0]
+    assert imp.patch_rates_per_year_per_1k.tolist() == [1.0, 2.0, 3.0, 4.0]
 
 
 if __name__ == "__main__":

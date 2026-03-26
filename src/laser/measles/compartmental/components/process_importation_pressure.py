@@ -3,6 +3,7 @@ Component for simulating the importation pressure in the compartmental model.
 """
 
 import numpy as np
+from collections.abc import Sequence
 from pydantic import BaseModel
 from pydantic import Field
 from pydantic import field_validator
@@ -22,7 +23,7 @@ class ImportationPressureParams(BaseModel):
         default=1.0,
         description=(
             "Yearly crude importation rate per 1k population. "
-            "Can be a scalar (all patches), a list/array aligned to scenario rows, "
+            "Can be a scalar (all patches), a sequence (list, tuple, numpy array) aligned to scenario rows, "
             "or a dict keyed by patch id."
         ),
     )
@@ -45,14 +46,19 @@ class ImportationPressureParams(BaseModel):
         if isinstance(v, (int, float)):
             if v < 0:
                 raise ValueError("crude_importation_rate must be >= 0")
-        elif isinstance(v, list):
+        elif isinstance(v, np.ndarray):
+            if np.any(v < 0):
+                raise ValueError("All crude_importation_rate values must be >= 0")
+            return v.tolist()
+        elif isinstance(v, Sequence) and not isinstance(v, (str, bytes)):
             if any(x < 0 for x in v):
                 raise ValueError("All crude_importation_rate values must be >= 0")
+            return list(v)
         elif isinstance(v, dict):
             if any(x < 0 for x in v.values()):
                 raise ValueError("All crude_importation_rate values must be >= 0")
         else:
-            raise TypeError("crude_importation_rate must be a float, list[float], or dict[str, float]")
+            raise TypeError("crude_importation_rate must be a float, sequence of floats, or dict[str, float]")
         return v
 
 
@@ -123,9 +129,9 @@ class ImportationPressureProcess(BasePhase):
         if isinstance(rates, (int, float)):
             arr = np.full(n_patches, float(rates), dtype=np.float64)
 
-        elif isinstance(rates, list):
+        elif isinstance(rates, (np.ndarray, list)) or (isinstance(rates, Sequence) and not isinstance(rates, (str, bytes))):
             if len(rates) != n_patches:
-                raise ValueError(f"crude_importation_rate list length {len(rates)} does not match number of patches {n_patches}")
+                raise ValueError(f"crude_importation_rate length {len(rates)} does not match number of patches {n_patches}")
             arr = np.asarray(rates, dtype=np.float64)
 
         elif isinstance(rates, dict):
