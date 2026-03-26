@@ -11,21 +11,104 @@ from laser.measles.utils import cast_type
 
 
 class ImportationPressureParams(BaseModel):
-    """
-    Parameters specific to the importation pressure component.
-    crude_importation_rate can be float, list or dict to support flexible patch-wise importation rates.
+    """Parameters for the importation pressure component.
+
+    Importation pressure simulates external case introductions from outside the
+    modeled population (e.g., international travel, cross-border movement),
+    moving susceptible individuals directly to infected (I) each biweekly tick.
+
+    Attributes:
+        crude_importation_rate: Yearly importation rate per 1,000 population.
+            Three forms are accepted:
+
+            - **float** (scalar): uniform rate applied to every patch.
+              ``0.0`` disables importation entirely.
+
+            - **list / tuple / numpy array** (sequence): per-patch rates in the
+              same order as ``model.scenario`` rows. Length must equal the number
+              of patches.
+
+            - **dict[str, float]** (sparse patch override): maps patch string ids
+              (values from ``model.scenario["id"]``, e.g. ``"n_0_0"``, ``"n_2_2"``)
+              to rates. Patches absent from the dict receive a rate of **0.0** —
+              they do *not* inherit the scalar default of 1.0.
+
+        importation_start: Day on which importation begins (inclusive). Supply in
+            days; the model converts to biweekly ticks internally. Default ``0``
+            starts importation at the first tick.
+
+        importation_end: Day on which importation ends (inclusive). Supply in days;
+            the model converts to biweekly ticks internally. Use ``-1`` (default)
+            to keep importation active for the full simulation. Must be greater than
+            ``importation_start`` when not ``-1``.
+
+    Examples:
+        Uniform low background pressure across all patches::
+
+            params = ImportationPressureParams(crude_importation_rate=0.05)
+
+        Disable importation entirely::
+
+            params = ImportationPressureParams(crude_importation_rate=0.0)
+
+        Per-patch sequence (one entry per patch, aligned to scenario row order)::
+
+            # 25-patch model; patch at row index 12 is the metro hub
+            rates = [0.02] * 25
+            rates[12] = 0.5
+            params = ImportationPressureParams(crude_importation_rate=rates)
+
+        Sparse dict — only named patches receive importation; all others get 0.0::
+
+            # Use string ids from model.scenario["id"], e.g. "n_0_0", "n_2_2"
+            params = ImportationPressureParams(
+                crude_importation_rate={"n_2_2": 0.5, "n_0_0": 0.1},
+            )
+
+        Numpy array input (accepted and converted to list internally)::
+
+            import numpy as np
+            params = ImportationPressureParams(
+                crude_importation_rate=np.array([0.01, 0.05, 0.01, 0.01, 0.01])
+            )
+
+        Time-windowed importation active only during the first year (days 0-364)::
+
+            params = ImportationPressureParams(
+                crude_importation_rate=0.1,
+                importation_start=0,
+                importation_end=364,
+            )
+
+        Metro-only importation for the first year, then stop::
+
+            params = ImportationPressureParams(
+                crude_importation_rate={"n_2_2": 2.0},
+                importation_start=0,
+                importation_end=364,
+            )
     """
 
     crude_importation_rate: float | list[float] | dict[str, float] = Field(
         default=1.0,
         description=(
             "Yearly crude importation rate per 1k population. "
-            "Can be a scalar (all patches), a sequence (list, tuple, numpy array) aligned to scenario rows, "
-            "or a dict keyed by patch id."
+            "Scalar: uniform across all patches. "
+            "Sequence (list/tuple/ndarray): per-patch rates aligned to scenario row order, length must equal n_patches. "
+            "Dict[str, float]: sparse override keyed by patch string id (from model.scenario['id']); "
+            "omitted patches default to 0.0, not 1.0."
         ),
     )
-    importation_start: int = Field(default=0, description="Start time for importation (in days)", ge=0)
-    importation_end: int = Field(default=-1, description="End time for importation (in days)", ge=-1)
+    importation_start: int = Field(
+        default=0,
+        description="Day on which importation begins (inclusive). Converted to biweekly ticks internally.",
+        ge=0,
+    )
+    importation_end: int = Field(
+        default=-1,
+        description="Day on which importation ends (inclusive). Converted to biweekly ticks internally. Use -1 (default) to run for the full simulation.",
+        ge=-1,
+    )
 
     @field_validator("importation_end")
     @classmethod
