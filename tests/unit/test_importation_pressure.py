@@ -94,6 +94,22 @@ def _four_patch_scenario():
     )
 
 
+NON_ABM_MODULES = ["laser.measles.compartmental", "laser.measles.biweekly"]
+
+
+def _build_model(measles_module, importation_rate, num_ticks=1, seed=123):
+    """Generic model builder for compartmental and biweekly model types."""
+    module = importlib.import_module(measles_module)
+    scenario = _four_patch_scenario()
+    model = module.Model(
+        module.BaseScenario(scenario),
+        module.Params(num_ticks=num_ticks, seed=seed),
+    )
+    imp_params = module.components.process_importation_pressure.ImportationPressureParams(crude_importation_rate=importation_rate)
+    model.components = [create_component(module.components.ImportationPressureProcess, imp_params)]
+    return model
+
+
 def _build_abm_model(measles_module, importation_rate, num_ticks=1, seed=123):
     module = importlib.import_module(measles_module)
     scenario = _four_patch_scenario()
@@ -231,6 +247,62 @@ def test_each_patch_can_be_targeted_individually(measles_module, target_patch):
             assert non_susceptible_by_patch[i] > 0
         else:
             assert non_susceptible_by_patch[i] == 0
+
+
+# -----------------------------------------------------------------------------
+# Compartmental / biweekly: per-patch rate initialization
+# -----------------------------------------------------------------------------
+@pytest.mark.parametrize("measles_module", NON_ABM_MODULES)
+def test_scalar_importation_rate_applies_to_all_patches_non_abm(measles_module):
+    model = _build_model(measles_module, 5.0, num_ticks=1)
+    model.run()
+    imp = model.get_instance("ImportationPressureProcess")[0]
+    assert imp.patch_rates_per_year_per_1k.tolist() == [5.0, 5.0, 5.0, 5.0]
+
+
+@pytest.mark.parametrize("measles_module", NON_ABM_MODULES)
+def test_list_importation_rate_resolves_by_patch_order_non_abm(measles_module):
+    model = _build_model(measles_module, [1.0, 2.0, 3.0, 4.0], num_ticks=1)
+    model.run()
+    imp = model.get_instance("ImportationPressureProcess")[0]
+    assert imp.patch_rates_per_year_per_1k.tolist() == [1.0, 2.0, 3.0, 4.0]
+
+
+@pytest.mark.parametrize("measles_module", NON_ABM_MODULES)
+def test_dict_importation_rate_resolves_by_patch_id_non_abm(measles_module):
+    model = _build_model(measles_module, {"patch_0": 1.0, "patch_2": 3.0}, num_ticks=1)
+    model.run()
+    imp = model.get_instance("ImportationPressureProcess")[0]
+    assert imp.patch_rates_per_year_per_1k.tolist() == [1.0, 0.0, 3.0, 0.0]
+
+
+@pytest.mark.parametrize("measles_module", NON_ABM_MODULES)
+def test_importation_rate_list_wrong_length_raises_non_abm(measles_module):
+    model = _build_model(measles_module, [1.0, 2.0, 3.0], num_ticks=1)
+    with pytest.raises(ValueError, match="does not match number of patches"):
+        model.run()
+
+
+@pytest.mark.parametrize("measles_module", NON_ABM_MODULES)
+def test_importation_rate_dict_unknown_patch_id_raises_non_abm(measles_module):
+    model = _build_model(measles_module, {"patch_999": 5.0}, num_ticks=1)
+    with pytest.raises(ValueError, match="Unknown patch ids"):
+        model.run()
+
+
+@pytest.mark.parametrize("measles_module", NON_ABM_MODULES)
+@pytest.mark.parametrize(
+    "bad_rate",
+    [
+        -1.0,
+        [1.0, -1.0, 0.0, 0.0],
+        {"patch_0": 1.0, "patch_1": -1.0},
+    ],
+)
+def test_negative_importation_rates_raise_validation_error_non_abm(measles_module, bad_rate):
+    module = importlib.import_module(measles_module)
+    with pytest.raises(ValidationError):
+        module.components.process_importation_pressure.ImportationPressureParams(crude_importation_rate=bad_rate)
 
 
 if __name__ == "__main__":
