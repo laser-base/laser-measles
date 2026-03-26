@@ -41,9 +41,12 @@ print(model.people)
 # the `NoBirthsProcess` is added by default:
 # %%
 from laser.measles.abm.components import InfectionProcess, InfectionSeedingProcess
-model = ABMModel(scenario=scenario, params=params)
-model.components = [InfectionSeedingProcess, InfectionProcess]
-model.run()
+def make_model():
+    model = ABMModel(scenario=scenario, params=params)
+    model.components = [InfectionSeedingProcess, InfectionProcess]
+    model.run()
+    return model
+model = make_model()
 print("People LaserFrame:")
 print(model.people)
 print("Model components:")
@@ -59,6 +62,7 @@ print(model.components)
 # For example, the `ConstantPopProcess` recycles entries in the arrays so that
 # the array sizes can remain the same
 # %%
+model = make_model()
 vd = ConstantPopProcess(model)
 print(f"Capacity for a constant population size: {vd.calculate_capacity(model)}")
 #
@@ -72,6 +76,7 @@ print(f"Capacity for a constant population size: {vd.calculate_capacity(model)}"
 # enforced age structure.
 #  %%
 from laser.measles.abm.components import VitalDynamicsProcess
+model = make_model()
 vd = VitalDynamicsProcess(model)
 print(f"Capacity for the {model.params.num_ticks} tick simulation: {vd.calculate_capacity(model)}")
 print(f"len(model.people): {len(model.people)} at the start of the simulation")
