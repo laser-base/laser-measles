@@ -50,9 +50,9 @@ from laser.measles.abm import Model
 #
 # To see/access all components available for a model you use the associated `components` sub-module.
 # %%
-from laser.measles.abm import components
+from laser.measles.abm import components as abm_components
 print("Available Process components:")
-for c in sorted([c for c in dir(components) if 'Process' in c]):
+for c in sorted([c for c in dir(abm_components) if 'Process' in c]):
     print(f"  - {c}")
 # %% [markdown]
 # ## Patches
@@ -129,7 +129,7 @@ print(f"\nCompartmental model total infections: {comp_infections_df['cases'].sum
 # %%
 import laser.measles as lm
 from laser.measles.abm import ABMModel
-from laser.measles.abm.components import InfectionProcess, InfectionSeedingProcess
+from laser.measles.abm import InfectionProcess, InfectionSeedingProcess, CaseSurveillanceTracker, CaseSurveillanceParams
 from laser.measles.abm.params import ABMParams
 
 # Initialize ABM model
@@ -147,8 +147,8 @@ print("ABM model after adding infection:")
 print(abm_model)
 
 # Add CaseSurveillanceTracker to ABM model
-abm_case_tracker = lm.create_component(
-    lm.abm.components.CaseSurveillanceTracker, lm.abm.components.CaseSurveillanceParams(detection_rate=1.0)
+abm_case_tracker = create_component(
+    CaseSurveillanceTracker, CaseSurveillanceParams(detection_rate=1.0)
 )
 abm_model.add_component(abm_case_tracker)
 
@@ -159,7 +159,7 @@ print(abm_model)
 abm_model.run()
 
 # Access infection data
-abm_case_tracker_instance = abm_model.get_instance(lm.abm.components.CaseSurveillanceTracker)[0]
+abm_case_tracker_instance = abm_model.get_instance(CaseSurveillanceTracker)[0]
 abm_infections_df = abm_case_tracker_instance.get_dataframe()
 print(f"\nABM model total infections: {abm_infections_df['cases'].sum()}")
 

@@ -62,7 +62,7 @@ scenario.head(n=3)
 from laser.measles.biweekly import BaseScenario
 from laser.measles.biweekly import BiweeklyParams
 from laser.measles.biweekly import Model
-from laser.measles.biweekly import components
+from laser.measles.biweekly import InfectionParams, InitializeEquilibriumStatesProcess, ImportationPressureProcess, InfectionProcess, VitalDynamicsProcess, StateTracker
 from laser.measles.components import create_component
 
 # %% [markdown]
@@ -115,29 +115,29 @@ biweekly_model = Model(scenario, params, name="biweekly_tutorial")
 print(f"Model has {len(biweekly_model.components)} components:\n{biweekly_model.components}")
 
 # Create infection parameters with seasonal transmission
-infection_params = components.InfectionParams(
+infection_params = InfectionParams(
     seasonality=0.3,  # seasonal variation
 )
 
 # Create model components
 model_components = [
-    components.InitializeEquilibriumStatesProcess,  # Initialize the states
-    components.ImportationPressureProcess,  # Infection seeding
-    create_component(components.InfectionProcess, params=infection_params),  # Infections
-    components.VitalDynamicsProcess,  # Births/deaths
+    InitializeEquilibriumStatesProcess,  # Initialize the states
+    ImportationPressureProcess,  # Infection seeding
+    create_component(InfectionProcess, params=infection_params),  # Infections
+    VitalDynamicsProcess,  # Births/deaths
 ]
 biweekly_model.components = model_components
 print(f"Model has {len(biweekly_model.components)} components:\n{biweekly_model.components}")
 
 # You can also add components using the `add_component` method
-biweekly_model.add_component(components.StateTracker)
+biweekly_model.add_component(StateTracker)
 print(f"Model has {len(biweekly_model.components)} components:\n{biweekly_model.components}")
 
 # %% [markdown]
 # ## Components vs instances
 #
-# Note that when we setup the `model.components` we pass a reference to the component Class (e.g., `components.VitalDynamicsProcess`) and not instances of the Class itself
-# (e.g., `components.VitalDynamicsProcess()`). The `Model` creates instances of the class and those are stored in the `model.instances` attribute. This is why if you want to
+# Note that when we setup the `model.components` we pass a reference to the component Class (e.g., `VitalDynamicsProcess`) and not instances of the Class itself
+# (e.g., `VitalDynamicsProcess()`). The `Model` creates instances of the class and those are stored in the `model.instances` attribute. This is why if you want to
 # pass parameters different than the defaults to the components you should use the `create_component` function.
 
 # %%
@@ -168,7 +168,7 @@ for state in biweekly_model.params.states:
 from laser.measles.compartmental import BaseScenario
 from laser.measles.compartmental import CompartmentalParams
 from laser.measles.compartmental import Model
-from laser.measles.compartmental import components
+from laser.measles.compartmental import InfectionParams, InitializeEquilibriumStatesProcess, ImportationPressureProcess, InfectionProcess, VitalDynamicsProcess, StateTracker
 
 # Create model parameters
 params = CompartmentalParams(
@@ -182,16 +182,16 @@ params = CompartmentalParams(
 compartmental_model = Model(scenario, params, name="compartmental_tutorial")
 
 # Create infection parameters with seasonal transmission
-infection_params = components.InfectionParams(
+infection_params = InfectionParams(
     seasonality=0.3,
 )
 # Create model components
 model_components = [
-    components.InitializeEquilibriumStatesProcess,  # Initialize the states
-    components.ImportationPressureProcess,  # Infection seeding
-    create_component(components.InfectionProcess, params=infection_params),  # Infections
-    components.VitalDynamicsProcess,  # Births/deaths
-    components.StateTracker,  # State tracking
+    InitializeEquilibriumStatesProcess,  # Initialize the states
+    ImportationPressureProcess,  # Infection seeding
+    create_component(InfectionProcess, params=infection_params),  # Infections
+    VitalDynamicsProcess,  # Births/deaths
+    StateTracker,  # State tracking
 ]
 compartmental_model.components = model_components
 

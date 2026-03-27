@@ -20,7 +20,32 @@ from .params import ABMParams
 
 class ABMModel(BaseLaserModel):
     """
-    A class to represent the agent-based model.
+    Agent-based model for measles transmission with daily timesteps (SEIR).
+
+    **Both** ``scenario`` and ``params`` are required positional arguments.
+    There is no default constructor — omitting ``params`` raises ``TypeError``.
+
+    Args:
+
+        scenario (pl.DataFrame): A DataFrame containing the metapopulation patch data.
+            Required columns: ``id`` (str), ``pop`` (int), ``lat`` (Float64),
+            ``lon`` (Float64), ``mcv1`` (Float64).
+        params (ABMParams): Simulation parameters including ``num_ticks``, ``seed``,
+            and ``start_time``. This argument is **mandatory**.
+        name (str, optional): The name of the model. Defaults to ``"abm"``.
+
+    Notes:
+
+        Typical usage::
+
+            from laser.measles.abm import ABMModel, ABMParams
+            from laser.measles.abm import components
+
+            params = ABMParams(num_ticks=365, seed=42)
+            model = ABMModel(scenario=df, params=params)
+            model.add_component(components.InfectionSeedingProcess)
+            model.add_component(components.InfectionProcess)
+            model.run()
     """
 
     people: PeopleLaserFrame

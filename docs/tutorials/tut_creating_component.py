@@ -10,7 +10,9 @@ from pydantic import BaseModel
 from pydantic import Field
 
 import laser.measles as lm
+from laser.measles import create_component
 from laser.measles.base import BasePhase
+from laser.measles.compartmental import InitializeEquilibriumStatesProcess, InitializeEquilibriumStatesParams, ImportationPressureProcess, ImportationPressureParams, VitalDynamicsProcess, InfectionProcess, StateTracker, CaseSurveillanceTracker, CaseSurveillanceParams
 
 # %% [markdown]
 # ## Component architecture
@@ -134,22 +136,22 @@ def run_simulation(use_piri: bool = True, num_ticks: int = 365 * 10) -> tuple:
     # Base components for all simulations
     components = [
         # Initialize with some immune individuals based on MCV1 coverage
-        lm.create_component(
-            lm.compartmental.components.InitializeEquilibriumStatesProcess, lm.compartmental.components.InitializeEquilibriumStatesParams()
+        create_component(
+            InitializeEquilibriumStatesProcess, InitializeEquilibriumStatesParams()
         ),
         # Seed infection to start outbreak
-        lm.create_component(
-            lm.compartmental.components.ImportationPressureProcess, lm.compartmental.components.ImportationPressureParams()
+        create_component(
+            ImportationPressureProcess, ImportationPressureParams()
         ),
         # Vital dynamics (births/deaths) - needed for MCV1 effects
-        lm.compartmental.components.VitalDynamicsProcess,
+        VitalDynamicsProcess,
         # Disease transmission
-        lm.compartmental.components.InfectionProcess,
+        InfectionProcess,
         # Track states over time
-        lm.compartmental.components.StateTracker,
+        StateTracker,
         # Track cases over time
-        lm.create_component(
-            lm.compartmental.components.CaseSurveillanceTracker, lm.compartmental.components.CaseSurveillanceParams(detection_rate=1.0)
+        create_component(
+            CaseSurveillanceTracker, CaseSurveillanceParams(detection_rate=1.0)
         ),
     ]
 
@@ -161,7 +163,7 @@ def run_simulation(use_piri: bool = True, num_ticks: int = 365 * 10) -> tuple:
             boost_duration=90,  # Month-long campaigns
             start_day=0,  # Start at the beginning
         )
-        components.append(lm.create_component(PIRIProcess, piri_params))
+        components.append(create_component(PIRIProcess, piri_params))
 
     model.components = components
 
@@ -169,14 +171,14 @@ def run_simulation(use_piri: bool = True, num_ticks: int = 365 * 10) -> tuple:
     model.run()
 
     # Get results
-    state_tracker = model.get_instance(lm.compartmental.components.StateTracker)[0]
+    state_tracker = model.get_instance(StateTracker)[0]
     results_df = state_tracker.get_dataframe()
 
     # Pivot to get state counts over time (tick, S, E, I, R format)
     results = results_df.pivot(index="tick", on="state", values="count").with_columns(pl.col("tick").cast(pl.Int32))
 
     # Get case surveillance data
-    case_tracker = model.get_instance(lm.compartmental.components.CaseSurveillanceTracker)[0]
+    case_tracker = model.get_instance(CaseSurveillanceTracker)[0]
     cases_df = case_tracker.get_dataframe()
 
     return model, results, cases_df

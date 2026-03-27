@@ -44,6 +44,7 @@ autosummary_ignore_module_all = False  # Respect __all__
 autodoc_member_order = "bysource"  # Keep original ordering
 add_module_names = False  # NB, does not work
 autodoc_inherit_docstrings = True  # Allow subclasses to inherit docs from parent classes
+autoclass_content = "both"  # Render both class docstring AND __init__ docstring in API pages
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]

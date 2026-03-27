@@ -101,10 +101,10 @@ model = ABMModel(scenario=scenario, params=params)
 # susceptible agent. Agents themselves do not move between patches.
 
 # %%
-from laser.measles.abm import components
+from laser.measles.abm import InfectionParams, InfectionSeedingParams, NoBirthsProcess, InfectionSeedingProcess, InfectionProcess, StateTracker, StateTrackerParams
 from laser.measles.components import create_component
 
-infection_params = components.InfectionParams(
+infection_params = InfectionParams(
     beta=2.0,
     seasonality=0.0,
     distance_exponent=20.0,  # strongly local transmission
@@ -118,7 +118,7 @@ infection_params = components.InfectionParams(
 # outward from one end of the line.
 
 # %%
-seeding_params = components.InfectionSeedingParams(
+seeding_params = InfectionSeedingParams(
     target_patches=["patch_7"],
     infections_per_patch=5,
 )
@@ -134,13 +134,13 @@ seeding_params = components.InfectionSeedingParams(
 
 # %%
 model.components = [
-    components.NoBirthsProcess,
-    create_component(components.InfectionSeedingProcess, seeding_params),
-    create_component(components.InfectionProcess, infection_params),
-    components.StateTracker,
+    NoBirthsProcess,
+    create_component(InfectionSeedingProcess, seeding_params),
+    create_component(InfectionProcess, infection_params),
+    StateTracker,
     create_component(
-        components.StateTracker,
-        components.StateTrackerParams(aggregation_level=0),
+        StateTracker,
+        StateTrackerParams(aggregation_level=0),
     ),
 ]
 

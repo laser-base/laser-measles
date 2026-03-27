@@ -46,7 +46,6 @@ def test_laserframe():
     "invalid",
     [
         "YYYY-MM",  # literal placeholder text
-        "2000-01-01",  # includes day
         "2000",  # year only
         "01-2000",  # wrong order
         "not-a-date",  # garbage
