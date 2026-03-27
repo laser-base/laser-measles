@@ -1,22 +1,85 @@
-# Installation/get started
+# Installation
 
-Depending on the structure of the rest of the content, you may want to include either an "Installation" topic or a "Get started" topic. Generally, if there is a single "Get started" tutorial or if installation is a complex process, use a separate "Installation" topic. These topics should follow the guidelines for a [How-to topic](topic-types/howto.md). 
+At the command line:
 
-If installation is a simple process, such as a `pip` install, and there is a recommended path for getting started with a project or package  we recommend including a "Get Started" topic with information about that onboarding path. This may include a brief overview of the project, installation instructions, tutorials, etc.
+```bash
+pip install laser-measles
+```
 
-MkDocs content tabs can be a neat way to present different instructions for different operating systems or Python installations. For example:
+You can also install the in-development version with:
 
-=== "Python"
+```bash
+pip install git+https://github.com/InstituteforDiseaseModeling/laser-measles.git@main
+```
 
-    ```
-    python -m venv <env-name>
-    ```
-=== "Anaconda"
+## Optional Dependencies
 
-    ```
-    conda create -n <env-name>
-    ```
+The package supports several optional dependency groups that can be installed for additional functionality:
 
-## Tutorials
+```bash
+# Development dependencies (testing, linting)
+pip install laser-measles[dev]
 
-For a "Get started" topic, it's good practice to link to one or more of the beginning tutorials. For example, the tutorial [Get started](tutorials/intro.ipynb) introduces the fundamentals of the package by walking through a typical workflow. 
+# Documentation dependencies (Sphinx, autodoc)
+pip install laser-measles[docs]
+
+# Example dependencies (Jupyter, notebooks, plotting)
+pip install laser-measles[examples]
+
+# All optional dependencies
+pip install laser-measles[full]
+```
+
+### Dependency Groups
+
+**dev**: Development tools for testing and code quality
+
+- pytest: Testing framework
+- pytest-order: Ordered test execution
+
+**docs**: Documentation building tools
+
+- sphinx-autodoc-typehints: Type hint documentation
+- sphinxcontrib-napoleon: Google/NumPy docstring support
+
+**examples**: Tools for running examples and tutorials
+
+- jupytext: Jupyter notebook text conversion
+- notebook: Jupyter notebook interface
+- seaborn: Statistical data visualization
+- ipykernel: Jupyter kernel support
+
+**full**: All optional dependencies combined
+
+- Includes all packages from dev, docs, and examples groups
+
+## Development
+
+You can use this github codespace for fast development:
+
+<a href='https://codespaces.new/InstituteforDiseaseModeling/laser-measles'><img src='https://github.com/codespaces/badge.svg' alt='Open in GitHub Codespaces' style='max-width: 100%;'></a>
+
+To run all the tests run:
+
+```bash
+tox
+```
+
+And to build the documentation run:
+
+```bash
+tox -e docs
+```
+
+Note, to combine the coverage data from all the tox environments run:
+
+| Platform | Command |
+|----------|---------|
+| Windows | `set PYTEST_ADDOPTS=--cov-append` then `tox` |
+| Other | `PYTEST_ADDOPTS=--cov-append tox` |
+
+You can check that the bump versioning works by running:
+
+```bash
+uvx bump-my-version bump minor --dry-run -vv
+```

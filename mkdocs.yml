@@ -30,19 +30,29 @@ theme:
       primary: black
       accent: light blue
 
-nav: # Navigation structure for the documentation
-  - MkDocs introduction: mkdocs.md # intro topic for MkDocs
-  - Topic types: # this creates a section in the TOC, without a parent topic
-    - Tutorial topic: topic-types/tutorial.md
-    - topic-types/howto.md # if there is no index parent topic, you must declare the title explicitly
-    - topic-types/reference.md
-    - topic-types/explanation.md
-  - Home: index.md # the rest of the nav illustrates a typical doc structure
-  - What's new: whatsnew.md 
-  - install.md # including the topic title is optional
-  - Tutorials: # this creates a section in the TOC
-    - tutorials/index.md # parent topics for sections must be an index.md file
-    - Get started: tutorials/intro.ipynb # the topic following index.md sometimes requires an explicit title
+nav:
+  - Home: index.md
+  - Installation: install.md
+  - Usage: usage.md
+  - Tutorials:
+    - tutorials/index.md
+    - Quick Start: tutorials/tut_quickstart_hello_world.ipynb
+    - Beginning tutorials:
+      - Basic Model: tutorials/tut_basic_model.ipynb
+      - Model Structure: tutorials/tut_model_structure.ipynb
+      - ABM Introduction: tutorials/tut_abm_intro.ipynb
+      - Scenarios: tutorials/tut_scenarios.ipynb
+    - Feature tutorials:
+      - Random Numbers: tutorials/tut_random_numbers.ipynb
+      - Creating a Component: tutorials/tut_creating_component.ipynb
+      - ABM Vital Dynamics: tutorials/tut_abm_vital_dynamics.ipynb
+      - Spatial Mixing: tutorials/tut_spatial_mixing.ipynb
+      - Pydantic Component Parameters: tutorials/tut_pydantic_component_parameters.ipynb
+      - State Arrays: tutorials/tut_state_arrays.ipynb
+    - End-to-end tutorials:
+      - Vaccination: tutorials/tut_vaccination.ipynb
+  - What's new: whatsnew.md
+  - Authors: authors.md
 
 # icons, semantic markup, emojis 
 markdown_extensions:
