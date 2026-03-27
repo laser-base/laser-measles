@@ -17,9 +17,17 @@ class ImportationPressureParams(BaseModel):
     modeled population (e.g., international travel, cross-border movement),
     seeding infections into susceptible individuals each tick.
 
+    Note:
+        Imported cases are drawn from the **total** population
+        (``binomial(population, rate)``), but only **susceptible** individuals
+        are actually infected. When the number of drawn imports exceeds the
+        available susceptibles in a patch, the excess is discarded. This means
+        the *effective* importation rate decreases as population immunity
+        increases.
+
     Attributes:
-        crude_importation_rate: Yearly importation rate per 1,000 population.
-            Three forms are accepted:
+        crude_importation_rate: Yearly importation rate per 1,000 **total**
+            population (not per susceptible). Three forms are accepted:
 
             - **float** (scalar): uniform rate applied to every patch.
               ``0.0`` disables importation entirely.
