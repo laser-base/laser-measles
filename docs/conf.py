@@ -128,7 +128,7 @@ nbsphinx_execute = "auto"
 nbsphinx_timeout = 600
 nbsphinx_allow_errors = True
 nbsphinx_execute_arguments = [
-    "--InlineBackend.figure_formats={'svg', 'pdf'}",
+    "--InlineBackend.figure_formats={'png'}",
     "--InlineBackend.rc={'figure.dpi': 96}",
 ]
 
