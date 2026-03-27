@@ -1,19 +1,10 @@
-pandoc
-pypandoc
-sphinx>=7.3.7
-sphinx-autodoc-typehints
-pydata-sphinx-theme
-sphinx-design
-readthedocs-sphinx-search
-sphinxcontrib-napoleon
-ipykernel # For tutorials
-ipywidgets # For the tutorials
-nbconvert>=7.10.0 # For tutorials
-nbsphinx>=0.9.5 # For tutorials
-plantweb
-sciris
-matplotlib
-scipy
-seaborn
-jupytext
-autodoc_pydantic>=2.0.0
+mkdocs-material # doc theme that includes extensive functionality
+mkdocs-include-markdown-plugin # include files outside /docs
+mkdocs-autorefs # create automatic linkable references to sections, etc.
+mkdocs-api-autonav # automatically add API ref to navigation
+python-markdown-math # integrate LaTeX math
+pymdown-extensions # various extensions for markdown
+mkdocs-jupyter # jupyter notebooks
+mkdocstrings # generate API reference from docstrings
+mkdocstrings-python # python handler for mkdocstrings
+mkdocs-table-reader-plugin # directly insert csv and other formats as tables

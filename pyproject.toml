@@ -170,8 +170,16 @@ dev = [
     "bump-my-version"
 ]
 docs = [
-    "sphinx-autodoc-typehints>=3.0.1",
-    "sphinxcontrib-napoleon>=0.7",
+    "mkdocs-material",
+    "mkdocs-include-markdown-plugin",
+    "mkdocs-autorefs",
+    "mkdocs-api-autonav",
+    "python-markdown-math",
+    "pymdown-extensions",
+    "mkdocs-jupyter",
+    "mkdocstrings",
+    "mkdocstrings-python",
+    "mkdocs-table-reader-plugin",
 ]
 examples = [
     "jupytext>=1.17.2",

@@ -95,8 +95,10 @@ docs/reference/
 docs/api/_autosummary/
 docs/tutorials/*.ipynb
 docs/models.rst
+docs-legacy/
 
 # Temp
 examples/
 .cursor/
 uv.lock
+site/
