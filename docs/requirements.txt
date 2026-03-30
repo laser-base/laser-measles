@@ -2,9 +2,13 @@ mkdocs-material # doc theme that includes extensive functionality
 mkdocs-include-markdown-plugin # include files outside /docs
 mkdocs-autorefs # create automatic linkable references to sections, etc.
 mkdocs-api-autonav # automatically add API ref to navigation
+mkdocs-gen-files # generate reference pages during the MkDocs build
+mkdocs-literate-nav # render generated SUMMARY.md into navigation
 python-markdown-math # integrate LaTeX math
 pymdown-extensions # various extensions for markdown
 mkdocs-jupyter # jupyter notebooks
 mkdocstrings # generate API reference from docstrings
 mkdocstrings-python # python handler for mkdocstrings
 mkdocs-table-reader-plugin # directly insert csv and other formats as tables
+mkdocs-mermaid2-plugin # Mermaid diagram support
+mkdocs-exclude # exclude files from the rendered docs tree

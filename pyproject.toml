@@ -174,12 +174,16 @@ docs = [
     "mkdocs-include-markdown-plugin",
     "mkdocs-autorefs",
     "mkdocs-api-autonav",
+    "mkdocs-gen-files",
+    "mkdocs-literate-nav",
     "python-markdown-math",
     "pymdown-extensions",
     "mkdocs-jupyter",
     "mkdocstrings",
     "mkdocstrings-python",
     "mkdocs-table-reader-plugin",
+    "mkdocs-mermaid2-plugin",
+    "mkdocs-exclude",
 ]
 examples = [
     "jupytext>=1.17.2",
