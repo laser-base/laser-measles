@@ -37,7 +37,7 @@ else:
 # Access the shapfile and metadata as a polars dataframe
 # This looks like geopandas but is more limited.
 df = get_shapefile_dataframe(shp.shapefile)
-print(df.head(n=2))
+print(df.head(n=2).to_pandas().to_string())
 # Plot the shapefile
 plot_shapefile_dataframe(df, plot_kwargs={"facecolor": "xkcd:sky blue"})
 
@@ -131,7 +131,7 @@ print("Shapefile is now at", new_shp.shapefile)
 
 # Get the results as a polars dataframe
 new_df = get_shapefile_dataframe(new_shp.shapefile)
-display(new_df.head(n=2))
+display(new_df.head(n=2).to_pandas())
 
 # Plot the resulting shapes
 import matplotlib.pyplot as plt
