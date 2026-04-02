@@ -69,9 +69,27 @@ MCP Server for Claude Code Users
 
 If you use Claude Code (or any MCP-compatible AI assistant), you can connect it directly to laser-measles and laser-core documentation and source via a local MCP server.
 
-See the `laser-mcp README <https://github.com/InstituteforDiseaseModeling/laser-mcp/blob/main/README.md>`_ for setup instructions (requires organization access).
+See the `laser-mcp README <https://github.com/InstituteforDiseaseModeling/laser-mcp/blob/main/README.md>`_ for full setup instructions (requires organization access).
 
 This gives Claude Code (and similar tools) deep, up-to-date context about laser-measles and laser-core — making it an excellent alternative to JENNER-MEASLES for developers who prefer working in their local environment with their own AI tooling.
+
+**Building the documentation artifact for the MCP server**
+
+The MCP server indexes a single combined markdown file built from this repo's
+documentation. To regenerate it after documentation changes::
+
+    make docs-jenner
+    # produces: dist/combined_mkdocs.md
+
+This runs the full pipeline: converts tutorial ``.py`` files to notebooks
+(jupytext), executes them, builds the MkDocs HTML site, and concatenates
+everything into ``dist/combined_mkdocs.md``. Hand that file to laser-mcp::
+
+    # In laser-mcp:
+    make ingest-measles COMBINED_MD=../laser-measles/dist/combined_mkdocs.md
+
+Prerequisites for ``make docs-jenner``: install the ``docs`` and ``examples``
+extras (``pip install -e ".[docs,examples]"`` or ``uv pip install -e ".[docs,examples]"``).
 
 
 What to Expect: Performance and Compute
