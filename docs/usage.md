@@ -778,9 +778,12 @@ from laser.measles.abm import ABMModel, ABMParams
 The `StateTracker` component stores time-series data differently depending
 on how it is configured.
 
-#### Default behavior (global aggregation, `aggregation_level=-1`)
+#### Default behavior (global aggregation)
 
-The default `aggregation_level=-1` sums across all patches.
+Adding `StateTracker` **without any params** (or with `aggregation_level=-1`) sums
+across all patches. **Do not pass `aggregation_level=0` or `aggregation_level=1`
+when you want global results** — those activate per-patch or per-region tracking
+and will produce multi-dimensional arrays.
 
 Arrays are **1-D** with shape:
 
@@ -921,6 +924,37 @@ scenario = single_patch_scenario(population=50_000, mcv1_coverage=0.85)
 params = ABMParams(num_ticks=365, seed=42)
 model = ABMModel(scenario, params)
 ```
+
+!!! warning
+
+    **The patch IDs returned by the helper functions are 1-indexed**, not 0-indexed:
+
+    - `single_patch_scenario()` → `id = "patch_1"` (not `"patch_0"`)
+    - `two_patch_scenario()` → `id = ["patch_1", "patch_2"]`
+
+    If you pass `target_patches=["patch_0"]` to `InfectionSeedingParams` when
+    using a helper-built scenario, the model will raise:
+
+    ```
+    ValueError: Target patches not found in model: ['patch_0']
+    ```
+
+    The safest approach is to **omit `target_patches`** entirely — it defaults
+    to seeding all patches, which is correct for single-patch scenarios:
+
+    ```python
+    # PREFERRED — omit target_patches to seed all patches
+    model.add_component(InfectionSeedingProcess)
+
+    # If you need to specify a patch explicitly, read the ID from the scenario:
+    patch_id = scenario["id"][0]   # "patch_1" for single_patch_scenario
+    from laser.measles.abm import InfectionSeedingParams
+    from laser.measles import create_component
+    model.add_component(
+        create_component(InfectionSeedingProcess,
+                         params=InfectionSeedingParams(target_patches=[patch_id]))
+    )
+    ```
 
 Available helpers: `single_patch_scenario`, `two_patch_scenario`,
 `two_cluster_scenario`, `satellites_scenario`. See the
