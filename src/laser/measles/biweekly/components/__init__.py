@@ -46,8 +46,9 @@ from .tracker_fadeout import FadeOutTracker
 __all__.extend(["FadeOutTracker"])
 
 from .tracker_state import StateTracker
+from .tracker_state import StateTrackerParams
 
-__all__.extend(["StateTracker"])
+__all__.extend(["StateTracker", "StateTrackerParams"])
 
 from .process_infection_seeding import InfectionSeedingParams
 from .process_infection_seeding import InfectionSeedingProcess

@@ -6,6 +6,7 @@ from .model import BiweeklyModel
 from .model import Model
 from .params import BiweeklyParams
 from .params import Params
+from laser.measles.components import create_component
 
 __all__ = [  # noqa: PLE0604
     "BaseScenario",
@@ -14,5 +15,6 @@ __all__ = [  # noqa: PLE0604
     "Model",
     "Params",
     "components",
+    "create_component",
     *_components_all,
 ]

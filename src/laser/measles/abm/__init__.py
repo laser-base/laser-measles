@@ -7,6 +7,7 @@ from .model import ABMModel
 from .model import Model
 from .params import ABMParams
 from .params import Params
+from laser.measles.components import create_component
 
 __all__ = [  # noqa: PLE0604
     "ABMModel",
@@ -16,5 +17,6 @@ __all__ = [  # noqa: PLE0604
     "Model",
     "Params",
     "components",
+    "create_component",
     *_components_all,
 ]
