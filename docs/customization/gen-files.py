@@ -14,7 +14,6 @@ logger = logging.getLogger(__name__)
 SRC = Path("src")
 NS = "laser"
 NS_ROOT = SRC / NS
-CORE_ROOT = "laser.core"  # importable package
 
 
 def ref_md(dotted: str) -> str:
@@ -63,17 +62,6 @@ for py in NS_ROOT.rglob("*.py"):
             break
         p = p.parent
 
-# ---------- collect from installed laser.core ----------
-core_items: set[str] = set()
-try:
-    core_pkg = importlib.import_module(CORE_ROOT)
-    core_items.add(CORE_ROOT)
-    for _, name, _ in pkgutil.walk_packages(core_pkg.__path__, prefix=CORE_ROOT + "."):
-        core_items.add(name)
-except Exception as e:
-    # not importable in this environment; fine
-    logger.debug("Optional import failed: %s", e)
-
 # ---------- emit all pages ----------
 emitted: set[str] = set()
 
@@ -92,9 +80,6 @@ for name in sorted(packages, key=lambda s: (s.count("."), s)):
     emit_once(name)
 
 for name in sorted(modules, key=lambda s: (s.count("."), s)):
-    emit_once(name)
-
-for name in sorted(core_items, key=lambda s: (s.count("."), s)):
     emit_once(name)
 
 # ---------- SUMMARY.md (two siblings, with correct hierarchical ordering) ----------
@@ -162,9 +147,9 @@ def _write_block(root: str, pool: set[str]) -> list[str]:
     return out
 
 
-# Build SUMMARY with two sibling blocks
+# Build SUMMARY with the laser.measles block only
 summary_lines: list[str] = ["# API reference\n"]
-for root in ("laser.core", "laser.measles"):
+for root in ("laser.measles",):
     summary_lines += _write_block(root, emitted)
 
 with gen.open("reference/SUMMARY.md", "w") as f:
