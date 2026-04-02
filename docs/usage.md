@@ -493,8 +493,7 @@ import numpy as np
 import polars as pl
 from laser.measles.biweekly import BiweeklyModel, BiweeklyParams
 from laser.measles.biweekly import InitializeEquilibriumStatesProcess, ImportationPressureProcess
-from laser.measles.biweekly import InfectionProcess, VitalDynamicsProcess, StateTracker
-from laser.measles.abm import StateTrackerParams   # not in biweekly — import from abm
+from laser.measles.biweekly import InfectionProcess, VitalDynamicsProcess, StateTracker, StateTrackerParams
 from laser.measles import create_component
 
 # ── 1. Scenario ─────────────────────────────────────────────────────────────
@@ -537,7 +536,6 @@ model.add_component(VitalDynamicsProcess)
 
 # StateTracker with aggregation_level=0 → per-patch tracker.
 # Results are in tracker.I with shape (num_ticks, n_patches).
-# IMPORTANT: StateTrackerParams is not in biweekly — imported from laser.measles.abm above.
 model.add_component(
     create_component(
         StateTracker,
@@ -653,13 +651,11 @@ top level for convenience.
 # PREFERRED (flattened public API)
 from laser.measles import create_component
 
-# ALSO SUPPORTED (direct components package)
-from laser.measles.components import create_component
-
-# WRONG — ImportError or inconsistent with the public API
+# ALSO SUPPORTED — re-exported from each model subpackage and shared components:
 from laser.measles.abm import create_component
 from laser.measles.biweekly import create_component
 from laser.measles.compartmental import create_component
+from laser.measles.components import create_component
 ```
 
 ### 2. How do I access component classes and their parameter classes?
@@ -695,6 +691,33 @@ model.components = [
 
 The same pattern applies to biweekly and compartmental — import directly from
 `laser.measles.biweekly` or `laser.measles.compartmental`.
+
+!!! warning
+
+    **Component and param classes are model-specific.** `InfectionParams`,
+    `SIACalendarParams`, `NoBirthsProcess`, and similar classes have different
+    fields per model type and live in their respective subpackage. Do not import
+    them from the shared `laser.measles.components` package or from the wrong
+    model subpackage:
+
+    ```python
+    # WRONG — ImportError or wrong class
+    from laser.measles.components import InfectionParams     # ImportError
+    from laser.measles import InfectionParams                # ImportError
+    from laser.measles.components import SIACalendarProcess  # ImportError
+    from laser.measles.abm import single_patch_scenario      # ImportError
+
+    # CORRECT — import each class from its own model subpackage
+    from laser.measles.abm import InfectionParams            # ABM variant
+    from laser.measles.biweekly import InfectionParams       # Biweekly variant
+    from laser.measles.compartmental import InfectionParams  # Compartmental variant
+
+    # Scenario helpers live at the top level only:
+    from laser.measles import single_patch_scenario, two_patch_scenario, two_cluster_scenario
+    ```
+
+    `NoBirthsProcess` and `SIACalendarProcess` exist in the ABM subpackage only —
+    there is no equivalent in the biweekly or compartmental subpackages.
 
 ### 3. `model.components` is assigned *after* construction
 
@@ -926,12 +949,13 @@ peak_day = int(tracker.I.argmax())     # day of peak
 
 **Per-patch tracker** (`aggregation_level=0`):
 
-`StateTrackerParams` always lives in `laser.measles.abm.components`,
-regardless of model type (ABM, biweekly, or compartmental).
+`StateTrackerParams` is available from all model subpackages:
 
 ```python
 from laser.measles import create_component
-from laser.measles.abm import StateTracker, StateTrackerParams
+from laser.measles.abm import StateTracker, StateTrackerParams          # ABM
+# or: from laser.measles.biweekly import StateTracker, StateTrackerParams
+# or: from laser.measles.compartmental import StateTracker, StateTrackerParams
 
 model.add_component(
     create_component(
@@ -1029,3 +1053,52 @@ scenario = pl.DataFrame({
 
 `ABMModel` and `CompartmentalModel` use **daily** ticks (1 tick = 1 day).
 `BiweeklyModel` uses **14-day** ticks (1 tick = 2 weeks, 26 ticks = 1 year).
+
+Scale `num_ticks` accordingly:
+
+```python
+# 5 years
+ABMParams(num_ticks=5 * 365)          # 1825 daily ticks
+BiweeklyParams(num_ticks=5 * 26)      # 130 biweekly ticks
+CompartmentalParams(num_ticks=5 * 365) # 1825 daily ticks
+```
+
+### 14. Scenario `id` must be a string; `pop` must be `Int32`
+
+Two dtype requirements that produce cryptic errors if violated:
+
+**`id` must be a string (`str` / `Utf8`), not an integer.**
+Python list comprehensions like `[0, 1, 2]` produce `Int64`, which fails
+schema validation. Use string patch IDs:
+
+```python
+# WRONG — Int64 id raises: Polars dtype Int64 does not match model field type
+scenario = pl.DataFrame({"id": [0, 1, 2], ...})
+
+# CORRECT — string id
+scenario = pl.DataFrame({"id": ["patch_0", "patch_1", "patch_2"], ...})
+```
+
+**`pop` (and all integer columns) must be `Int32`, not the default `Int64`.**
+Python integer lists and `np.array(...)` without a dtype both produce `Int64`:
+
+```python
+import numpy as np, polars as pl
+
+# WRONG — Int64 pop raises: Polars dtype Int64 does not match model field type
+scenario = pl.DataFrame({"pop": [100_000, 80_000, 60_000], ...})
+
+# CORRECT — explicit Int32 via numpy
+scenario = pl.DataFrame({
+    "pop": np.array([100_000, 80_000, 60_000], dtype=np.int32),
+    ...
+})
+
+# ALSO CORRECT — build with defaults then cast
+scenario = pl.DataFrame({"pop": [100_000, 80_000, 60_000], ...}).with_columns(
+    pl.col("pop").cast(pl.Int32)
+)
+```
+
+The scenario helper functions (`single_patch_scenario`, `two_patch_scenario`, etc.)
+handle these dtypes correctly and are the safest way to build test scenarios.
