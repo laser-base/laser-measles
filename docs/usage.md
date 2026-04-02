@@ -1136,3 +1136,73 @@ scenario = pl.DataFrame({"pop": [100_000, 80_000, 60_000], ...}).with_columns(
 
 The scenario helper functions (`single_patch_scenario`, `two_patch_scenario`, etc.)
 handle these dtypes correctly and are the safest way to build test scenarios.
+
+### 15. Do NOT add `TransmissionProcess` separately when using `InfectionProcess` (ABM)
+
+`InfectionProcess` already instantiates `TransmissionProcess` internally and
+registers the `etimer` property on the population. Adding `TransmissionProcess`
+as a separate component causes a `ValueError: Property 'etimer' already exists`.
+
+```python
+# WRONG — TransmissionProcess is already created inside InfectionProcess
+model.add_component(TransmissionProcess)   # registers etimer
+model.add_component(InfectionProcess)      # tries to register etimer again → crash
+
+# CORRECT — InfectionProcess is self-contained; add it alone
+model.add_component(InfectionProcess)
+```
+
+The same applies to any component that is a sub-component of another: check the
+docs to see which components are stand-alone vs. internally managed.
+
+### 16. `StateTracker` values are `StateArray` objects, not plain Python scalars
+
+When you index into a tracker's `.S`, `.I`, `.R` (etc.) arrays you get a
+`StateArray`, not a `float`. Passing a `StateArray` to an f-string format spec
+(e.g. `f"{val:.4f}"`) raises `TypeError: unsupported format string`.
+
+Always extract a Python scalar first:
+
+```python
+# WRONG — StateArray does not support format specs
+frac = tracker.I[tick]
+print(f"infected fraction: {frac:.4f}")   # TypeError
+
+# CORRECT — call .item() to get a plain Python float
+frac = float(tracker.I[tick])              # or tracker.I[tick].item()
+print(f"infected fraction: {frac:.4f}")
+```
+
+For per-patch trackers (`aggregation_level=0`) the shape is
+`(n_states, n_ticks, n_patches)` — index with `[state_idx, tick, patch_idx]`
+and wrap with `int()` or `float()` before arithmetic or formatting.
+
+### 17. SIA schedule date column must use `datetime.date` values, not strings
+
+`SIACalendarProcess` filters the schedule by comparing a polars date column
+to the current simulation date. If the column contains Python `str` values
+(e.g. `"2024-06-01"`) rather than `datetime.date` objects, polars raises:
+
+```
+InvalidOperationError: cannot compare 'date/datetime/time' to a string value
+```
+
+Build the schedule with `datetime.date` objects (or cast the column):
+
+```python
+import datetime, polars as pl
+
+# WRONG — string dates cause a polars comparison error at runtime
+sia_df = pl.DataFrame({
+    "date": ["2024-06-01", "2025-06-01"],
+    ...
+})
+
+# CORRECT — use datetime.date objects
+sia_df = pl.DataFrame({
+    "date": [datetime.date(2024, 6, 1), datetime.date(2025, 6, 1)],
+    ...
+})
+# OR cast after construction
+sia_df = sia_df.with_columns(pl.col("date").str.to_date())
+```
