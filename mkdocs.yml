@@ -5,7 +5,7 @@ repo_url: https://github.com/InstituteforDiseaseModeling/laser-measles
 theme:
   name: material
   custom_dir: docs/customization/overrides
-  font: 
+  font:
     text: Roboto
     code: Roboto Mono
   logo: images/idm-logo-transparent.png
@@ -55,7 +55,7 @@ nav:
   - What's new: whatsnew.md
   - Authors: authors.md
 
-# icons, semantic markup, emojis 
+# icons, semantic markup, emojis
 markdown_extensions:
   - toc:
       toc_depth: 3
@@ -86,7 +86,7 @@ markdown_extensions:
 # javascript and CSS customization
 extra_javascript:
   - https://unpkg.com/mathjax@3/es5/tex-mml-chtml.js
-extra_css: 
+extra_css:
   - customization/css/extra.css # custom CSS for footer spacing
 
 plugins:
@@ -157,6 +157,6 @@ extra:
         - icon: material/emoticon-sad-outline
           name: This page could be improved
           data: 0
-          note: >- 
+          note: >-
             Thanks for your feedback! Help us improve this page by
             using our <a href="https://app.smartsheet.com/b/form/ec8dbb77809949ecab7286a5ca74a206" target="_blank" rel="noopener">feedback form</a>.

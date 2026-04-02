@@ -1,3 +1,5 @@
+from laser.measles.components import create_component
+
 from . import components
 from .base import BaseABMScenario
 from .base import BaseScenario
@@ -7,7 +9,6 @@ from .model import ABMModel
 from .model import Model
 from .params import ABMParams
 from .params import Params
-from laser.measles.components import create_component
 
 __all__ = [  # noqa: PLE0604
     "ABMModel",

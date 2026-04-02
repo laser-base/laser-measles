@@ -1,9 +1,7 @@
 # docs/gen-files.py
 from __future__ import annotations
 
-import importlib
 import logging
-import pkgutil
 from pathlib import Path
 from pathlib import PurePosixPath
 
