@@ -35,6 +35,7 @@ docs-executed-nbs:
 	$(PYTHON) -m jupyter nbconvert \
 		--to notebook \
 		--execute \
+		--allow-errors \
 		--ExecutePreprocessor.timeout=300 \
 		--output-dir $(EXEC_DIR) \
 		$(NBS_SRC)/tut_*.ipynb
