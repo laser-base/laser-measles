@@ -16,11 +16,13 @@ import json
 import re
 import sys
 from pathlib import Path
-from bs4 import BeautifulSoup
+
 import markdownify
+from bs4 import BeautifulSoup
 
 try:
     import laser.measles
+
     _LASER_MEASLES_VERSION = laser.measles.__version__
 except Exception:
     _LASER_MEASLES_VERSION = "unknown"
@@ -32,21 +34,14 @@ def extract_markdown(html_path: Path) -> str:
     soup = BeautifulSoup(text, "html.parser")
 
     # MkDocs Material puts content in article or div[role=main]
-    content = (
-        soup.find("article")
-        or soup.find("div", role="main")
-        or soup.find("div", {"class": "md-content"})
-        or soup.find("body")
-    )
+    content = soup.find("article") or soup.find("div", role="main") or soup.find("div", {"class": "md-content"}) or soup.find("body")
     if content is None:
         return ""
 
     # Strip navigation, sidebars, search, footer, and breadcrumbs
     for tag in content.find_all(["nav", "footer", "script", "style"]):
         tag.decompose()
-    for tag in content.find_all(class_=["md-nav", "md-sidebar", "md-search",
-                                        "md-header", "md-footer", "headerlink",
-                                        "md-breadcrumb"]):
+    for tag in content.find_all(class_=["md-nav", "md-sidebar", "md-search", "md-header", "md-footer", "headerlink", "md-breadcrumb"]):
         tag.decompose()
 
     # Fix MkDocs syntax-highlighted code blocks: rendered as a two-column table
@@ -72,7 +67,7 @@ def extract_markdown(html_path: Path) -> str:
     )
 
     # Collapse 3+ blank lines to 2
-    md = re.sub(r'\n{3,}', '\n\n', md)
+    md = re.sub(r"\n{3,}", "\n\n", md)
     return md.strip()
 
 
@@ -84,7 +79,7 @@ def notebook_to_markdown(nb_path: Path) -> str:
     Text outputs are included inline after the code fence.
     Image outputs (plots) are skipped.
     """
-    with open(nb_path, encoding="utf-8") as f:
+    with nb_path.open(encoding="utf-8") as f:
         nb = json.load(f)
 
     parts = []
@@ -106,17 +101,17 @@ def notebook_to_markdown(nb_path: Path) -> str:
                         text = "".join(text)
                     if text and text.strip():
                         # Skip lines that look like progress bars or pure decorative output
-                        cleaned = re.sub(r'<[^>]+>', '', text).strip()
+                        cleaned = re.sub(r"<[^>]+>", "", text).strip()
                         if cleaned:
                             # Annotate Polars schema output that shows i64 for integer columns:
                             # tutorial notebooks use untyped construction so schemas print i64,
                             # but laser-measles requires Int32. Warn the LLM inline.
-                            if re.search(r'┆\s*i64\s*┆|┆\s*i64\s*│|│\s*i64\s*┆|│\s*i64\s*│', cleaned):
+                            if re.search(r"┆\s*i64\s*┆|┆\s*i64\s*│|│\s*i64\s*┆|│\s*i64\s*│", cleaned):
                                 cleaned += "\n# NOTE: 'i64' shown above reflects untyped tutorial code. laser-measles requires Int32 for integer columns (pop, etc.) and str for id."
                             parts.append(f"```\n{cleaned}\n```")
 
     md = "\n\n".join(parts)
-    md = re.sub(r'\n{3,}', '\n\n', md)
+    md = re.sub(r"\n{3,}", "\n\n", md)
     return md.strip()
 
 
@@ -126,10 +121,12 @@ def get_reference_pages(base: Path):
     if not ref_dir.exists():
         return []
     pages = sorted(ref_dir.rglob("index.html"))
+
     # Exclude pages under /base/ directories and base_* subdirectories (internal base classes)
     def is_base(p: Path) -> bool:
         parts = p.relative_to(ref_dir).parts
         return any(part == "base" or part.startswith("base_") for part in parts[:-1])  # exclude index.html itself
+
     return [p for p in pages if not is_base(p)]
 
 
