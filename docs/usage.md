@@ -1206,3 +1206,71 @@ sia_df = pl.DataFrame({
 # OR cast after construction
 sia_df = sia_df.with_columns(pl.col("date").str.to_date())
 ```
+
+### 18. `AgePyramidTracker` — reading the age distribution data
+
+`AgePyramidTracker` stores snapshots in its `.age_pyramid` dict, keyed by
+date string (`"YYYY-MM-DD"`), with numpy histogram arrays as values.
+There is no `.counts` attribute.
+
+```python
+from laser.measles.abm import AgePyramidTracker, AgePyramidTrackerParams
+
+model.add_component(AgePyramidTracker)   # default: yearly snapshots
+
+model.run()
+
+# Retrieve the tracker instance
+apt = model.get_instance(AgePyramidTracker)[0]
+
+# Iterate over snapshots  {date_str: np.ndarray of counts per age bin}
+for date_str, counts in apt.age_pyramid.items():
+    print(f"{date_str}: total tracked = {counts.sum()}, bins = {counts}")
+
+# Compare start vs end
+dates = sorted(apt.age_pyramid.keys())
+start_counts = apt.age_pyramid[dates[0]]
+end_counts   = apt.age_pyramid[dates[-1]]
+change = end_counts.astype(float) - start_counts.astype(float)
+```
+
+The bin edges are set by `AgePyramidTrackerParams.age_bins` (in days).
+Default bins come from `pyvd.constants.MORT_XVAL[::2]`.
+
+### 19. Per-patch attack rates from `StateTracker` (multi-patch models)
+
+When using a per-patch tracker (`aggregation_level=0`), the raw array has
+shape `(n_states, n_ticks, n_patches)`. To compute attack rates per patch
+at the end of a run:
+
+```python
+import numpy as np
+from laser.measles.abm import StateTracker, StateTrackerParams
+
+# Add per-patch tracker
+model.add_component(StateTracker,
+                    params=StateTrackerParams(aggregation_level=0))
+
+model.run()
+
+st = model.get_instance(StateTracker)[1]   # index 1 = per-patch tracker
+# state_tracker shape: (n_states, n_ticks, n_patches)
+arr = st.state_tracker   # e.g. shape (5, 365, 10) for 10 patches
+
+# State indices (check StateTracker docs for your model)
+S_IDX, I_IDX, R_IDX = 0, 2, 3   # typical ABM order: S E I R D
+
+initial_S = arr[S_IDX, 0, :]    # shape (n_patches,)
+final_R   = arr[R_IDX, -1, :]   # shape (n_patches,)
+pop       = initial_S            # approx total population per patch at t=0
+
+attack_rate = final_R / pop      # shape (n_patches,) — fraction ever infected
+
+# Pop must come from the scenario, NOT from tracker, for the denominator:
+pop_from_scenario = scenario["pop"].to_numpy()   # Int32 array, shape (n_patches,)
+attack_rate = final_R / pop_from_scenario.astype(float)
+```
+
+**Key rule**: the number of patches in the scenario must equal `n_patches`
+in the tracker array. Do not mix a 100-patch scenario with a tracker
+configured for 2 patches, or vice versa.
