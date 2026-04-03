@@ -18,7 +18,10 @@ jobs:
         python-version: '3.x'
 
     - name: Install MkDocs and dependencies
-      run: pip install ".[docs]"
+      run: pip install ".[docs,examples]"
+
+    - name: Convert tutorial .py files to notebooks
+      run: python docs/tutorials/convert_tutorials.py
 
     - name: Build MkDocs site
       run: mkdocs build
