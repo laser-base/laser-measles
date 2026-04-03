@@ -1,11 +1,7 @@
 # See https://docs.readthedocs.io/en/stable/config-file/v2.html for details
 version: 2
-sphinx:
-  configuration: docs/conf.py
-formats:
-  - htmlzip
-  - epub
-  - pdf
+mkdocs:
+  configuration: mkdocs.yml
 
 build:
   os: ubuntu-22.04
