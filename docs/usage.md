@@ -1521,3 +1521,29 @@ Or iterate:
 ```python
 first_array = next(iter(tracker.age_pyramid.values()))
 ```
+
+### 31. `numpy` has no `cummax` — use `np.maximum.accumulate`
+
+`np.cummax` does not exist in NumPy. The equivalent is `np.maximum.accumulate`:
+
+```python
+# WRONG
+result = np.cummax(arr)          # AttributeError: module 'numpy' has no attribute 'cummax'
+
+# CORRECT
+result = np.maximum.accumulate(arr)
+```
+
+### 32. `AgePyramidTracker.age_pyramid` key format — do not hardcode date strings
+
+The keys of `age_pyramid` are date strings generated internally and may not
+match the format you expect (e.g. `'2005-01-01'` vs `'2005-1-1'`). Always
+retrieve keys dynamically:
+
+```python
+keys = sorted(tracker.age_pyramid.keys())
+start_pyramid = tracker.age_pyramid[keys[0]]   # first snapshot
+end_pyramid   = tracker.age_pyramid[keys[-1]]  # last snapshot
+```
+
+Never do `tracker.age_pyramid['2005-01-01']` — use `keys[-1]` instead.
