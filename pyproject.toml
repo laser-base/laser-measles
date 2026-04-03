@@ -4,7 +4,7 @@ build-backend = "uv_build"
 
 [project]
 name = "laser.measles"
-version = "0.9.4"
+version = "0.10.0"
 license-files = ["LICENSE"]
 readme = "README.rst"
 
@@ -124,7 +124,7 @@ force-single-line = true
 quote-style = "double"
 
 [tool.bumpversion]
-current_version = "0.9.4"
+current_version = "0.10.0"
 parse = "(?P<major>\\d+)\\.(?P<minor>\\d+)\\.(?P<patch>\\d+)"
 serialize = ["{major}.{minor}.{patch}"]
 search = "{current_version}"
@@ -149,11 +149,6 @@ replace = 'version: "{new_version}"'
 filename = "pyproject.toml"
 search = 'version = "{current_version}"'
 replace = 'version = "{new_version}"'
-
-[[tool.bumpversion.files]]
-filename = "docs/conf.py"
-search = 'version = release = "{current_version}"'
-replace = 'version = release = "{new_version}"'
 
 [[tool.bumpversion.files]]
 filename = "src/laser/measles/__init__.py"
