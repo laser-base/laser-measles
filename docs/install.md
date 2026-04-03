@@ -20,7 +20,7 @@ The package supports several optional dependency groups that can be installed fo
 # Development dependencies (testing, linting)
 pip install laser-measles[dev]
 
-# Documentation dependencies (Sphinx, autodoc)
+# Documentation dependencies (MkDocs, mkdocstrings)
 pip install laser-measles[docs]
 
 # Example dependencies (Jupyter, notebooks, plotting)
@@ -39,8 +39,10 @@ pip install laser-measles[full]
 
 **docs**: Documentation building tools
 
-- sphinx-autodoc-typehints: Type hint documentation
-- sphinxcontrib-napoleon: Google/NumPy docstring support
+- mkdocs-material: MkDocs theme with extensive functionality
+- mkdocstrings-python: API reference generation from docstrings
+- mkdocs-jupyter: Jupyter notebook rendering
+- mkdocs-gen-files, mkdocs-literate-nav: Auto-generated API navigation
 
 **examples**: Tools for running examples and tutorials
 
