@@ -1274,3 +1274,73 @@ attack_rate = final_R / pop_from_scenario.astype(float)
 **Key rule**: the number of patches in the scenario must equal `n_patches`
 in the tracker array. Do not mix a 100-patch scenario with a tracker
 configured for 2 patches, or vice versa.
+
+### 20. `two_cluster_scenario` returns 100 patches by default (2 × 50)
+
+`two_cluster_scenario(n_nodes_per_cluster=50)` creates **100 patches** (2
+clusters × 50 nodes each). A per-patch StateTracker will have shape
+`(n_states, n_ticks, 100)`. Using a global tracker and indexing `[-1]`
+gives shape `(n_states,)` which cannot be divided by a 100-element pop array.
+
+```python
+from laser.measles.scenarios import two_cluster_scenario
+from laser.measles.biweekly import BiweeklyModel, BiweeklyParams
+from laser.measles.biweekly import StateTracker, StateTrackerParams
+
+scenario = two_cluster_scenario()   # 100 patches
+
+params = BiweeklyParams(...)
+model  = BiweeklyModel(scenario, params)
+
+# Add per-patch tracker
+model.add_component(StateTracker,
+                    params=StateTrackerParams(aggregation_level=0))
+model.run()
+
+st = model.get_instance(StateTracker)[0]
+arr = st.state_tracker                     # (n_states, n_ticks, 100)
+
+# Attack rate per patch (biweekly model state order: S=0, I=1, R=2)
+initial_S = arr[0,  0, :].astype(float)   # shape (100,)
+final_R   = arr[2, -1, :].astype(float)   # shape (100,)
+pop       = scenario["pop"].to_numpy().astype(float)   # shape (100,)
+attack_rate = (initial_S - arr[0, -1, :]) / pop        # fraction ever infected
+```
+
+For a smaller scenario pass `n_nodes_per_cluster`:
+```python
+scenario = two_cluster_scenario(n_nodes_per_cluster=5)  # 10 patches
+```
+
+### 21. Multiprocessing workers must be defined at module level
+
+Python's `multiprocessing` module uses pickle to transfer functions to worker
+processes. Functions defined inside another function (closures / nested defs)
+cannot be pickled and will raise:
+
+```
+AttributeError: Can't pickle local object 'run_all_models.<locals>.worker'
+```
+
+Define worker functions at the **top level** of the module, not inside
+another function:
+
+```python
+# WRONG — nested function cannot be pickled
+def run_all_models():
+    def worker(model_type):
+        ...
+    with Pool() as p:
+        results = p.map(worker, model_types)   # AttributeError
+
+# CORRECT — top-level function is picklable
+def _worker(model_type):
+    ...
+
+def run_all_models():
+    with Pool() as p:
+        results = p.map(_worker, model_types)  # works
+```
+
+Alternatively, use `concurrent.futures.ProcessPoolExecutor` with
+`functools.partial` if you need to pass extra arguments.
