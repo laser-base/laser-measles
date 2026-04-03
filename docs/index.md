@@ -15,10 +15,10 @@ pip install laser-measles
 
 **Recommended stable release: version 0.9**
 
-New users should install the v0.9 release, which is the current stable version:
+New users should install the latest 0.9.x release, which is the current stable version:
 
 ```bash
-pip install "laser-measles==0.9"
+pip install "laser-measles>=0.9.4,<1.0"
 ```
 
 Version 0.9 is the recommended starting point for all new projects. Development continues on the `main` branch, but v0.9 is the version that has been validated and is supported for most use cases.
@@ -38,7 +38,7 @@ JENNER-MEASLES can help you:
 
 !!! note
 
-    JENNER-MEASLES is currently pinned to **version 0.9** of laser-measles. If you are using a newer version, some details may differ.
+    JENNER-MEASLES is currently pinned to **version 0.9.4** of laser-measles. If you are using a newer version, some details may differ.
 
 Access requires a ChatGPT account and organization access. If you have access, this is the recommended on-ramp before diving into the documentation or source code.
 
