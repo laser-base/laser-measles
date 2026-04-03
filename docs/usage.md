@@ -1345,7 +1345,24 @@ def run_all_models():
 Alternatively, use `concurrent.futures.ProcessPoolExecutor` with
 `functools.partial` if you need to pass extra arguments.
 
-### 22. `SIACalendarParams.aggregation_level` must be ≥ 1
+### 22. Scenario helpers are in `laser.measles` or `laser.measles.scenarios`, not in subpackages
+
+Scenario generators (`single_patch_scenario`, `two_patch_scenario`,
+`two_cluster_scenario`, etc.) are exported from `laser.measles` and
+`laser.measles.scenarios`. They are **not** available from the model-specific
+subpackages (`laser.measles.abm`, `laser.measles.biweekly`, etc.).
+
+```python
+# WRONG — raises ImportError
+from laser.measles.abm import single_patch_scenario
+
+# CORRECT
+from laser.measles import single_patch_scenario
+# or
+from laser.measles.scenarios import single_patch_scenario
+```
+
+### 23. `SIACalendarParams.aggregation_level` must be ≥ 1
 
 `SIACalendarParams` validates that `aggregation_level >= 1`. Passing 0 raises:
 
@@ -1362,7 +1379,7 @@ params = SIACalendarParams(aggregation_level=1, sia_schedule=schedule_df, ...)
 
 For hierarchical IDs like `"country:state:lga"`, use `aggregation_level=3`.
 
-### 23. Custom components added via `add_component` must accept `verbose`
+### 24. Custom components added via `add_component` must accept `verbose`
 
 `ABMModel.add_component(ComponentClass)` instantiates the class as
 `ComponentClass(model, verbose=False)`. Any custom component class must
@@ -1381,7 +1398,7 @@ class MyTracker:
         # ...
 ```
 
-### 24. `model.people` has `date_of_birth`, not `age`
+### 25. `model.people` has `date_of_birth`, not `age`
 
 The ABM people LaserFrame stores `date_of_birth` (in ticks), not an `age`
 column. Accessing `model.people.age` raises `AttributeError`. To get age
@@ -1401,7 +1418,7 @@ age_years  = age_ticks / 365.0
 Available people properties: `state`, `susceptibility`, `patch_id`,
 `active`, `date_of_birth`, `date_of_vaccination`.
 
-### 25. Scenario `pop` column must be integer (`Int32`), not float
+### 26. Scenario `pop` column must be integer (`Int32`), not float
 
 The scenario DataFrame validator requires `pop` to be an integer type.
 Passing a float column raises:
@@ -1426,7 +1443,7 @@ scenario = pl.DataFrame({
 scenario = scenario.with_columns(pl.col("pop").cast(pl.Int32))
 ```
 
-### 26. polars `with_column` (singular) was removed — use `with_columns`
+### 27. polars `with_column` (singular) was removed — use `with_columns`
 
 Older polars had `DataFrame.with_column(expr)` (singular). Current polars only
 has `with_columns(*exprs)` (plural). Using the singular form raises:
@@ -1446,7 +1463,7 @@ df = df.with_column(pl.col("pop").cast(pl.Int32))
 df = df.with_columns(pl.col("pop").cast(pl.Int32))
 ```
 
-### 27. `get_mixing_matrix()` takes no arguments — pass `scenario` at construction
+### 28. `get_mixing_matrix()` takes no arguments — pass `scenario` at construction
 
 All mixing models (GravityMixing, RadiationMixing, etc.) accept the scenario
 at construction time, not at `get_mixing_matrix()` call time. Calling
@@ -1465,7 +1482,7 @@ mixer = RadiationMixing(scenario=scenario, params=RadiationParams())
 mixing_matrix = mixer.get_mixing_matrix()   # no arguments
 ```
 
-### 28. `lookup_state_idx` does not exist — use `params.states.index()`
+### 29. `lookup_state_idx` does not exist — use `params.states.index()`
 
 There is no `lookup_state_idx` function exported from `laser.measles`. To find
 state indices, use the `states` list on the model params:
@@ -1479,7 +1496,7 @@ R_IDX = params.states.index('R')
 
 For the biweekly model the default order is `['S', 'I', 'R']` (indices 0, 1, 2).
 
-### 29. `AgePyramidTracker.age_pyramid` is a dict keyed by date strings — not an array
+### 30. `AgePyramidTracker.age_pyramid` is a dict keyed by date strings — not an array
 
 `AgePyramidTracker.age_pyramid` returns a `dict[str, np.ndarray]` where the
 keys are date strings (e.g. `"2000-01-01"`). Indexing with an integer raises
