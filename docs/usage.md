@@ -1344,3 +1344,82 @@ def run_all_models():
 
 Alternatively, use `concurrent.futures.ProcessPoolExecutor` with
 `functools.partial` if you need to pass extra arguments.
+
+### 22. polars `with_column` (singular) was removed — use `with_columns`
+
+Older polars had `DataFrame.with_column(expr)` (singular). Current polars only
+has `with_columns(*exprs)` (plural). Using the singular form raises:
+
+```
+AttributeError: 'DataFrame' object has no attribute 'with_column'.
+Did you mean: 'with_columns'?
+```
+
+Always use the plural form:
+
+```python
+# WRONG
+df = df.with_column(pl.col("pop").cast(pl.Int32))
+
+# CORRECT
+df = df.with_columns(pl.col("pop").cast(pl.Int32))
+```
+
+### 23. `get_mixing_matrix()` takes no arguments — pass `scenario` at construction
+
+All mixing models (GravityMixing, RadiationMixing, etc.) accept the scenario
+at construction time, not at `get_mixing_matrix()` call time. Calling
+`mixer.get_mixing_matrix(scenario)` raises:
+
+```
+TypeError: BaseMixing.get_mixing_matrix() takes 1 positional argument but 2 were given
+```
+
+Correct pattern:
+
+```python
+from laser.measles import RadiationMixing, RadiationParams
+
+mixer = RadiationMixing(scenario=scenario, params=RadiationParams())
+mixing_matrix = mixer.get_mixing_matrix()   # no arguments
+```
+
+### 24. `lookup_state_idx` does not exist — use `params.states.index()`
+
+There is no `lookup_state_idx` function exported from `laser.measles`. To find
+state indices, use the `states` list on the model params:
+
+```python
+params = BiweeklyParams(...)   # or ABMParams, CompartmentalParams
+S_IDX = params.states.index('S')
+I_IDX = params.states.index('I')
+R_IDX = params.states.index('R')
+```
+
+For the biweekly model the default order is `['S', 'I', 'R']` (indices 0, 1, 2).
+
+### 25. `AgePyramidTracker.age_pyramid` is a dict keyed by date strings — not an array
+
+`AgePyramidTracker.age_pyramid` returns a `dict[str, np.ndarray]` where the
+keys are date strings (e.g. `"2000-01-01"`). Indexing with an integer raises
+`KeyError`:
+
+```python
+# WRONG — age_pyramid is not a list or array
+start_pyramid = tracker.age_pyramid[0]    # KeyError: 0
+end_pyramid   = tracker.age_pyramid[-1]   # KeyError: -1
+```
+
+Use dict access:
+
+```python
+keys = list(tracker.age_pyramid.keys())   # sorted date strings
+start_pyramid = tracker.age_pyramid[keys[0]]   # first recorded date
+end_pyramid   = tracker.age_pyramid[keys[-1]]  # last recorded date
+```
+
+Or iterate:
+
+```python
+first_array = next(iter(tracker.age_pyramid.values()))
+```
