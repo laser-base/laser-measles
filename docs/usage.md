@@ -1345,7 +1345,88 @@ def run_all_models():
 Alternatively, use `concurrent.futures.ProcessPoolExecutor` with
 `functools.partial` if you need to pass extra arguments.
 
-### 22. polars `with_column` (singular) was removed — use `with_columns`
+### 22. `SIACalendarParams.aggregation_level` must be ≥ 1
+
+`SIACalendarParams` validates that `aggregation_level >= 1`. Passing 0 raises:
+
+```
+ValueError: aggregation_level must be at least 1
+```
+
+Use `aggregation_level=1` for flat (single-level) hierarchies:
+
+```python
+from laser.measles.abm.components import SIACalendarParams
+params = SIACalendarParams(aggregation_level=1, sia_schedule=schedule_df, ...)
+```
+
+For hierarchical IDs like `"country:state:lga"`, use `aggregation_level=3`.
+
+### 23. Custom components added via `add_component` must accept `verbose`
+
+`ABMModel.add_component(ComponentClass)` instantiates the class as
+`ComponentClass(model, verbose=False)`. Any custom component class must
+accept `verbose` as a keyword argument or the framework raises:
+
+```
+TypeError: MyTracker.__init__() got an unexpected keyword argument 'verbose'
+```
+
+Always include `verbose=False` in custom component `__init__`:
+
+```python
+class MyTracker:
+    def __init__(self, model, verbose: bool = False):
+        self.model = model
+        # ...
+```
+
+### 24. `model.people` has `date_of_birth`, not `age`
+
+The ABM people LaserFrame stores `date_of_birth` (in ticks), not an `age`
+column. Accessing `model.people.age` raises `AttributeError`. To get age
+in years at a given tick:
+
+```python
+# WRONG
+age_years = model.people.age
+
+# CORRECT — date_of_birth is stored in ticks
+dob = model.people.date_of_birth[model.people.active.view(bool)]
+current_tick = model.params.num_ticks - 1
+age_ticks = current_tick - dob
+age_years  = age_ticks / 365.0
+```
+
+Available people properties: `state`, `susceptibility`, `patch_id`,
+`active`, `date_of_birth`, `date_of_vaccination`.
+
+### 25. Scenario `pop` column must be integer (`Int32`), not float
+
+The scenario DataFrame validator requires `pop` to be an integer type.
+Passing a float column raises:
+
+```
+ValueError: DataFrame validation error: Column 'pop' must be integer type
+```
+
+Cast `pop` to `Int32` when building a scenario:
+
+```python
+import polars as pl
+
+scenario = pl.DataFrame({
+    "id":   ["patch_0", "patch_1"],
+    "lat":  [0.0, 1.0],
+    "lon":  [0.0, 1.0],
+    "pop":  pl.Series([100_000, 50_000], dtype=pl.Int32),
+    "mcv1": [0.8, 0.7],
+})
+# or cast after the fact:
+scenario = scenario.with_columns(pl.col("pop").cast(pl.Int32))
+```
+
+### 26. polars `with_column` (singular) was removed — use `with_columns`
 
 Older polars had `DataFrame.with_column(expr)` (singular). Current polars only
 has `with_columns(*exprs)` (plural). Using the singular form raises:
@@ -1365,7 +1446,7 @@ df = df.with_column(pl.col("pop").cast(pl.Int32))
 df = df.with_columns(pl.col("pop").cast(pl.Int32))
 ```
 
-### 23. `get_mixing_matrix()` takes no arguments — pass `scenario` at construction
+### 27. `get_mixing_matrix()` takes no arguments — pass `scenario` at construction
 
 All mixing models (GravityMixing, RadiationMixing, etc.) accept the scenario
 at construction time, not at `get_mixing_matrix()` call time. Calling
@@ -1384,7 +1465,7 @@ mixer = RadiationMixing(scenario=scenario, params=RadiationParams())
 mixing_matrix = mixer.get_mixing_matrix()   # no arguments
 ```
 
-### 24. `lookup_state_idx` does not exist — use `params.states.index()`
+### 28. `lookup_state_idx` does not exist — use `params.states.index()`
 
 There is no `lookup_state_idx` function exported from `laser.measles`. To find
 state indices, use the `states` list on the model params:
@@ -1398,7 +1479,7 @@ R_IDX = params.states.index('R')
 
 For the biweekly model the default order is `['S', 'I', 'R']` (indices 0, 1, 2).
 
-### 25. `AgePyramidTracker.age_pyramid` is a dict keyed by date strings — not an array
+### 29. `AgePyramidTracker.age_pyramid` is a dict keyed by date strings — not an array
 
 `AgePyramidTracker.age_pyramid` returns a `dict[str, np.ndarray]` where the
 keys are date strings (e.g. `"2000-01-01"`). Indexing with an integer raises
