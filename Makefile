@@ -42,7 +42,7 @@ docs-executed-nbs:
 	@echo "Done: $(EXEC_DIR)/"
 
 # ── Full combined markdown pipeline ───────────────────────────────────────────
-docs-jenner: docs-build docs-executed-nbs
+docs-jenner: docs-executed-nbs docs-build
 	@echo "Generating combined markdown -> $(COMBINED) ..."
 	$(PYTHON) docs/concat_mkdocs.py $(SITE_DIR) $(EXEC_DIR) $(COMBINED)
 	@echo ""
