@@ -6,7 +6,7 @@ build-backend = "uv_build"
 name = "laser.measles"
 version = "0.10.0"
 license-files = ["LICENSE"]
-readme = "README.rst"
+readme = "README.md"
 
 dependencies = [
   "numba>=0.61.0",
@@ -42,7 +42,7 @@ maintainers = [
   {name = "Christopher Lorton"}
 ]
 description = "Spatial models of measles implemented with the LASER toolkit."
-readme = "README.rst"
+readme = "README.md"
 license = "MIT"
 keywords = ["measles", "spatial", "modeling", "laser"]
 classifiers = [
