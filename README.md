@@ -25,8 +25,8 @@ pip install "laser-measles>=0.10,<1.0"
 
 Version 0.10 is the recommended starting point for all new projects. Development continues on the `main` branch, but v0.10 is the version that has been validated and is supported for most use cases.
 
-Our recommended first example is the [Quick Start Tutorial](https://laser-measles.readthedocs.io/en/latest/tutorials/tut_quickstart_hello_world.html).
+Our recommended first example is the [Quick Start Tutorial]([https://laser-measles.readthedocs.io/en/latest/tutorials/tut_quickstart_hello_world.html](https://institutefordiseasemodeling.github.io/laser-measles/tutorials/tut_quickstart_hello_world/)).
 
 ## Documentation
 
-Full documentation is available at [laser-measles.readthedocs.io](https://laser-measles.readthedocs.io/en/latest/).
+Full documentation is available at [here](https://institutefordiseasemodeling.github.io/laser-measles/).
