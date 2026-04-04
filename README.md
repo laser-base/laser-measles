@@ -15,15 +15,15 @@ pip install laser-measles
 
 ## Getting Started
 
-**Recommended stable release: version 0.9**
+**Recommended stable release: version 0.10**
 
-New users should install the latest 0.9.x release, which is the current stable version:
+New users should install the latest 0.10.x release, which is the current stable version:
 
 ```bash
-pip install "laser-measles>=0.9.4,<1.0"
+pip install "laser-measles>=0.10,<1.0"
 ```
 
-Version 0.9 is the recommended starting point for all new projects. Development continues on the `main` branch, but v0.9 is the version that has been validated and is supported for most use cases.
+Version 0.10 is the recommended starting point for all new projects. Development continues on the `main` branch, but v0.10 is the version that has been validated and is supported for most use cases.
 
 Our recommended first example is the [Quick Start Tutorial](https://laser-measles.readthedocs.io/en/latest/tutorials/tut_quickstart_hello_world.html).
 
