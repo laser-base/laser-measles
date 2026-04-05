@@ -5,8 +5,37 @@ build-backend = "uv_build"
 [project]
 name = "laser.measles"
 version = "0.10.0"
+authors = [
+  {name = "Christopher Lorton"},
+  {name = "Jonathan Bloedow"},
+  {name = "Katherine Rosenfeld"},
+  {name = "Kevin McCarthy"},
+]
+maintainers = [
+  {name = "Christopher Lorton"}
+]
+description = "Spatial models of measles implemented with the LASER toolkit."
+license = "MIT"
 license-files = ["LICENSE"]
 readme = "README.md"
+keywords = ["measles", "spatial", "modeling", "laser"]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "Operating System :: Unix",
+    "Operating System :: POSIX",
+    "Operating System :: Microsoft :: Windows",
+    "Operating System :: MacOS",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: Implementation :: CPython",
+    "Topic :: Utilities",
+]
 
 dependencies = [
   "numba>=0.61.0",
@@ -31,37 +60,6 @@ requires-python = ">= 3.10"
 [tool.uv.build-backend]
 module-name = [ "laser.measles" ]
 source-include = ["AUTHORS.rst", "CHANGELOG.rst", "CONTRIBUTING.rst"]
-
-authors = [
-  {name = "Christopher Lorton"},
-  {name = "Jonathan Bloedow"},
-  {name = "Katherine Rosenfeld"},
-  {name = "Kevin McCarthy"},
-]
-maintainers = [
-  {name = "Christopher Lorton"}
-]
-description = "Spatial models of measles implemented with the LASER toolkit."
-readme = "README.md"
-license = "MIT"
-keywords = ["measles", "spatial", "modeling", "laser"]
-classifiers = [
-    "Development Status :: 5 - Production/Stable",
-    "Intended Audience :: Developers",
-    "Operating System :: Unix",
-    "Operating System :: POSIX",
-    "Operating System :: Microsoft :: Windows",
-    "Operating System :: MacOS",
-    "Programming Language :: Python",
-    "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3 :: Only",
-    "Programming Language :: Python :: 3.10",
-    "Programming Language :: Python :: 3.11",
-    "Programming Language :: Python :: 3.12",
-    "Programming Language :: Python :: 3.13",
-    "Programming Language :: Python :: Implementation :: CPython",
-    "Topic :: Utilities",
-]
 
 [project.urls]
 Homepage = "https://example.com"
