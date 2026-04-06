@@ -177,7 +177,6 @@ docs = [
     "mkdocstrings",
     "mkdocstrings-python",
     "mkdocs-table-reader-plugin",
-    "mkdocs-mermaid2-plugin",
     "mkdocs-exclude",
 ]
 examples = [
@@ -207,7 +206,6 @@ full = [
     "mkdocstrings",
     "mkdocstrings-python",
     "mkdocs-table-reader-plugin",
-    "mkdocs-mermaid2-plugin",
     "mkdocs-exclude",
     "jupytext>=1.17.2",
     "notebook>=7.4.3",
