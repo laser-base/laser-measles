@@ -104,10 +104,4 @@ Bug reports and feature requests can be filed on the [GitHub issue tracker](http
 
 -   :material-new-box:{ .lg .middle } __What's new__
 
-    ---
-
-    See what's in the latest releases.
-
-    [:octicons-arrow-right-24: What's new](whatsnew.md)
-
 </div>
