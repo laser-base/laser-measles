@@ -352,19 +352,13 @@ class BaseLaserModel(ABC):
         Args:
             component: A component class to be initialized and integrated into the model.
         """
-        if not isinstance(component, type):
-            raise TypeError(
-                f"add_component() expects a component class, not an instance. "
-                f"Got an instance of {type(component).__name__!r}. "
-                f"Pass the class itself, not a pre-constructed object."
-            )
         self._components.append(component)
         try:
             instance = component(self, verbose=getattr(self.params, "verbose", False))
         except TypeError as exc:
             if "verbose" in str(exc):
                 raise TypeError(
-                    f"{component.__name__}.__init__() does not accept a 'verbose' keyword argument. "
+                    f"{getattr(component, '__name__', repr(component))}.__init__() does not accept a 'verbose' keyword argument. "
                     f"Custom components must include 'verbose: bool = False' in their __init__ signature. "
                     f"Example: def __init__(self, model, verbose: bool = False): ..."
                 ) from exc
