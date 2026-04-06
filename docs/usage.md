@@ -1547,3 +1547,85 @@ end_pyramid   = tracker.age_pyramid[keys[-1]]  # last snapshot
 ```
 
 Never do `tracker.age_pyramid['2005-01-01']` — use `keys[-1]` instead.
+
+### 33. `CaseSurveillanceTracker` — correct class name
+
+The case surveillance tracker class is named `CaseSurveillanceTracker`, not
+`CaseSurveillance`. Importing the wrong name raises `ImportError`.
+
+```python
+# CORRECT
+from laser.measles.biweekly import CaseSurveillanceTracker, CaseSurveillanceParams
+```
+
+The params class is `CaseSurveillanceParams`. Both are available from
+`laser.measles.biweekly` (and equivalently from `laser.measles.biweekly.components`).
+
+### 34. Always print the mixing matrix — it will not appear automatically
+
+Mixing model objects (GravityMixing, RadiationMixing, etc.) compute the matrix
+when `get_mixing_matrix()` is called, but they do not print it automatically.
+You must explicitly print it to include it in the output:
+
+```python
+from laser.measles import GravityMixing, GravityParams
+
+mixer = GravityMixing(scenario=scenario, params=GravityParams())
+mixing_matrix = mixer.get_mixing_matrix()
+
+# Must print explicitly
+import numpy as np
+print("Mixing matrix:")
+print(np.array2string(mixing_matrix, precision=4, suppress_small=True))
+```
+
+### 35. Custom components added via `add_component` must accept `verbose`
+
+`ABMModel.add_component(ComponentClass)` calls
+`ComponentClass(model, verbose=False)`. Any custom component that does not
+accept `verbose` raises `TypeError: unexpected keyword argument 'verbose'`.
+
+Always include `verbose: bool = False` in `__init__`:
+
+```python
+class MyTracker:
+    def __init__(self, model, verbose: bool = False):
+        self.model = model
+```
+
+You do not need to inherit from `BaseComponent` — `add_component` will
+automatically assign `instance.name = MyTracker.__name__` if `name` is not
+already set, so `get_instance(MyTracker)` will work correctly.
+
+### 36. Never pass a plain dict as `params` to `create_component` or model constructors
+
+All params objects are Pydantic models, not plain dicts. Passing a dict
+raises `AttributeError` at runtime when the component accesses a field like
+`self.params.R0`.
+
+Always instantiate the typed class:
+
+```python
+from laser.measles.abm import InfectionParams
+
+model.components = [
+    create_component(InfectionProcess, params=InfectionParams(beta=1.2)),
+]
+```
+
+Do not write `params={"beta": 1.2}`.
+
+### 37. Do not use try/except import fallbacks or dict params as fallbacks
+
+Do not write defensive import chains like:
+
+```
+try:
+    from laser.measles.abm import InfectionParams
+except ImportError:
+    InfectionParams = None
+```
+
+and then fall back to passing dicts. If an import fails, fix the import
+path (see gotcha #2). Fallback patterns produce silently broken code that
+raises `AttributeError` at runtime when the component accesses param fields.

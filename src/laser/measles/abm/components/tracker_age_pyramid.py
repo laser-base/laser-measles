@@ -55,6 +55,23 @@ class AgePyramidTracker(BasePhase):
         else:
             raise ValueError(f"Frequency {self.params.frequency} not supported")
 
+    def __repr__(self) -> str:
+        keys = list(self.age_pyramid.keys())
+        n = len(keys)
+        if n == 0:
+            key_preview = "(no snapshots yet — run the model first)"
+        elif n <= 3:
+            key_preview = str(keys)
+        else:
+            key_preview = f"[{keys[0]!r}, ..., {keys[-1]!r}] ({n} snapshots)"
+        return (
+            f"AgePyramidTracker(snapshots={n}, keys={key_preview})\n"
+            f"  Access: tracker.age_pyramid  ->  dict[str, np.ndarray]\n"
+            f"  Usage:  keys = sorted(tracker.age_pyramid.keys())\n"
+            f"          start = tracker.age_pyramid[keys[0]]\n"
+            f"          end   = tracker.age_pyramid[keys[-1]]"
+        )
+
     def _get_age_pyramid(self, model: ABMModel, tick: int) -> dict:
         people = model.people
         idx = np.where(people.active)[0]
