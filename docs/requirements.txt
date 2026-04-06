@@ -10,7 +10,6 @@ mkdocs-jupyter # jupyter notebooks
 mkdocstrings # generate API reference from docstrings
 mkdocstrings-python # python handler for mkdocstrings
 mkdocs-table-reader-plugin # directly insert csv and other formats as tables
-mkdocs-mermaid2-plugin # Mermaid diagram support
 mkdocs-exclude # exclude files from the rendered docs tree
 jupytext
 markdownify
