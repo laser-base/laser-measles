@@ -113,12 +113,12 @@ jobs:
       with:
         python-version: "3.12"
     - name: Install dependencies
-      run: pip install ".[docs,examples]"
+      run: pip install ".[docs,examples]" bump-my-version
     - name: Build combined markdown
-      run: make PYTHON=python docs-jenner
+      run: make docs-jenner
     - name: Upload to GitHub Release
       env:
         GITHUB_TOKEN: ${{ github.token }}
       run: |
-        tag_name=v$(python -c "import laser.measles; print(laser.measles.__version__)")
+        tag_name=v$(bump-my-version show current_version)
         gh release upload "$tag_name" dist/combined_mkdocs.md
