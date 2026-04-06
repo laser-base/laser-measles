@@ -115,7 +115,7 @@ jobs:
     - name: Install dependencies
       run: pip install ".[docs,examples]"
     - name: Build combined markdown
-      run: make docs-jenner
+      run: make PYTHON=python docs-jenner
     - name: Upload to GitHub Release
       env:
         GITHUB_TOKEN: ${{ github.token }}
