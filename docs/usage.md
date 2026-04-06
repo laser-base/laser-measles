@@ -36,11 +36,11 @@ pip install -e ".[dev]"
 **Major Dependencies:**
 
 - `laser-core>=1.0.0`: Core LASER framework
-- `pydantic>=2.11.5`: Parameter validation and serialization
-- `polars>=1.30.0`: High-performance data manipulation
-- `alive-progress>=3.2.0`: Progress bars and status indicators
+- `pydantic>=2.0`: Parameter validation and serialization
+- `polars>=1.0.0`: High-performance data manipulation
+- `alive-progress>=3.0`: Progress bars and status indicators
 - `rastertoolkit>=0.3.11`: Raster data processing utilities
-- `patito>=0.8.3`: Polars DataFrame validation
+- `patito>=0.8`: Polars DataFrame validation
 
 ---
 

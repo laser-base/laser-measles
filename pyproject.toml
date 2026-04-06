@@ -38,21 +38,18 @@ classifiers = [
 ]
 
 dependencies = [
-  "numba>=0.61.0",
   "laser-core>=1.0.0",
-  "diskcache>=5.6.3",
-  "appdirs>=1.4.4",
-  "pydantic>=2.11.5",
-  "pycountry>=24.6.1",
-  "requests>=2.32.3",
-  "alive-progress>=3.2.0",
-  "sciris>=3.2.1",
-  "polars>=1.30.0",
-  "pyarrow>=20.0.0",
-  "rastertoolkit>=0.4.9",
-  "typer>=0.12.0",
-  "patito>=0.8.3",
-  "pyvd>=1.0.1",
+  "diskcache>=5.0",
+  "appdirs>=1.4",
+  "pydantic>=2.0",
+  "pycountry>=22.3",
+  "requests>=2.28",
+  "alive-progress>=3.0",
+  "polars>=1.0.0",
+  "rastertoolkit>=0.3.11",
+  "typer>=0.9",
+  "patito>=0.8",
+  "pyvd>=1.0",
 ]
 
 requires-python = ">= 3.10"
@@ -170,7 +167,6 @@ docs = [
     "mkdocstrings",
     "mkdocstrings-python",
     "mkdocs-table-reader-plugin",
-    "mkdocs-mermaid2-plugin",
     "mkdocs-exclude",
 ]
 examples = [
@@ -200,7 +196,6 @@ full = [
     "mkdocstrings",
     "mkdocstrings-python",
     "mkdocs-table-reader-plugin",
-    "mkdocs-mermaid2-plugin",
     "mkdocs-exclude",
     "jupytext>=1.17.2",
     "notebook>=7.4.3",
