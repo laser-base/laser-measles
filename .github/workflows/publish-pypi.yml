@@ -121,4 +121,4 @@ jobs:
         GITHUB_TOKEN: ${{ github.token }}
       run: |
         tag_name=v$(bump-my-version show current_version)
-        gh release upload "$tag_name" dist/combined_mkdocs.md
+        gh release upload --clobber "$tag_name" dist/combined_mkdocs.md
