@@ -98,3 +98,27 @@ jobs:
           echo "Release may already exist, attempting to upload artifacts"
           gh release upload "$tag_name" dist/*
         fi
+
+  docs-jenner:
+    name: Build and upload Jenner RAG artifact
+    needs:
+    - github-release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-python@v5
+      with:
+        python-version: "3.12"
+    - name: Install dependencies
+      run: pip install ".[docs,examples]"
+    - name: Build combined markdown
+      run: make docs-jenner
+    - name: Upload to GitHub Release
+      env:
+        GITHUB_TOKEN: ${{ github.token }}
+      run: |
+        tag_name=v$(python -c "import laser.measles; print(laser.measles.__version__)")
+        gh release upload "$tag_name" dist/combined_mkdocs.md
