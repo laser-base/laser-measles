@@ -154,12 +154,8 @@ model.run()
     **All three model constructors require both** `scenario` **and** `params`.
     There is no default — omitting `params` raises `TypeError` immediately:
 
-    ```python
-    # WRONG — raises TypeError: missing 1 required positional argument: 'params'
-    model = ABMModel(scenario=scenario)
-    model = BiweeklyModel(scenario=scenario)
-    model = CompartmentalModel(scenario=scenario)
-    ```
+    Do not pass only `scenario` to the constructor — omitting `params`
+    raises `TypeError: missing 1 required positional argument: 'params'`.
 
     Always create the `*Params` object first, then pass both to the constructor:
 
@@ -409,10 +405,8 @@ params = ABMParams(num_ticks=365, seed=42, start_time="2000-01")
     Passing a full date string raises a Pydantic `ValidationError` at
     construction time, before the simulation runs:
 
-    ```python
-    # WRONG — raises ValidationError: start_time must be in 'YYYY-MM' format
-    params = ABMParams(num_ticks=365, seed=42, start_time="2000-01-01")
-    ```
+    Do not pass a full date string like `"2000-01-01"` — it raises
+    `ValidationError: start_time must be in 'YYYY-MM' format`.
 
 ### Example 1 — ABM: single-patch outbreak with StateTracker
 
@@ -700,20 +694,27 @@ The same pattern applies to biweekly and compartmental — import directly from
     them from the shared `laser.measles.components` package or from the wrong
     model subpackage:
 
-    ```python
-    # WRONG — ImportError or wrong class
-    from laser.measles.components import InfectionParams     # ImportError
-    from laser.measles import InfectionParams                # ImportError
-    from laser.measles.components import SIACalendarProcess  # ImportError
-    from laser.measles.abm import single_patch_scenario      # ImportError
+    Do not import `InfectionParams` from `laser.measles.components` or from
+    `laser.measles` directly — those paths raise `ImportError`. Always import
+    model-specific classes from the correct model subpackage
+    (`laser.measles.abm`, `laser.measles.biweekly`, or
+    `laser.measles.compartmental`).
 
+    Do not import scenario helpers (`single_patch_scenario`,
+    `two_patch_scenario`, `two_cluster_scenario`) from `laser.measles.abm`
+    or any model subpackage — they are not there. Import them from
+    `laser.measles` or `laser.measles.scenarios`:
+
+    ```python
     # CORRECT — import each class from its own model subpackage
     from laser.measles.abm import InfectionParams            # ABM variant
     from laser.measles.biweekly import InfectionParams       # Biweekly variant
     from laser.measles.compartmental import InfectionParams  # Compartmental variant
 
-    # Scenario helpers live at the top level only:
+    # Scenario helpers live at the top level or laser.measles.scenarios:
     from laser.measles import single_patch_scenario, two_patch_scenario, two_cluster_scenario
+    # or equivalently:
+    from laser.measles.scenarios import single_patch_scenario
     ```
 
     `NoBirthsProcess` and `SIACalendarProcess` exist in the ABM subpackage only —
@@ -742,14 +743,9 @@ model.components = [
 The model internally instantiates the component classes when the list is
 assigned.
 
-```python
-# WRONG — TypeError: unexpected keyword argument "components"
-model = BiweeklyModel(
-    scenario=scenario,
-    params=params,
-    components=[...]
-)
-```
+Do not pass `components` as a constructor argument — it raises
+`TypeError: unexpected keyword argument "components"`. Always assign
+`model.components` as a separate statement after construction.
 
 This applies to all three model types:
 
@@ -765,10 +761,10 @@ object such as `lm`.
 Some tutorials or AI-generated examples use this alias, but it is not part
 of the package API.
 
-```python
-# WRONG — ImportError
-from laser.measles import lm
+Do not try `from laser.measles import lm` — it raises `ImportError`.
+Import the specific model class directly:
 
+```python
 # CORRECT
 from laser.measles.abm import ABMModel, ABMParams
 ```
@@ -825,10 +821,10 @@ Polars expects **Python primitive types** when constructing row-oriented
 DataFrames. Passing NumPy scalars can trigger `TypeError` or
 `DataOrientationWarning`.
 
-```python
-# WRONG
-rows.append([patch_id, tracker.I[:, p].max()])
+Do not pass NumPy scalar results (e.g. `tracker.I[:, p].max()`) directly
+to Polars DataFrame constructors — wrap with `int()` or call `.item()`:
 
+```python
 # CORRECT
 rows.append([patch_id, int(tracker.I[:, p].max())])
 ```
@@ -846,16 +842,17 @@ Components should be passed as **classes**, not instantiated objects.
 The model constructs the component instances internally.
 
 ```python
-# CORRECT
+# CORRECT — pass the class, not an instance
 model.components = [
     InfectionProcess
 ]
-
-# WRONG
-model.components = [
-    InfectionProcess()
-]
 ```
+
+Do not instantiate components before adding them. Neither
+`model.components = [InfectionProcess()]` nor
+`model.add_component(InfectionProcess())` works — the model
+constructs component instances internally. Passing an already-created
+instance causes `TypeError: 'InfectionProcess' object is not callable`.
 
 If parameters are needed, use `create_component`:
 
@@ -1023,13 +1020,10 @@ global_tracker = model.get_instance("StateTracker")[0]
 patch_tracker  = model.get_instance("StateTracker")[1]
 ```
 
-```python
-# WRONG — these attributes do not exist
-tracker.data
-tracker.results
-tracker.to_polars()
-tracker.df
-```
+The following attributes do not exist on any tracker and will raise
+`AttributeError`: `tracker.data`, `tracker.results`, `tracker.to_polars()`,
+`tracker.df`. Use `get_dataframe()` for global trackers or `.state_tracker`
+for per-patch trackers.
 
 ### 11. `VitalDynamicsProcess` must be the first component
 
@@ -1050,12 +1044,10 @@ model.add_component(InfectionProcess)
 model.add_component(StateTracker)
 ```
 
-```python
-# WRONG — VitalDynamicsProcess is not first; LaserFrame is already
-# initialized at the wrong capacity and will crash at runtime
-model.add_component(InitializeEquilibriumStatesProcess)
-model.add_component(VitalDynamicsProcess)   # too late
-```
+Do not add `InitializeEquilibriumStatesProcess` or any other component
+before `VitalDynamicsProcess`. If `VitalDynamicsProcess` is not first,
+the `LaserFrame` is already initialized at the wrong capacity and will
+crash at runtime.
 
 ### 12. `lat` and `lon` columns must be `Float64`, not `Int64`
 
@@ -1063,16 +1055,11 @@ The scenario schema requires `lat` and `lon` to be floating-point.
 Using Python's `range()` or integer literals produces `Int64` columns,
 which fail Polars schema validation when the model is constructed.
 
-```python
-# WRONG — list(range(N)) produces Int64; schema validation will fail
-scenario = pl.DataFrame({
-    "id":   [f"patch_{i}" for i in range(5)],
-    "pop":  [10_000] * 5,
-    "lat":  [0] * 5,            # Int64
-    "lon":  list(range(5)),     # Int64
-    "mcv1": [0.0] * 5,
-})
+Do not use `[0] * N` or `list(range(N))` for `lat`/`lon` columns —
+Python integer lists produce `Int64` which fails schema validation.
+Always use float literals:
 
+```python
 # CORRECT — explicit float literals
 scenario = pl.DataFrame({
     "id":   [f"patch_{i}" for i in range(5)],
@@ -1105,10 +1092,10 @@ Two dtype requirements that produce cryptic errors if violated:
 Python list comprehensions like `[0, 1, 2]` produce `Int64`, which fails
 schema validation. Use string patch IDs:
 
-```python
-# WRONG — Int64 id raises: Polars dtype Int64 does not match model field type
-scenario = pl.DataFrame({"id": [0, 1, 2], ...})
+Do not use integer lists for `id` — `[0, 1, 2]` produces `Int64` which
+fails schema validation. Always use string patch IDs:
 
+```python
 # CORRECT — string id
 scenario = pl.DataFrame({"id": ["patch_0", "patch_1", "patch_2"], ...})
 ```
@@ -1116,11 +1103,11 @@ scenario = pl.DataFrame({"id": ["patch_0", "patch_1", "patch_2"], ...})
 **`pop` (and all integer columns) must be `Int32`, not the default `Int64`.**
 Python integer lists and `np.array(...)` without a dtype both produce `Int64`:
 
+Do not use plain Python integer lists for `pop` — `[100_000, ...]`
+produces `Int64` which fails schema validation. Use `np.array(..., dtype=np.int32)`:
+
 ```python
 import numpy as np, polars as pl
-
-# WRONG — Int64 pop raises: Polars dtype Int64 does not match model field type
-scenario = pl.DataFrame({"pop": [100_000, 80_000, 60_000], ...})
 
 # CORRECT — explicit Int32 via numpy
 scenario = pl.DataFrame({
@@ -1143,11 +1130,11 @@ handle these dtypes correctly and are the safest way to build test scenarios.
 registers the `etimer` property on the population. Adding `TransmissionProcess`
 as a separate component causes a `ValueError: Property 'etimer' already exists`.
 
-```python
-# WRONG — TransmissionProcess is already created inside InfectionProcess
-model.add_component(TransmissionProcess)   # registers etimer
-model.add_component(InfectionProcess)      # tries to register etimer again → crash
+Do not add `TransmissionProcess` separately — `InfectionProcess` already
+creates it internally. Adding `TransmissionProcess` before or alongside
+`InfectionProcess` causes `ValueError: Property 'etimer' already exists`.
 
+```python
 # CORRECT — InfectionProcess is self-contained; add it alone
 model.add_component(InfectionProcess)
 ```
@@ -1163,12 +1150,12 @@ When you index into a tracker's `.S`, `.I`, `.R` (etc.) arrays you get a
 
 Always extract a Python scalar first:
 
-```python
-# WRONG — StateArray does not support format specs
-frac = tracker.I[tick]
-print(f"infected fraction: {frac:.4f}")   # TypeError
+Do not use `tracker.I[tick]` directly in f-string format specs like
+`f"{frac:.4f}"` — `StateArray` does not support format specs and raises
+`TypeError`. Always extract a Python scalar first:
 
-# CORRECT — call .item() to get a plain Python float
+```python
+# CORRECT — call float() or .item() to get a plain Python float
 frac = float(tracker.I[tick])              # or tracker.I[tick].item()
 print(f"infected fraction: {frac:.4f}")
 ```
@@ -1189,14 +1176,12 @@ InvalidOperationError: cannot compare 'date/datetime/time' to a string value
 
 Build the schedule with `datetime.date` objects (or cast the column):
 
+Do not use string literals like `"2024-06-01"` for the `date` column —
+polars raises `InvalidOperationError` when comparing a string column to
+a date. Always use `datetime.date` objects:
+
 ```python
 import datetime, polars as pl
-
-# WRONG — string dates cause a polars comparison error at runtime
-sia_df = pl.DataFrame({
-    "date": ["2024-06-01", "2025-06-01"],
-    ...
-})
 
 # CORRECT — use datetime.date objects
 sia_df = pl.DataFrame({
@@ -1325,14 +1310,12 @@ AttributeError: Can't pickle local object 'run_all_models.<locals>.worker'
 Define worker functions at the **top level** of the module, not inside
 another function:
 
-```python
-# WRONG — nested function cannot be pickled
-def run_all_models():
-    def worker(model_type):
-        ...
-    with Pool() as p:
-        results = p.map(worker, model_types)   # AttributeError
+Do not define worker functions inside another function (closures /
+nested defs) — they cannot be pickled and raise
+`AttributeError: Can't pickle local object`. Define the worker at the
+**top level** of the module:
 
+```python
 # CORRECT — top-level function is picklable
 def _worker(model_type):
     ...
@@ -1352,10 +1335,12 @@ Scenario generators (`single_patch_scenario`, `two_patch_scenario`,
 `laser.measles.scenarios`. They are **not** available from the model-specific
 subpackages (`laser.measles.abm`, `laser.measles.biweekly`, etc.).
 
-```python
-# WRONG — raises ImportError
-from laser.measles.abm import single_patch_scenario
+Do not import scenario helpers from `laser.measles.abm`,
+`laser.measles.biweekly`, or `laser.measles.compartmental` — they are
+not defined there and will raise `ImportError`. Always import them from
+`laser.measles` or `laser.measles.scenarios`:
 
+```python
 # CORRECT
 from laser.measles import single_patch_scenario
 # or
@@ -1404,10 +1389,10 @@ The ABM people LaserFrame stores `date_of_birth` (in ticks), not an `age`
 column. Accessing `model.people.age` raises `AttributeError`. To get age
 in years at a given tick:
 
-```python
-# WRONG
-age_years = model.people.age
+Do not access `model.people.age` — that attribute does not exist and raises
+`AttributeError`. Use `date_of_birth` (stored in ticks) instead:
 
+```python
 # CORRECT — date_of_birth is stored in ticks
 dob = model.people.date_of_birth[model.people.active.view(bool)]
 current_tick = model.params.num_ticks - 1
@@ -1455,10 +1440,9 @@ Did you mean: 'with_columns'?
 
 Always use the plural form:
 
-```python
-# WRONG
-df = df.with_column(pl.col("pop").cast(pl.Int32))
+Always use the plural form `with_columns` (not `with_column`):
 
+```python
 # CORRECT
 df = df.with_columns(pl.col("pop").cast(pl.Int32))
 ```
@@ -1502,11 +1486,8 @@ For the biweekly model the default order is `['S', 'I', 'R']` (indices 0, 1, 2).
 keys are date strings (e.g. `"2000-01-01"`). Indexing with an integer raises
 `KeyError`:
 
-```python
-# WRONG — age_pyramid is not a list or array
-start_pyramid = tracker.age_pyramid[0]    # KeyError: 0
-end_pyramid   = tracker.age_pyramid[-1]   # KeyError: -1
-```
+Do not index `age_pyramid` with integers — it is a dict, not a list.
+`tracker.age_pyramid[0]` raises `KeyError: 0`. Use dict access:
 
 Use dict access:
 
@@ -1526,10 +1507,10 @@ first_array = next(iter(tracker.age_pyramid.values()))
 
 `np.cummax` does not exist in NumPy. The equivalent is `np.maximum.accumulate`:
 
-```python
-# WRONG
-result = np.cummax(arr)          # AttributeError: module 'numpy' has no attribute 'cummax'
+Do not use `np.cummax` — it does not exist in NumPy and raises
+`AttributeError`. Use `np.maximum.accumulate` instead:
 
+```python
 # CORRECT
 result = np.maximum.accumulate(arr)
 ```
@@ -1547,3 +1528,46 @@ end_pyramid   = tracker.age_pyramid[keys[-1]]  # last snapshot
 ```
 
 Never do `tracker.age_pyramid['2005-01-01']` — use `keys[-1]` instead.
+
+### 33. Never pass a plain dict as `params` to `create_component` or model constructors
+
+All params objects (`ABMParams`, `BiweeklyParams`, `InfectionParams`, etc.)
+are **Pydantic models**, not plain dicts. Passing a dict raises
+`AttributeError` at runtime when the component accesses a field like
+`self.params.R0`.
+
+Always instantiate the typed params class:
+
+```python
+# CORRECT — use the typed Pydantic class
+from laser.measles.abm import InfectionParams, InfectionSeedingParams
+
+model.components = [
+    create_component(
+        InfectionSeedingProcess,
+        params=InfectionSeedingParams(target_patches=["patch_0"])
+    ),
+    create_component(
+        InfectionProcess,
+        params=InfectionParams(beta=1.2)
+    ),
+]
+```
+
+Do not write `params={"beta": 1.2}` — this will appear to work but fail
+when the component accesses `self.params.beta` as an attribute.
+
+### 34. Do not use try/except import blocks or dict fallbacks for params
+
+Do not write defensive import blocks like:
+
+```
+try:
+    InfectionParams = ...
+except ImportError:
+    InfectionParams = None
+```
+
+and then fall back to passing a dict as params. These fallback patterns
+produce broken code. If an import fails, fix the import path rather than
+working around it. Consult gotcha #2 for correct import paths.
