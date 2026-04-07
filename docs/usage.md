@@ -1615,6 +1615,22 @@ model.components = [
 
 Do not write `params={"beta": 1.2}`.
 
+### 38. `ABMModel` has no `initialize()` method — call `model.run()` directly
+
+Do not call `model.initialize()`. It does not exist and raises `AttributeError`:
+
+```
+AttributeError: 'ABMModel' object has no attribute 'initialize'
+```
+
+The correct pattern is simply:
+
+```python
+model.run()
+```
+
+`ABMModel.run()` handles all initialization internally before iterating ticks. There is no separate initialization step.
+
 ### 37. Do not use try/except import fallbacks or dict params as fallbacks
 
 Do not write defensive import chains like:
