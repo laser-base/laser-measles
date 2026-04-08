@@ -1152,7 +1152,7 @@ Always extract a Python scalar first:
 
 Do not use `tracker.I[tick]` directly in f-string format specs like
 `f"{frac:.4f}"` — `StateArray` does not support format specs and raises
-`TypeError`. Always extract a Python scalar first:
+`TypeError`.
 
 ```python
 # CORRECT — call float() or .item() to get a plain Python float
