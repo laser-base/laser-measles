@@ -1438,8 +1438,6 @@ AttributeError: 'DataFrame' object has no attribute 'with_column'.
 Did you mean: 'with_columns'?
 ```
 
-Always use the plural form:
-
 Always use the plural form `with_columns` (not `with_column`):
 
 ```python
