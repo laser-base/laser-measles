@@ -52,7 +52,6 @@ nav:
     - End-to-end tutorials:
       - Vaccination: tutorials/tut_vaccination.ipynb
   - API reference: reference/
-  - What's new: whatsnew.md
   - Authors: authors.md
 
 # icons, semantic markup, emojis
