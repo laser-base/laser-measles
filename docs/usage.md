@@ -1489,8 +1489,6 @@ keys are date strings (e.g. `"2000-01-01"`). Indexing with an integer raises
 Do not index `age_pyramid` with integers — it is a dict, not a list.
 `tracker.age_pyramid[0]` raises `KeyError: 0`. Use dict access:
 
-Use dict access:
-
 ```python
 keys = list(tracker.age_pyramid.keys())   # sorted date strings
 start_pyramid = tracker.age_pyramid[keys[0]]   # first recorded date
