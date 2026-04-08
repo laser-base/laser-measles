@@ -1536,7 +1536,9 @@ Always instantiate the typed params class:
 
 ```python
 # CORRECT — use the typed Pydantic class
-from laser.measles.abm import InfectionParams, InfectionSeedingParams
+from laser.measles.abm import InfectionProcess, InfectionParams
+from laser.measles.abm import InfectionSeedingProcess, InfectionSeedingParams
+from laser.measles import create_component
 
 model.components = [
     create_component(
