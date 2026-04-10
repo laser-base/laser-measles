@@ -1529,8 +1529,8 @@ Never do `tracker.age_pyramid['2005-01-01']` — use `keys[-1]` instead.
 
 All params objects (`ABMParams`, `BiweeklyParams`, `InfectionParams`, etc.)
 are **Pydantic models**, not plain dicts. Passing a dict raises
-`AttributeError` at runtime when the component accesses a field like
-`self.params.R0`.
+`AttributeError` immediately at model construction — `BaseLaserModel.__init__`
+accesses `params.verbose` and `params.start_time` before any component runs.
 
 Always instantiate the typed params class:
 
@@ -1552,8 +1552,8 @@ model.components = [
 ]
 ```
 
-Do not write `params={"beta": 1.2}` — this will appear to work but fail
-when the component accesses `self.params.beta` as an attribute.
+Do not write `params={"beta": 1.2}` — this will fail immediately at model
+construction with `AttributeError: 'dict' object has no attribute 'verbose'`.
 
 ### 34. Do not use try/except import blocks or dict fallbacks for params
 
