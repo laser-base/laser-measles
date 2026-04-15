@@ -206,42 +206,106 @@ class StateArray(np.ndarray):
         state_names: List of state compartment names (e.g., ["S", "E", "I", "R"])
     """
 
-    def __new__(cls, input_array, state_names=None):
-        obj = np.asarray(input_array).view(cls)
-        obj._state_names = state_names or []
-        obj._state_indices = {name: i for i, name in enumerate(obj._state_names)}
+    def __new__(cls, state_names: list[str], state_axis: int, source_array: np.ndarray | None = None, shape: tuple[int, ...] | None = None, dtype=np.int32, default=0):
+
+        if (source_array is not None) and (shape is not None):
+            raise ValueError("specify either source_array or shape, but not both")
+
+        if (source_array is None) and (shape is None):
+            raise ValueError("must specify either source_array or shape")
+
+        if state_axis < 0:
+            raise ValueError(f"state_axis must be >= 0, got {state_axis}")
+
+        shape = shape or source_array.shape
+
+        if state_axis >= len(shape):
+            raise ValueError(f"state_axis must be between >= 0 and < {len(shape)}, got {state_axis}")
+
+        if len(state_names) != shape[state_axis]:
+            raise ValueError(f"Number of states {len(state_names)} does not match array states dimension {shape[state_axis]}.")
+
+        if source_array is None:
+            source_array = np.full(shape, default, dtype=dtype)
+        arr = np.asarray(source_array)
+
+        for state in state_names:
+            if not state.isidentifier():
+                raise ValueError(f"Invalid state name: {state!r}")
+            if hasattr(np.ndarray, state):
+                raise ValueError(f"State name collides with ndarray attribute: {state!r}")
+
+        obj = arr.view(cls)
+        obj._state_axis = state_axis
+        obj._state_names = tuple(state_names)
+
+        def get_indexing(value):
+            """Get tuple representing an axis slice."""
+            # Example np.ndarray[:,n,:,:] actually calls np.ndarray.__getitem__(tuple)
+            # where tuple is (Slice(None), n, Slice(None), Slice(None))
+            # So, we build the required tuple here based on state_axis, the value of n, and shape
+            return tuple([slice(None) for i in range(state_axis)] + [value] + [slice(None) for i in range(state_axis+1, len(shape))])
+
+        # Instantiate and cache a np.ndarray view for each state.
+        obj._state_to_view = {state : obj.view(np.ndarray)[get_indexing(i)] for i, state in enumerate(state_names)}
+
         return obj
 
     def __array_finalize__(self, obj):
         if obj is None:
             return
-        self._state_names = getattr(obj, "_state_names", [])
-        self._state_indices = getattr(obj, "_state_indices", {})
+        self._state_names = getattr(obj, "_state_names", None)
+        self._state_to_view = getattr(obj, "_state_to_view", None)
+
+        return
 
     def __getattr__(self, name):
-        if name in self._state_indices:
-            return self[self._state_indices[name]]
-        raise AttributeError(f"'{self.__class__.__name__}' object has no attribute '{name}'")
+        # only called if regular attribute lookup fails
+
+        mapping = getattr(self, "_state_to_view", None)
+        if mapping is not None and name in mapping:
+            return mapping[name]
+
+        return object.__getattribute__(self, name)
 
     def __setattr__(self, name, value):
-        if name.startswith("_") or name in ["base", "dtype", "shape", "size", "ndim"]:
-            super().__setattr__(name, value)
-        elif hasattr(self, "_state_indices") and name in self._state_indices:
-            self[self._state_indices[name]] = cast_type(value, self.dtype)
-        else:
-            # For invalid state names, raise AttributeError
-            if hasattr(self, "_state_indices") and name not in ["base", "dtype", "shape", "size", "ndim"]:
+        # Intercept field assignment like x.E = ...
+        if name.startswith("_"):
+            object.__setattr__(self, name, value)
+            return
+
+        mapping = getattr(self, "_state_to_view", None)
+        if mapping is not None:
+            if name in mapping:
+                view = mapping[name]
+                view[...] = value
+                return
+            else:
+                if name in ["dtype", "shape"]:
+                    raise AttributeError(f"attribute '{name}' of 'laser.measles.utils.StateArray' objects is not writable")
                 raise AttributeError(f"'{self.__class__.__name__}' object has no attribute '{name}'")
-            super().__setattr__(name, value)
+
+        super().__setattr__(name, value)
+
+        return
+
+    def __getitem__(self, key):
+        return self.view(np.ndarray)[key]
 
     @property
     def state_names(self):
         """Return the list of state compartment names."""
-        return self._state_names.copy()
+        # We can just return the tuple, it's immutable
+        return self._state_names
+
+    @property
+    def state_axis(self):
+        """Get the axis index for the state compartments."""
+        return self._state_axis
 
     def get_state_index(self, name):
         """Get the numeric index for a state compartment name."""
-        return self._state_indices.get(name)
+        return self._state_names.index(name) if name in self._state_names else None
 
 
 def get_laserframe_properties(laserframe: LaserFrame):
