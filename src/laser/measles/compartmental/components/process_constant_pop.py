@@ -46,9 +46,6 @@ class ConstantPopProcess(BaseConstantPopProcess):
         # Get number of deaths per patch per state
         deaths = model.prng.poisson(lam=patches.states * self.mu_death, size=patches.states.shape)
 
-        # Get number of deaths per patch per state
-        deaths = model.prng.poisson(lam=patches.states * self.mu_death, size=patches.states.shape)
-
         # Same number of births
         births = deaths.sum(axis=0)
 
