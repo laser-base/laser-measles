@@ -1,6 +1,6 @@
 ---
 name: laser-measles
-description: Use when creating, modifying, or testing code built with laser-measles
+description: Use when working with laser-measles or the LASER framework for spatial measles modeling — including writing models (ABM, biweekly, or compartmental), debugging component or import errors, building scenarios, configuring spatial mixing, or analyzing simulation output. Trigger any time the user mentions laser-measles, LASER framework, measles modeling, spatial epidemiology with LASER, or uses imports like `laser.measles`.
 license: MIT
 metadata:
   author: "IDM"
@@ -39,6 +39,7 @@ Read individual rule files for detailed explanations and code examples on partic
 | [Vaccination Modeling Approaches](./rules/tut_vaccination.md) | tutorials | This tutorial demonstrates three approaches for modeling vaccination in laser-measles and explains when to use each one. |
 
 ## Other Resources
+
 For additional information, see:
-- Full Documentation: https://docs.inkeep.com/ (llms.txt and llms-full.txt available are available!)
-- GitHub Repo (Open Source): https://github.com/inkeep/agents
+- Full Documentation: https://laser-measles.readthedocs.io/en/latest/
+- GitHub Repo (Open Source): https://github.com/InstituteforDiseaseModeling/laser-measles

@@ -20,6 +20,7 @@ Read individual rule files for detailed explanations and code examples on partic
 {{RULES_TABLE}}
 
 ## Other Resources
+
 For additional information, see:
-- Full Documentation: https://docs.inkeep.com/ (llms.txt and llms-full.txt available are available!)
-- GitHub Repo (Open Source): https://github.com/inkeep/agents
+- Full Documentation: https://laser.idmod.org/laser-measles/
+- GitHub Repo (Open Source): https://github.com/laser-base/laser-measles

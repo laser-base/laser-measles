@@ -1,6 +1,6 @@
 # Laser-measles Skills
 
-Generated skills from the [laser-measles](https://github.com/InstituteforDiseaseModeling/laser-measles) documentation.
+Generated skills from the [laser-measles](https://github.com/laser-base/laser-measles) documentation.
 
 ## About
 
@@ -14,8 +14,8 @@ Each skill contains:
 
 | Skill | Description |
 | --- | --- |
-| [laser-measles](./skills/laser-measles/SKILL.md) | Use when creating, modifying, or testing code built with laser-measles |
+| [laser-measles](./skills/laser-measles/SKILL.md) | Use when working with laser-measles or the LASER framework for spatial measles modeling — including writing models (ABM, biweekly, or compartmental), debugging component or import errors, building scenarios, configuring spatial mixing, or analyzing simulation output. Trigger any time the user mentions laser-measles, LASER framework, measles modeling, spatial epidemiology with LASER, or uses imports like `laser.measles`. |
 
 ---
 
-*Auto-generated from [laser-measles](https://github.com/InstituteforDiseaseModeling/laser-measles). Do not edit directly.*
+*Auto-generated from [laser-measles](https://github.com/laser-base/laser-measles). Do not edit directly.*
