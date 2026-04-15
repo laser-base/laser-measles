@@ -98,7 +98,8 @@ class BaseStateTracker(BasePhase):
             state_names=model.params.states,
             shape=(len(model.params.states), model.params.num_ticks, num_groups),
             state_axis=0,
-            dtype=model.patches.states.dtype)
+            dtype=model.patches.states.dtype,
+        )
 
         # Dynamically create properties for each state
         for i, state in enumerate(model.params.states):

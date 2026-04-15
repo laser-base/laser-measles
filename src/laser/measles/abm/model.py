@@ -89,11 +89,7 @@ class ABMModel(BaseLaserModel):
 
         self.patches = PatchLaserFrame(capacity=len(scenario))
         # Create the state vector for each of the patches
-        self.patches.states = StateArray(
-            state_names=self.params.states,
-            shape=(len(self.params.states), len(scenario)),
-            state_axis=0
-        )
+        self.patches.states = StateArray(state_names=self.params.states, shape=(len(self.params.states), len(scenario)), state_axis=0)
 
         # Start with totally susceptible population
         self.patches.states.S[:] = scenario["pop"]  # All susceptible initially

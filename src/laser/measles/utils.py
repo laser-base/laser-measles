@@ -206,7 +206,15 @@ class StateArray(np.ndarray):
         state_names: List of state compartment names (e.g., ["S", "E", "I", "R"])
     """
 
-    def __new__(cls, state_names: list[str], state_axis: int, source_array: np.ndarray | None = None, shape: tuple[int, ...] | None = None, dtype=np.int32, default=0):
+    def __new__(
+        cls,
+        state_names: list[str],
+        state_axis: int,
+        source_array: np.ndarray | None = None,
+        shape: tuple[int, ...] | None = None,
+        dtype=np.int32,
+        default=0,
+    ):
 
         if (source_array is not None) and (shape is not None):
             raise ValueError("specify either source_array or shape, but not both")
@@ -244,10 +252,10 @@ class StateArray(np.ndarray):
             # Example np.ndarray[:,n,:,:] actually calls np.ndarray.__getitem__(tuple)
             # where tuple is (Slice(None), n, Slice(None), Slice(None))
             # So, we build the required tuple here based on state_axis, the value of n, and shape
-            return tuple([slice(None) for i in range(state_axis)] + [value] + [slice(None) for i in range(state_axis+1, len(shape))])
+            return tuple([slice(None) for i in range(state_axis)] + [value] + [slice(None) for i in range(state_axis + 1, len(shape))])
 
         # Instantiate and cache a np.ndarray view for each state.
-        obj._state_to_view = {state : obj.view(np.ndarray)[get_indexing(i)] for i, state in enumerate(state_names)}
+        obj._state_to_view = {state: obj.view(np.ndarray)[get_indexing(i)] for i, state in enumerate(state_names)}
 
         return obj
 

@@ -19,7 +19,11 @@ class TestStateArray:
 
         assert isinstance(states, np.ndarray)
         assert states.shape == (3, 10)
-        assert states.state_names == ("S", "I", "R",)
+        assert states.state_names == (
+            "S",
+            "I",
+            "R",
+        )
 
     def test_attribute_access(self):
         """Test accessing states by attribute names."""
@@ -174,6 +178,7 @@ class TestStateArray:
         prevalence = states.I / np.maximum(total_pop, 1)
         assert np.all(prevalence >= 0)
         assert np.all(prevalence <= 1)
+
 
 ##########
 
@@ -502,9 +507,7 @@ class TestNamedRead:
         for name in NAMES:
             row = getattr(arr, name)
             assert isinstance(row, np.ndarray), f"{name}: expected np.ndarray, got {type(row)}"
-            assert not isinstance(row, StateArray), (
-                f"{name}: returned a StateArray instead of a plain ndarray"
-            )
+            assert not isinstance(row, StateArray), f"{name}: returned a StateArray instead of a plain ndarray"
 
         return
 
@@ -1005,9 +1008,7 @@ class TestTicksStatesPatchesLayout:
         # when / then
         for i, name in enumerate(NAMES):
             slc = getattr(arr, name)
-            assert slc.shape == (NUM_TICKS, NUM_PATCHES), (
-                f"{name}: expected shape ({NUM_TICKS}, {NUM_PATCHES}), got {slc.shape}"
-            )
+            assert slc.shape == (NUM_TICKS, NUM_PATCHES), f"{name}: expected shape ({NUM_TICKS}, {NUM_PATCHES}), got {slc.shape}"
             assert np.all(slc == i + 1), f"{name}: expected all values {i + 1}"
 
         return
@@ -1122,9 +1123,7 @@ class TestTicksStatesPatchesLayout:
         # then
         for name in NAMES:
             if name != "V":
-                assert np.all(getattr(arr, name) == 0), (
-                    f"State {name!r} should be unaffected by writing to V"
-                )
+                assert np.all(getattr(arr, name) == 0), f"State {name!r} should be unaffected by writing to V"
 
         return
 
@@ -1213,9 +1212,7 @@ class TestStatesAgesPatchesLayout:
         # when / then
         for i, name in enumerate(NAMES):
             slc = getattr(arr, name)
-            assert slc.shape == (NUM_AGES, NUM_PATCHES), (
-                f"{name}: expected shape ({NUM_AGES}, {NUM_PATCHES}), got {slc.shape}"
-            )
+            assert slc.shape == (NUM_AGES, NUM_PATCHES), f"{name}: expected shape ({NUM_AGES}, {NUM_PATCHES}), got {slc.shape}"
             assert np.all(slc == i + 1), f"{name}: expected all values {i + 1}"
 
         return
@@ -1236,9 +1233,7 @@ class TestStatesAgesPatchesLayout:
         assert np.all(arr.I == 42)
         for name in NAMES:
             if name != "I":
-                assert np.all(getattr(arr, name) == 0), (
-                    f"State {name!r} should be unaffected by writing to I"
-                )
+                assert np.all(getattr(arr, name) == 0), f"State {name!r} should be unaffected by writing to I"
 
         return
 
@@ -1320,9 +1315,7 @@ class TestTicksStatesAgesPatchesLayout:
         assert np.all(arr.I == 42)
         for name in NAMES:
             if name != "I":
-                assert np.all(getattr(arr, name) == 0), (
-                    f"State {name!r} should be unaffected by writing to I"
-                )
+                assert np.all(getattr(arr, name) == 0), f"State {name!r} should be unaffected by writing to I"
 
         return
 
