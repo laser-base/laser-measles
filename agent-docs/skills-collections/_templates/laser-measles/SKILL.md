@@ -1,6 +1,6 @@
 ---
 name: laser-measles
-description: Use when creating, modifying, or testing code built with laser-measles
+description: Use when working with laser-measles or the LASER framework for spatial measles modeling — including writing models (ABM, biweekly, or compartmental), debugging component or import errors, building scenarios, configuring spatial mixing, or analyzing simulation output. Trigger any time the user mentions laser-measles, LASER framework, measles modeling, spatial epidemiology with LASER, or uses imports like `laser.measles`.
 license: MIT
 metadata:
   author: IDM
