@@ -1174,11 +1174,9 @@ to the current simulation date. If the column contains Python `str` values
 InvalidOperationError: cannot compare 'date/datetime/time' to a string value
 ```
 
-Build the schedule with `datetime.date` objects (or cast the column):
-
 Do not use string literals like `"2024-06-01"` for the `date` column —
 polars raises `InvalidOperationError` when comparing a string column to
-a date. Always use `datetime.date` objects:
+a date. Always use `datetime.date` objects (or cast the column):
 
 ```python
 import datetime, polars as pl
@@ -1307,9 +1305,6 @@ cannot be pickled and will raise:
 AttributeError: Can't pickle local object 'run_all_models.<locals>.worker'
 ```
 
-Define worker functions at the **top level** of the module, not inside
-another function:
-
 Do not define worker functions inside another function (closures /
 nested defs) — they cannot be pickled and raise
 `AttributeError: Can't pickle local object`. Define the worker at the
@@ -1385,12 +1380,9 @@ class MyTracker:
 
 ### 25. `model.people` has `date_of_birth`, not `age`
 
-The ABM people LaserFrame stores `date_of_birth` (in ticks), not an `age`
-column. Accessing `model.people.age` raises `AttributeError`. To get age
-in years at a given tick:
-
-Do not access `model.people.age` — that attribute does not exist and raises
-`AttributeError`. Use `date_of_birth` (stored in ticks) instead:
+Do not access `model.people.age` — the ABM people LaserFrame stores
+`date_of_birth` (in ticks), not an `age` column. Accessing `model.people.age`
+raises `AttributeError`. Use `date_of_birth` instead:
 
 ```python
 # CORRECT — date_of_birth is stored in ticks
@@ -1480,11 +1472,8 @@ For the biweekly model the default order is `['S', 'I', 'R']` (indices 0, 1, 2).
 
 ### 30. `AgePyramidTracker.age_pyramid` is a dict keyed by date strings — not an array
 
-`AgePyramidTracker.age_pyramid` returns a `dict[str, np.ndarray]` where the
-keys are date strings (e.g. `"2000-01-01"`). Indexing with an integer raises
-`KeyError`:
-
-Do not index `age_pyramid` with integers — it is a dict, not a list.
+Do not index `age_pyramid` with integers — it is a `dict[str, np.ndarray]`
+keyed by date strings (e.g. `"2000-01-01"`), not a list.
 `tracker.age_pyramid[0]` raises `KeyError: 0`. Use dict access:
 
 ```python
@@ -1500,8 +1489,6 @@ first_array = next(iter(tracker.age_pyramid.values()))
 ```
 
 ### 31. `numpy` has no `cummax` — use `np.maximum.accumulate`
-
-`np.cummax` does not exist in NumPy. The equivalent is `np.maximum.accumulate`:
 
 Do not use `np.cummax` — it does not exist in NumPy and raises
 `AttributeError`. Use `np.maximum.accumulate` instead:
@@ -1557,15 +1544,7 @@ construction with `AttributeError: 'dict' object has no attribute 'verbose'`.
 
 ### 34. Do not use try/except import blocks or dict fallbacks for params
 
-Do not write defensive import blocks like:
-
-```
-try:
-    InfectionParams = ...
-except ImportError:
-    InfectionParams = None
-```
-
-and then fall back to passing a dict as params. These fallback patterns
+Do not write defensive `try: ... except ImportError: InfectionParams = None`
+blocks and then fall back to passing a dict as params. These fallback patterns
 produce broken code. If an import fails, fix the import path rather than
 working around it. Consult gotcha #2 for correct import paths.
