@@ -200,20 +200,26 @@ class StateArray(np.ndarray):
         >>> states.S[0] = 1000  # Set susceptible population in patch 0
         >>> prevalence = states.I / states.sum(axis=0)  # Calculate prevalence
         >>> states[0] += births  # Numeric indexing still works
+        >>> N = states.sum(axis=states.state_axis)  # Sum over state axis to get total population per patch
 
     Args:
-        input_array: The numpy array to wrap
-        state_names: List of state compartment names (e.g., ["S", "E", "I", "R"])
+        state_names: List or tuple of state compartment names (e.g., ["S", "E", "I", "R"])
+        state_axis: The axis along which the state compartments are stored
+        source_array: The numpy array to wrap
+        shape: The shape of the array if source_array is not provided
+        dtype: The data type of the array
+        default_value: The default value to fill the array with if source_array is not provided
+
     """
 
     def __new__(
         cls,
-        state_names: list[str],
+        state_names: list[str] | tuple[str, ...],
         state_axis: int,
         source_array: np.ndarray | None = None,
         shape: tuple[int, ...] | None = None,
         dtype=np.int32,
-        default=0,
+        default_value=0,
     ):
 
         if (source_array is not None) and (shape is not None):
@@ -234,7 +240,8 @@ class StateArray(np.ndarray):
             raise ValueError(f"Number of states {len(state_names)} does not match array states dimension {shape[state_axis]}.")
 
         if source_array is None:
-            source_array = np.full(shape, default, dtype=dtype)
+            source_array = np.full(shape, default_value, dtype=dtype)
+
         arr = np.asarray(source_array)
 
         for state in state_names:
@@ -247,6 +254,17 @@ class StateArray(np.ndarray):
         obj._state_axis = state_axis
         obj._state_names = tuple(state_names)
 
+        StateArray._cache_state_views(obj)
+
+        return obj
+
+    @staticmethod
+    def _cache_state_views(obj):
+
+        state_axis = obj._state_axis
+        state_names = obj._state_names
+        shape = obj.shape
+
         def get_indexing(value):
             """Get tuple representing an axis slice."""
             # Example np.ndarray[:,n,:,:] actually calls np.ndarray.__getitem__(tuple)
@@ -257,13 +275,22 @@ class StateArray(np.ndarray):
         # Instantiate and cache a np.ndarray view for each state.
         obj._state_to_view = {state: obj.view(np.ndarray)[get_indexing(i)] for i, state in enumerate(state_names)}
 
-        return obj
+        return
 
     def __array_finalize__(self, obj):
         if obj is None:
             return
+        self._state_axis = getattr(obj, "_state_axis", None)
         self._state_names = getattr(obj, "_state_names", None)
-        self._state_to_view = getattr(obj, "_state_to_view", None)
+        self._state_to_view = None
+        if self._state_axis is not None and self._state_names is not None:
+            # This does not guarantee that the state views will be valid, but it
+            # is a best effort to cache them for any view that has the same shape
+            # along the state axis.
+            # If the shape along the state axis changes, the views will be invalid
+            # and will be recreated on demand in __getattr__.
+            if self._state_axis < self.ndim and self.shape[self._state_axis] == len(self._state_names):
+                StateArray._cache_state_views(self)
 
         return
 
@@ -313,7 +340,7 @@ class StateArray(np.ndarray):
 
     def get_state_index(self, name):
         """Get the numeric index for a state compartment name."""
-        return self._state_names.index(name) if name in self._state_names else None
+        return self._state_names.index(name) if (self._state_names is not None) and (name in self._state_names) else None
 
 
 def get_laserframe_properties(laserframe: LaserFrame):

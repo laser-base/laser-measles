@@ -182,10 +182,8 @@ class TestStateArray:
 
 ##########
 
-"""Tests for StateArray.
-
-Scenario: 6 epidemiological states (S, E, I, R, V, M) across 32 patches/locations.
-"""
+# Additional Tests for StateArray
+# Scenario: 6 epidemiological states (S, E, I, R, V, M) across 32 patches/locations.
 
 # ---------------------------------------------------------------------------
 # Constants
@@ -396,7 +394,7 @@ class TestAllocation:
         non-zero sentinel would receive silently wrong initial state.
         """
         # when
-        arr = StateArray(NAMES, 0, shape=(NUM_STATES, NUM_PATCHES), default=42)
+        arr = StateArray(NAMES, 0, shape=(NUM_STATES, NUM_PATCHES), default_value=42)
 
         # then
         assert np.all(arr == 42)
@@ -411,7 +409,7 @@ class TestAllocation:
         callers that rely on both being honoured simultaneously.
         """
         # when
-        arr = StateArray(NAMES, 0, shape=(NUM_STATES, NUM_PATCHES), dtype=np.float32, default=-1.0)
+        arr = StateArray(NAMES, 0, shape=(NUM_STATES, NUM_PATCHES), dtype=np.float32, default_value=-1.0)
 
         # then
         assert arr.dtype == np.dtype(np.float32)
@@ -455,7 +453,7 @@ class TestAllocation:
         whose named access is somehow broken, e.g. due to a missing finalize step.
         """
         # when
-        arr = StateArray(NAMES, 0, shape=(NUM_STATES, NUM_PATCHES), default=5)
+        arr = StateArray(NAMES, 0, shape=(NUM_STATES, NUM_PATCHES), default_value=5)
 
         # then
         for name in NAMES:
@@ -1316,6 +1314,105 @@ class TestTicksStatesAgesPatchesLayout:
         for name in NAMES:
             if name != "I":
                 assert np.all(getattr(arr, name) == 0), f"State {name!r} should be unaffected by writing to I"
+
+        return
+
+
+# Ways to create a StateArray according to NumPy subclassing rules:
+# - explicit constructor call StateArray(...)
+# - view casting: arr.view(StateArray)  # if arr is a compatible ndarray
+# - np.asarray(..., dtype=StateArray)  # if __array__ returns a StateArray instance
+# The latter two paths must produce a valid StateArray with the correct name registry, so we test them both here.
+
+
+class TestConstructionPaths:
+    """StateArray construction via explicit constructor, np.asarray with dtype, and view casting."""
+
+    # Well tested in all the cases above.
+    # def test_explicit_constructor(self):
+    #     return
+
+    def test_view_casting(self, sample_data):
+        """
+        arr = np.zeros((3,))
+        # take a view of it, as our subclass
+        state_array = arr.view(StateArray)
+        type(state_array)
+        """
+        # given
+        # sample_data
+
+        # when
+        state_arr = sample_data.view(StateArray)
+
+        # then
+        assert isinstance(state_arr, StateArray)
+        assert (
+            state_arr.state_names is None
+        )  # We don't have the machinery to reconstruct the state names from a view cast, so these should be None.
+        assert state_arr.state_axis is None  # Same for state_axis.
+        assert state_arr.get_state_index("V") is None  # And the name-to-view mapping should also be None.
+
+        return
+
+    def test_new_from_template(self):
+        """
+        v = c_arr[1:]
+        type(v) # the view is of type 'C'
+        v is not c_arr # but it's a new instance
+        """
+        # given
+        sa = StateArray(NAMES, 0, shape=(NUM_STATES, NUM_PATCHES))
+
+        # when
+        # take a view of it, as a new StateArray instance
+        new_arr = sa[1:]
+
+        # then
+        # The new view should be a plain ndarray, not a StateArray, because slicing
+        # should delegate directly to the underlying array and not preserve the
+        # subclass type _in our implementation_.
+        assert not isinstance(new_arr, StateArray)
+
+        return
+
+    def test_new_from_dtype(self, sample_data):
+        """
+        np.asarray(state_arr, dtype=StateArray)
+        """
+        # given
+        state_arr = StateArray(NAMES, 0, source_array=sample_data)
+
+        # when
+        arr_from_asarray = state_arr.astype(np.float64)
+
+        # then
+        assert isinstance(arr_from_asarray, StateArray)
+        assert arr_from_asarray.state_names == state_arr.state_names
+        assert arr_from_asarray.state_axis == state_arr.state_axis
+        assert arr_from_asarray._state_to_view.keys() == state_arr._state_to_view.keys()
+        assert np.array_equal(arr_from_asarray, sample_data)
+
+        return
+
+    def test_from_ufunc(self):
+        # given
+        sa = StateArray(NAMES, 0, shape=(NUM_STATES, NUM_PATCHES))
+        sa.S = 10_000
+        sa.E = 0
+        sa.I = 10
+        sa.R = 59_990
+        sa.V = 28_000
+        sa.M = 2_000
+
+        # when
+        normalized = sa / sa.sum(sa.state_axis)
+
+        # then
+        assert isinstance(normalized, StateArray)
+        assert normalized.state_names == sa.state_names
+        assert normalized.state_axis == sa.state_axis
+        assert normalized._state_to_view.keys() == sa._state_to_view.keys()
 
         return
 
