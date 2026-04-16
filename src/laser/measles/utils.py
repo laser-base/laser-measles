@@ -196,7 +196,7 @@ class StateArray(np.ndarray):
     numeric indexing (e.g., states[0], states[1]).
 
     Example:
-        >>> states = StateArray(np.zeros((3, 100)), state_names=["S", "I", "R"])
+        >>> states = StateArray(state_names=["S", "I", "R"], state_axis=0, shape=(3, 100))
         >>> states.S[0] = 1000  # Set susceptible population in patch 0
         >>> prevalence = states.I / states.sum(axis=0)  # Calculate prevalence
         >>> states[0] += births  # Numeric indexing still works

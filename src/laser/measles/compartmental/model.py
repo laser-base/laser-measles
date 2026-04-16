@@ -98,6 +98,7 @@ class CompartmentalModel(BaseLaserModel):
             state_names=self.params.states,
             shape=(len(self.params.states), len(scenario)),
             state_axis=0,
+            dtype=np.uint32,
         )
 
         # Start with totally susceptible population
