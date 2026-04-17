@@ -87,6 +87,7 @@ ignore = [
     "S603", # flake8-bandit subprocess-without-shell-equals-true
     "S607", # flake8-bandit start-process-with-partial-path
     "E501", # pycodestyle line-too-long
+    "UP017", # datetime-timezone-utc (not supported in Python 3.10)
 ]
 select = [
     "B", # flake8-bugbear

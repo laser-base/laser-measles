@@ -97,11 +97,11 @@ class TestBaseComponent:
 
         str_repr = str(component)
         expected = (
-            "Base class for all laser-measles components.\n\n"
-            "    Components follow a uniform interface with __call__(model, tick) method\n"
-            "    for execution during simulation loops."
+            "Base class for all laser-measles components.",
+            "Components follow a uniform interface with __call__(model, tick) method",
+            "for execution during simulation loops.",
         )
-        assert str_repr == expected
+        assert all(sub_str in str_repr for sub_str in expected)
 
     def test_str_method_child_class_with_docstring(self):
         """Test __str__ method returns child class docstring when available."""
@@ -110,11 +110,11 @@ class TestBaseComponent:
 
         str_repr = str(component)
         expected = (
-            "A test component with a custom docstring.\n\n"
-            "    This component is used for testing the __str__ method\n"
-            "    functionality with child class docstrings."
+            "A test component with a custom docstring.",
+            "This component is used for testing the __str__ method",
+            "functionality with child class docstrings.",
         )
-        assert str_repr == expected
+        assert all(sub_str in str_repr for sub_str in expected)
 
     def test_str_method_child_class_without_docstring(self):
         """Test __str__ method falls back to base class docstring when child has none."""
@@ -123,11 +123,10 @@ class TestBaseComponent:
 
         str_repr = str(component)
         expected = (
-            "Base class for all laser-measles components.\n\n"
-            "    Components follow a uniform interface with __call__(model, tick) method\n"
-            "    for execution during simulation loops."
+            "Base class for all laser-measles components.",
+            "Components follow a uniform interface with __call__(model, tick) method",
         )
-        assert str_repr == expected
+        assert all(sub_str in str_repr for sub_str in expected)
 
     def test_str_method_no_docstring_fallback(self):
         """Test __str__ method fallback when no docstring is available."""

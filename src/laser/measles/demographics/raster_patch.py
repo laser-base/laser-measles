@@ -4,8 +4,9 @@ You can use this to generate initial conditions (e.g, population, MCV1 coverage)
 laser-measles scenario.
 """
 
-from datetime import UTC
+# from datetime import UTC
 from datetime import datetime
+from datetime import timezone
 from pathlib import Path
 
 import alive_progress
@@ -129,7 +130,7 @@ class RasterPatchGenerator:
                         new_dict["pop"].append(v["pop"])
 
                     # Store data with timestamp
-                    c[cache_key] = {"data": new_dict, "timestamp": datetime.now(UTC).timestamp()}
+                    c[cache_key] = {"data": new_dict, "timestamp": datetime.now(timezone.utc).timestamp()}
 
             return pl.DataFrame(c[cache_key]["data"])
 
@@ -174,7 +175,7 @@ class RasterPatchGenerator:
                 new_values_raster_file.unlink()
 
                 # Store data with timestamp
-                c[cache_key] = {"data": mcv_dict, "timestamp": datetime.now(UTC).timestamp()}
+                c[cache_key] = {"data": mcv_dict, "timestamp": datetime.now(timezone.utc).timestamp()}
 
         mcv_dict = c[cache_key]["data"]
         new_dict = {"dotname": [], "lat": [], "lon": [], "mcv1": []}

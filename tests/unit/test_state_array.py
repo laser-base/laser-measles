@@ -367,7 +367,7 @@ class TestAllocation:
 
         # then
         assert arr.shape == (NUM_STATES, NUM_PATCHES)
-        assert arr.dtype == np.dtype(np.int32)
+        assert arr.dtype == np.dtype(np.uint32)
         assert np.all(arr == 0)
 
         return
@@ -973,7 +973,7 @@ class TestTicksStatesPatchesLayout:
 
         # then
         assert arr.shape == (NUM_TICKS, NUM_STATES, NUM_PATCHES)
-        assert arr.dtype == np.dtype(np.int32)
+        assert arr.dtype == np.dtype(np.uint32)
         assert np.all(arr == 0)
 
         return
@@ -1193,7 +1193,7 @@ class TestStatesAgesPatchesLayout:
 
         # then
         assert arr.shape == (NUM_STATES, NUM_AGES, NUM_PATCHES)
-        assert arr.dtype == np.dtype(np.int32)
+        assert arr.dtype == np.dtype(np.uint32)
         assert np.all(arr == 0)
 
         return
@@ -1273,7 +1273,7 @@ class TestTicksStatesAgesPatchesLayout:
 
         # then
         assert arr.shape == (NUM_TICKS, NUM_STATES, NUM_AGES, NUM_PATCHES)
-        assert arr.dtype == np.dtype(np.int32)
+        assert arr.dtype == np.dtype(np.uint32)
         assert np.all(arr == 0)
 
         return
