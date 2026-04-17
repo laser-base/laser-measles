@@ -231,7 +231,8 @@ class StateArray(np.ndarray):
         if state_axis < 0:
             raise ValueError(f"state_axis must be >= 0, got {state_axis}")
 
-        shape = shape or source_array.shape
+        if shape is None:
+            shape = source_array.shape
 
         if state_axis >= len(shape):
             raise ValueError(f"state_axis must be between >= 0 and < {len(shape)}, got {state_axis}")
@@ -288,7 +289,6 @@ class StateArray(np.ndarray):
             # is a best effort to cache them for any view that has the same shape
             # along the state axis.
             # If the shape along the state axis changes, the views will be invalid
-            # and will be recreated on demand in __getattr__.
             if self._state_axis < self.ndim and self.shape[self._state_axis] == len(self._state_names):
                 StateArray._cache_state_views(self)
 
@@ -301,12 +301,12 @@ class StateArray(np.ndarray):
         if mapping is not None and name in mapping:
             return mapping[name]
 
-        return object.__getattribute__(self, name)
+        return super().__getattribute__(name)
 
     def __setattr__(self, name, value):
         # Intercept field assignment like x.E = ...
         if name.startswith("_"):
-            object.__setattr__(self, name, value)
+            super().__setattr__(name, value)
             return
 
         mapping = getattr(self, "_state_to_view", None)

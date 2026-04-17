@@ -4,9 +4,9 @@ You can use this to generate initial conditions (e.g, population, MCV1 coverage)
 laser-measles scenario.
 """
 
-# from datetime import UTC
+# from datetime import UTC # reinstate this when we drop support for Python 3.10
 from datetime import datetime
-from datetime import timezone
+from datetime import timezone  # remove this when we drop support for Python 3.10
 from pathlib import Path
 
 import alive_progress

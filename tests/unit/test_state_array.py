@@ -1377,9 +1377,7 @@ class TestConstructionPaths:
         return
 
     def test_new_from_dtype(self, sample_data):
-        """
-        np.asarray(state_arr, dtype=StateArray)
-        """
+        """StateArray.astype(np.float64) preserves subclass metadata."""
         # given
         state_arr = StateArray(NAMES, 0, source_array=sample_data)
 
