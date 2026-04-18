@@ -1,103 +1,97 @@
-name: Publish to PyPI
+name: GitHub Release and Publish to PyPI
 
 on:
-  workflow_run:
-    workflows: ["Manual major/minor version bump and build"]
-    types:
-      - completed
+  push:
+    tags:
+      - "v*"
   workflow_dispatch:
 
 jobs:
   build:
-    name: Build distribution 📦
-    runs-on: ubuntu-latest
-
+    name: Build on (${{ matrix.os }}) 📦
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
     steps:
-    - uses: actions/checkout@v4
-    - name: Install uv
-      uses: astral-sh/setup-uv@v5
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: "3.12"
-    - name: Build sdist and wheel
-      run: uv build
-    # - name: Build platform wheels
-    #   uses: pypa/cibuildwheel@v2.16.2
-    #   env:
-    #     CIBW_BUILD: cp312-*
-    #     CIBW_ARCHS_LINUX: x86_64
-    # - name: Move wheels to dist directory
-    #   run: |
-    #     mkdir -p dist
-    #     cp wheelhouse/*.whl dist/
-    - name: Store the distribution packages
-      uses: actions/upload-artifact@v4
-      with:
-        name: python-package-distributions
-        path: dist/
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 0
 
-  publish-to-pypi:
-    name: >-
-      Publish Python 🐍 distribution 📦 to PyPI
-    needs:
-    - build
-    runs-on: ubuntu-latest
-    environment:
-      name: pypi
-      url: https://pypi.org/p/laser-measles
-    permissions:
-      id-token: write  # IMPORTANT: mandatory for trusted publishing
+      - name: Install UV
+        uses: astral-sh/setup-uv@cec208311dfd045dd5311c1add060b2062131d57 # v8.0.0
 
-    steps:
-    - name: Download all the dists
-      uses: actions/download-artifact@v4
-      with:
-        name: python-package-distributions
-        path: dist/
-    - name: Publish distribution 📦 to PyPI
-      uses: pypa/gh-action-pypi-publish@release/v1
+      - name: Build wheels
+        run: uv build --package laser.core --out-dir dist --sdist --wheel --python 3.12
+
+      - name: Store distribution packages
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: python-package-distributions-${{ matrix.os }}
+          path: dist/
 
   github-release:
     name: >-
-      Sign the Python 🐍 distribution 📦 with Sigstore
-      and upload them to GitHub Release
-    needs:
-    - publish-to-pypi
+      Sign Python 🐍 distribution 📦 with Sigstore and make GitHub Release
+    needs: build
     runs-on: ubuntu-latest
-
     permissions:
       contents: write  # IMPORTANT: mandatory for making GitHub Releases
       id-token: write  # IMPORTANT: mandatory for sigstore
 
     steps:
-    - uses: actions/checkout@v4
-    - name: Download all the dists
-      uses: actions/download-artifact@v4
-      with:
-        name: python-package-distributions
-        path: dist/
-    - name: Sign the dists with Sigstore
-      uses: sigstore/gh-action-sigstore-python@v3.0.0
-      with:
-        inputs: >-
-          ./dist/*.tar.gz
-          ./dist/*.whl
-    - name: Install bump-my-version
-      run: |
-        python3 -m pip install bump-my-version
-    - name: Create GitHub Release and Upload Artifacts
-      env:
-        GITHUB_TOKEN: ${{ github.token }}
-      run: |
-        tag_name=v$(bump-my-version show current_version)
-        # Create release or upload to existing release
-        if gh release create "$tag_name" dist/* --title "$tag_name" --notes "Automated release for $tag_name"; then
-          echo "Release created successfully"
-        else
-          echo "Release may already exist, attempting to upload artifacts"
-          gh release upload "$tag_name" dist/*
-        fi
+      - name: Checkout source code
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: "${{ github.ref_name }}"
+          fetch-depth: 1
+          fetch-tags: true
+
+      - name: Download dists
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          pattern: python-package-distributions-*
+          merge-multiple: true
+          path: dist/
+
+      - name: Sign with Sigstore
+        uses: sigstore/gh-action-sigstore-python@04cffa1d795717b140764e8b640de88853c92acc # v3.3.0
+        with:
+          inputs: >-
+            ./dist/*.tar.gz
+            ./dist/*.whl
+
+      - name: Create GitHub Release
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          git status
+          gh release create "${{ github.ref_name }}" dist/* \
+            --title "${{ github.ref_name }}" \
+            --notes "Automated release for ${{ github.ref_name }}"
+
+  publish-to-pypi:
+    name: >-
+      Publish Python 🐍 distribution 📦 to PyPI
+    needs: github-release
+    runs-on: ubuntu-latest
+    environment:
+      name: restricted # remove if v* tag protection is enabled with GitHub App as sole bypass
+      url: https://test.pypi.org/p/laser-measles
+    permissions:
+      id-token: write  # IMPORTANT: mandatory for trusted publishing
+
+    steps:
+      - name: Download dists
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          pattern: python-package-distributions-*
+          merge-multiple: true
+          path: dist/
+          verbose: true
+
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@cef221092ed1bacb1cc03d23a2d87d1d172e277b # v1.14.0
 
   docs-jenner:
     name: Build and upload Jenner RAG artifact
@@ -108,7 +102,9 @@ jobs:
       contents: write
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      with:
+        fetch-depth: 1
     - uses: actions/setup-python@v5
       with:
         python-version: "3.12"

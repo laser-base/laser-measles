@@ -1,32 +1,75 @@
-# https://github.com/callowayproject/bump-my-version
-name: Bump version
+name: Bump Version
+
 on:
   workflow_dispatch:
     inputs:
-      bump-type:
-        description: 'Bump type'
+      version_type:
+        description: 'Version bump type'
         required: true
         default: 'patch'
         type: choice
         options:
-        - major
-        - minor
-        - patch
+          - patch
+          - minor
+          - major
+
 jobs:
-  build:
+  approve:
+    name: Approve version bump
+    environment: restricted
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout the code
-        uses: actions/checkout@v4
-      - name: Bump version
-        id: bump
-        uses: callowayproject/bump-my-version@master
-        env:
-          BUMPVERSION_TAG: "true"
-        with:
-          args: ${{ inputs.bump-type }}
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-      - name: Check
-        if: steps.bump.outputs.bumped == 'true'
+      - name: Ensure running on main
         run: |
-          echo "Version was bumped from ${{ steps.bump.outputs.previous-version }} to ${{ steps.bump.outputs.current-version }}!"
+          if [ "${{ github.ref }}" != "refs/heads/main" ]; then
+            echo "This workflow must be run from main. Got: ${{ github.ref }}"
+            exit 1
+          fi
+
+      - name: Awaiting approval
+        run: echo "Approved."
+
+  version-bump:
+    name: Bump Version
+    needs: approve
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Generate GitHub App token
+        uses: actions/create-github-app-token@1b10c78c7865c340bc4f6099eb2f838309f1e8c3 # v3.1.1
+        id: app-token
+        with:
+          app-id: ${{ secrets.BOT_APP_ID }}
+          private-key: ${{ secrets.BOT_APP_PRIVATE_KEY }}
+
+      - name: Get GitHub App user info
+        id: app-user
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: |
+          APP_SLUG="${{ steps.app-token.outputs.app-slug }}"
+          APP_USER_ID=$(gh api "/users/${APP_SLUG}[bot]" --jq '.id')
+          echo "name=${APP_SLUG}[bot]" >> $GITHUB_OUTPUT
+          echo "id=${APP_USER_ID}" >> $GITHUB_OUTPUT
+
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 0
+          token: ${{ steps.app-token.outputs.token }}
+
+      - name: Set up Git identity
+        run: |
+          git config user.name "${{ steps.app-user.outputs.name }}"
+          git config user.email "${{ steps.app-user.outputs.id }}+${{ steps.app-user.outputs.name }}@users.noreply.github.com"
+
+      - name: Install UV
+        uses: astral-sh/setup-uv@cec208311dfd045dd5311c1add060b2062131d57 # v8.0.0
+
+      - name: Bump version
+        run: uvx --python 3.12 bump-my-version bump ${{ github.event.inputs.version_type }}
+
+      - name: Push
+        run: |
+          git push origin HEAD
+          git push origin --tags
