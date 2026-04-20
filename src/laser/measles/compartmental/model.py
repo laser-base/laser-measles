@@ -152,6 +152,12 @@ class CompartmentalModel(BaseLaserModel):
     def _setup_components(self) -> None:
         pass
 
+    @classmethod
+    def from_snapshot(cls, path, params, components=None, verbose=True):
+        """Load a CompartmentalModel from an HDF5 snapshot (alias for load_snapshot)."""
+        from laser.measles.compartmental.snapshot import load_snapshot
+        return load_snapshot(path, params, components=components, verbose=verbose)
+
 
 # Create an alias for CompartmentalModel as Model
 Model = CompartmentalModel
