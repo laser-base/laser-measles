@@ -32,6 +32,8 @@ jobs:
       Sign Python 🐍 distribution 📦 with Sigstore and make GitHub Release
     needs: build
     runs-on: ubuntu-latest
+    environment:
+      name: restricted # remove if v* tag protection is enabled with GitHub App as sole bypass
     permissions:
       contents: write  # IMPORTANT: mandatory for making GitHub Releases
       id-token: write  # IMPORTANT: mandatory for sigstore

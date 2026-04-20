@@ -1,6 +1,6 @@
 .PHONY: help docs-build docs-executed-nbs docs-jenner clean-docs
 
-PYTHON     ?= python3.11
+PYTHON     ?= python3.12
 SITE_DIR   ?= dist/mkdocs
 NBS_SRC    := docs/tutorials
 EXEC_DIR   ?= dist/executed_nbs
