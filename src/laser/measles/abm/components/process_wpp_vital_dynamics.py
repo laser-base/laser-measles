@@ -30,14 +30,27 @@ class WPPVitalDynamicsProcess(BasePhase):
         self.params = params
         self.wpp = WPP(self.params.country_code)
 
+        date_of_birth_dtype = np.int32
+        self.null_value = np.iinfo(date_of_birth_dtype).max
+
+        if getattr(model, "_from_snapshot", False):
+            # ── Snapshot-load path ────────────────────────────────────────────
+            # The people frame is already populated from the HDF5 file.
+            # Skip frame resizing, property creation, and age initialization;
+            # just rebuild the vaccination queue from agents with pending dates.
+            people = model.people
+            self.vaccination_queue = SortedQueue(capacity=people.capacity, values=people.date_of_vaccination)
+            pending = people.date_of_vaccination[: people.count].astype(np.int64) < self.null_value
+            for idx in np.where(pending)[0]:
+                self.vaccination_queue.push(int(idx))
+            return
+
+        # ── Normal (non-snapshot) initialization ─────────────────────────────
         # re-initialize people frame with correct capacity
         capacity = self.calculate_capacity(model=model)
         model.initialize_people_capacity(capacity=int(capacity), initial_count=model.scenario["pop"].sum())
 
         people = model.people
-
-        date_of_birth_dtype = np.int32
-        self.null_value = np.iinfo(date_of_birth_dtype).max
 
         if model.params.num_ticks >= self.null_value:
             raise ValueError("Simulation is too long; birth and vaccination dates must be able to store the number of ticks")

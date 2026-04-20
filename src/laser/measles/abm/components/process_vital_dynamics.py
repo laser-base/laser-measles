@@ -29,15 +29,35 @@ class VitalDynamicsProcess(BaseVitalDynamicsProcess):
         params_: VitalDynamicsParams = params or VitalDynamicsParams()
         super().__init__(model, verbose=verbose, params=params_)
 
+        date_of_birth_dtype = np.int32
+        self.null_value = np.iinfo(date_of_birth_dtype).max
+
+        if getattr(model, "_from_snapshot", False):
+            # ── Snapshot-load path ────────────────────────────────────────────
+            # The people frame is already populated from the HDF5 file.
+            # People properties are already present; skip re-adding them.
+            # patches are always freshly constructed, so add births property.
+            model.patches.add_scalar_property("births", dtype=np.uint32)
+            # Resize frame to accommodate projected births during the resumed run.
+            needed_capacity = self.calculate_capacity(model=model)
+            current_count = model.people.count
+            if model.people.capacity < needed_capacity:
+                model.initialize_people_capacity(needed_capacity, initial_count=current_count)
+            people = model.people
+            # Rebuild the vaccination queue from agents with pending dates.
+            self.vaccination_queue = SortedQueue(capacity=people.capacity, values=people.date_of_vaccination)
+            pending = people.date_of_vaccination[: people.count].astype(np.int64) < self.null_value
+            for idx in np.where(pending)[0]:
+                self.vaccination_queue.push(int(idx))
+            return
+
+        # ── Normal (non-snapshot) initialization ─────────────────────────────
         # re-initialize people frame with correct capacity
         capacity = self.calculate_capacity(model=model)
         model.initialize_people_capacity(capacity=capacity, initial_count=model.scenario["pop"].sum())
 
         people = model.people
         patches = model.patches
-
-        date_of_birth_dtype = np.int32
-        self.null_value = np.iinfo(date_of_birth_dtype).max
 
         people.add_scalar_property("active", dtype=np.bool, default=False)
         people.add_scalar_property("date_of_birth", dtype=date_of_birth_dtype, default=self.null_value)
@@ -122,6 +142,10 @@ class VitalDynamicsProcess(BaseVitalDynamicsProcess):
         return params.routine_immunization_delay * self.model.params.time_step_days
 
     def _initialize(self, model: ABMModel) -> None:
+        if getattr(model, "_from_snapshot", False):
+            # Population state (active, date_of_birth) already loaded from snapshot.
+            return
+
         # initialize the people laserframe with correct capacity
         # initial_pop = model.scenario["pop"].sum()
         # model.initialize_people_capacity(capacity=self.calculate_capacity(model), initial_count=initial_pop)

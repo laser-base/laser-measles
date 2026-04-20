@@ -209,6 +209,29 @@ class ABMModel(BaseLaserModel):
         yield
         return
 
+    @classmethod
+    def from_snapshot(cls, path, params: "ABMParams", components: list | None = None, verbose: bool = True) -> "ABMModel":
+        """
+        Restore an :class:`ABMModel` from an HDF5 snapshot file.
+
+        Convenience wrapper around :func:`laser.measles.abm.snapshot.load_snapshot`.
+
+        Args:
+            path: Path to the HDF5 file written by :func:`save_snapshot`.
+            params: :class:`ABMParams` for the resumed segment.  Set
+                ``start_time`` to the snapshot date and ``num_ticks`` to the
+                remaining simulation duration.
+            components: Ordered list of component *classes* — same as the
+                original model.
+            verbose: Print a loading summary.
+
+        Returns:
+            A configured :class:`ABMModel` ready for ``model.run()``.
+        """
+        from laser.measles.abm.snapshot import load_snapshot
+
+        return load_snapshot(path, params, components=components, verbose=verbose)
+
     def _setup_components(self) -> None:
         pass
 

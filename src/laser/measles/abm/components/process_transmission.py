@@ -160,8 +160,11 @@ class TransmissionProcess(BasePhase):
 
         # add new properties to the laserframes
         assert hasattr(model.people, "susceptibility")  # susceptibility factor
-        model.people.add_scalar_property("etimer", dtype=np.uint16, default=0)  # exposure timer
-        model.people.add_scalar_property("itimer", dtype=np.uint16, default=0)  # infection timer
+        if not getattr(model, "_from_snapshot", False):
+            # people properties already loaded from snapshot; skip re-adding
+            model.people.add_scalar_property("etimer", dtype=np.uint16, default=0)  # exposure timer
+            model.people.add_scalar_property("itimer", dtype=np.uint16, default=0)  # infection timer
+        # patches are always freshly constructed — add regardless of snapshot mode
         model.patches.add_scalar_property("incidence", dtype=np.uint32, default=0)  # new infections per time step
         return
 
