@@ -25,9 +25,10 @@ Notes:
     - Do **not** include ``InfectionSeedingProcess`` in the ``components`` list
       for a resumed run — infections are already encoded in the restored patch
       states.
-    - ``SIACalendarProcess`` does not persist its internal list of already-
-      applied campaigns; include it in the resumed components list only if you
-      want campaigns to fire again from the schedule.
+    - Snapshots persist ``SIACalendarProcess``'s ``implemented_sias`` state.
+      When resumed with ``SIACalendarProcess`` in the ``components`` list,
+      campaigns already applied before the snapshot will not fire again; only
+      campaigns not yet implemented in the schedule remain eligible.
 """
 
 from __future__ import annotations
