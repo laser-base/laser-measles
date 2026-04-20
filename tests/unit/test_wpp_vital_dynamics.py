@@ -86,8 +86,8 @@ def test_initial_age_pyramid(WPPModelZeroTicks):
     model_pyramid = np.histogram(0 - WPPModelZeroTicks.people.date_of_birth[idx], bins=age_bins)[0]
     vd = WPPModelZeroTicks.get_component(WPPVitalDynamicsProcess)[0]
     wpp_pyramid = vd.wpp.get_population_pyramid(WPPModelZeroTicks.start_time.year)
-    if DEBUG:
-        debug_plot_age_pyramid(WPPModelZeroTicks, age_bins, model_pyramid, wpp_pyramid)
+    # if DEBUG:
+    #     debug_plot_age_pyramid(WPPModelZeroTicks, age_bins, model_pyramid, wpp_pyramid)
     model_pyramid_samples = reconstruct_from_histogram(age_bins, model_pyramid)
     wpp_pyramid_samples = reconstruct_from_histogram(age_bins[1:], np.round(wpp_pyramid * (model_pyramid.sum() / wpp_pyramid.sum())))
     assert np.sum(model_pyramid) == len(idx)  # check that the pyramid captures everyone in the model
