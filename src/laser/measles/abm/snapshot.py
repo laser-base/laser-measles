@@ -41,7 +41,7 @@ if TYPE_CHECKING:
     from laser.measles.abm.model import ABMModel
     from laser.measles.abm.params import ABMParams
 
-__all__ = ["save_snapshot", "load_snapshot"]
+__all__ = ["load_snapshot", "save_snapshot"]
 
 # Null sentinel used by VitalDynamicsProcess / WPPVitalDynamicsProcess for
 # unscheduled dates.  Must match the value used in those components.
@@ -123,6 +123,17 @@ def save_snapshot(
         if cbr_per_1000 is not None:
             f.create_dataset("cbr_per_1000", data=float(cbr_per_1000))
 
+        # ── Persist SIACalendarProcess.implemented_sias ───────────────────────
+        all_sias: set[str] = set()
+        for inst in getattr(model, "instances", []):
+            if hasattr(inst, "implemented_sias"):
+                all_sias.update(str(s) for s in inst.implemented_sias)
+        if all_sias:
+            f.create_dataset(
+                "implemented_sias",
+                data=np.array([s.encode() for s in sorted(all_sias)]),
+            )
+
         scen_grp = f.create_group("scenario")
         scen_df = model.scenario.unwrap()
         for col in scen_df.columns:
@@ -177,6 +188,11 @@ def load_snapshot(
         snap_date = raw.decode() if isinstance(raw, bytes) else str(raw)
         patch_states = f["patch_states"][:]  # (n_states, n_patches)
         cbr_per_1000 = float(f["cbr_per_1000"][()]) if "cbr_per_1000" in f else None
+        implemented_sias: set[str] = set()
+        if "implemented_sias" in f:
+            implemented_sias = {
+                s.decode() if isinstance(s, bytes) else s for s in f["implemented_sias"][:]
+            }
 
         scen_grp = f["scenario"]
         scen_data: dict = {}
@@ -238,10 +254,17 @@ def load_snapshot(
     for comp_class in components:
         model.add_component(comp_class)
 
+    # ── Restore implemented_sias into any SIACalendarProcess instances ────────
+    if implemented_sias:
+        for inst in model.instances:
+            if hasattr(inst, "implemented_sias"):
+                inst.implemented_sias.update(implemented_sias)
+
     return model
 
 
 # ── Internal helpers ──────────────────────────────────────────────────────────
+
 
 def _normalize_vaccination_dates(people, t_snap: int) -> None:
     """

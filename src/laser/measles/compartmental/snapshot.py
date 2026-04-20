@@ -43,7 +43,7 @@ if TYPE_CHECKING:
     from laser.measles.compartmental.model import CompartmentalModel
     from laser.measles.compartmental.params import CompartmentalParams
 
-__all__ = ["save_snapshot", "load_snapshot"]
+__all__ = ["load_snapshot", "save_snapshot"]
 
 
 def save_snapshot(
@@ -73,6 +73,17 @@ def save_snapshot(
         f.create_dataset("t_snap", data=np.int32(t_snap))
         f.create_dataset("snap_date", data=snap_date)
         f.create_dataset("patch_states", data=patch_states)
+
+        # ── Persist SIACalendarProcess.implemented_sias ───────────────────────
+        all_sias: set[str] = set()
+        for inst in getattr(model, "instances", []):
+            if hasattr(inst, "implemented_sias"):
+                all_sias.update(str(s) for s in inst.implemented_sias)
+        if all_sias:
+            f.create_dataset(
+                "implemented_sias",
+                data=np.array([s.encode() for s in sorted(all_sias)]),
+            )
 
         scen_grp = f.create_group("scenario")
         scen_df = model.scenario.unwrap()
@@ -124,6 +135,11 @@ def load_snapshot(
         raw = f["snap_date"][()]
         snap_date = raw.decode() if isinstance(raw, bytes) else str(raw)
         patch_states = f["patch_states"][:]  # (n_states, n_patches)
+        implemented_sias: set[str] = set()
+        if "implemented_sias" in f:
+            implemented_sias = {
+                s.decode() if isinstance(s, bytes) else s for s in f["implemented_sias"][:]
+            }
 
         scen_grp = f["scenario"]
         scen_data: dict = {}
@@ -159,6 +175,12 @@ def load_snapshot(
 
     # Attach components
     model.components = components
+
+    # ── Restore implemented_sias into any SIACalendarProcess instances ────────
+    if implemented_sias:
+        for inst in model.instances:
+            if hasattr(inst, "implemented_sias"):
+                inst.implemented_sias.update(implemented_sias)
 
     if verbose:
         total_I = int(patch_states[params.states.index("I")].sum())
