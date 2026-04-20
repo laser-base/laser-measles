@@ -85,3 +85,5 @@ You can check that the bump versioning works by running:
 ```bash
 uvx bump-my-version bump minor --dry-run -vv
 ```
+
+**Note that actual version bumps should be run via the `publish-pypi.yml` GitHub action from the "Actions" tab of the repository (limited to repository administrators).**
