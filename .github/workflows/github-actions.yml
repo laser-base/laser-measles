@@ -64,11 +64,5 @@ jobs:
     - name: Install UV
       uses: astral-sh/setup-uv@cec208311dfd045dd5311c1add060b2062131d57 # v8.0.0
 
-    - name: Install tox
-      run: uv tool install tox --with tox-uv
-
     - name: regular build and test
-      env:
-        TOXPYTHON: '${{ matrix.toxpython }}'
-      run: >
-        uv tool run tox -e ${{ matrix.tox_env }} -v
+      run: uvx --with tox-uv tox -e ${{ matrix.tox_env }} -v

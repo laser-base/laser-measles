@@ -71,5 +71,5 @@ jobs:
 
       - name: Push
         run: |
-          git push origin HEAD
+          git push origin HEAD:refs/heads/main
           git push origin --tags
