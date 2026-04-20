@@ -10,9 +10,12 @@ Run directly:
     # → tests/unit/snapshot_continuity.png
 """
 
+import tempfile
 from pathlib import Path
 
 import matplotlib
+from matplotlib.lines import Line2D
+
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import matplotlib.ticker as mticker
@@ -29,12 +32,13 @@ from laser.measles.components import BaseStateTrackerParams
 
 # ── Scenario ──────────────────────────────────────────────────────────────────
 
-SNAP_TICKS = 55   # at epidemic peak (total I across all patches peaks ~tick 56)
-SEG2_TICKS = 50   # full post-peak decline visible
+SNAP_TICKS = 55  # at epidemic peak (total I across all patches peaks ~tick 56)
+SEG2_TICKS = 50  # full post-peak decline visible
 SEED = 42
 COMP_CLS = [InfectionSeedingProcess, InfectionProcess]
 
 PATCH_NAMES = ["urban", "rural_a", "rural_b"]
+
 
 def _scenario() -> pl.DataFrame:
     return pl.DataFrame(
@@ -42,7 +46,7 @@ def _scenario() -> pl.DataFrame:
             "id": PATCH_NAMES,
             "pop": [50_000, 20_000, 10_000],
             "lat": [0.0, 1.0, -1.0],
-            "lon": [0.0, 1.0,  1.0],
+            "lon": [0.0, 1.0, 1.0],
             "mcv1": [0.5, 0.4, 0.3],
         }
     )
@@ -54,6 +58,10 @@ def _scenario() -> pl.DataFrame:
 _TRACKER_PARAMS = BaseStateTrackerParams(aggregation_level=0)
 
 
+def _tracker_comp(model, verbose=False):
+    return StateTracker(model, verbose=verbose, params=_TRACKER_PARAMS)
+
+
 def _run_segment(scenario, params, snap_path=None, load_from=None):
     """
     Run one segment.  Returns (model, dataframe).
@@ -61,13 +69,11 @@ def _run_segment(scenario, params, snap_path=None, load_from=None):
     * If load_from is set, load from that snapshot file.
     * If snap_path is set, save a snapshot at the end.
     """
-    tracker_comp = lambda model, verbose=False: StateTracker(model, verbose=verbose, params=_TRACKER_PARAMS)
-
     if load_from is not None:
-        model = load_snapshot(load_from, params, components=COMP_CLS + [tracker_comp], verbose=True)
+        model = load_snapshot(load_from, params, components=[*COMP_CLS, _tracker_comp], verbose=True)
     else:
         model = lm.ABMModel(scenario, params)
-        model.components = COMP_CLS + [tracker_comp]
+        model.components = [*COMP_CLS, _tracker_comp]
 
     model.run()
 
@@ -82,9 +88,8 @@ def _run_segment(scenario, params, snap_path=None, load_from=None):
 
 # ── Main ──────────────────────────────────────────────────────────────────────
 
-def main():
-    import tempfile
 
+def main():
     with tempfile.TemporaryDirectory() as tmpdir:
         snap = Path(tmpdir) / "snap.h5"
         scenario = _scenario()
@@ -107,7 +112,7 @@ def main():
             show_progress=False,
             verbose=False,
         )
-        m2, df2 = _run_segment(scenario, p2, load_from=snap)
+        _, df2 = _run_segment(scenario, p2, load_from=snap)
 
     # Offset seg2 ticks so they continue from where seg1 left off
     df2 = df2.with_columns((pl.col("tick") + SNAP_TICKS).alias("tick"))
@@ -115,7 +120,7 @@ def main():
     df = pl.concat([df1, df2])
 
     # ── Plot ──────────────────────────────────────────────────────────────────
-    states = m1.params.states          # ["S", "E", "I", "R"]
+    states = m1.params.states  # ["S", "E", "I", "R"]
     # Preserve scenario order (not alphabetical)
     all_ids = PATCH_NAMES
     patches = [p for p in all_ids if p in df["patch_id"].unique().to_list()]
@@ -124,7 +129,8 @@ def main():
 
     colors = {"S": "#2196F3", "E": "#FF9800", "I": "#F44336", "R": "#4CAF50"}
     fig, axes = plt.subplots(
-        n_patches, n_states,
+        n_patches,
+        n_states,
         figsize=(4 * n_states, 3 * n_patches),
         sharex=True,
     )
@@ -168,20 +174,19 @@ def main():
                 ax.set_xlabel("tick")
 
     # Legend for boundary markers
-    from matplotlib.lines import Line2D
     legend_elements = [
         Line2D([0], [0], color="black", ls="--", lw=1.2, label="snapshot boundary"),
         Line2D([0], [0], marker="o", color="gray", ls="none", ms=6, label="seg1 last tick"),
         Line2D([0], [0], marker="x", color="gray", ls="none", ms=8, mew=2, label="seg2 first tick"),
     ]
-    fig.legend(handles=legend_elements, loc="upper center", ncol=3, fontsize=9,
-               bbox_to_anchor=(0.5, 1.03))
+    fig.legend(handles=legend_elements, loc="upper center", ncol=3, fontsize=9, bbox_to_anchor=(0.5, 1.03))
 
     fig.suptitle(
         f"Snapshot continuity — SEIR by patch\n"
         f"seg1={SNAP_TICKS} ticks, seg2={SEG2_TICKS} ticks, seed={SEED}\n"
         "Dots = seg1 last tick | ×s = seg2 first tick (should overlap exactly at boundary)",
-        fontsize=10, y=1.04,
+        fontsize=10,
+        y=1.04,
     )
     fig.tight_layout()
 

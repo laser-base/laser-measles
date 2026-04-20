@@ -155,7 +155,8 @@ class CompartmentalModel(BaseLaserModel):
     @classmethod
     def from_snapshot(cls, path, params, components=None, verbose=True):
         """Load a CompartmentalModel from an HDF5 snapshot (alias for load_snapshot)."""
-        from laser.measles.compartmental.snapshot import load_snapshot
+        from laser.measles.compartmental.snapshot import load_snapshot  # noqa: PLC0415
+
         return load_snapshot(path, params, components=components, verbose=verbose)
 
 

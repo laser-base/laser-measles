@@ -228,7 +228,7 @@ class ABMModel(BaseLaserModel):
         Returns:
             A configured :class:`ABMModel` ready for ``model.run()``.
         """
-        from laser.measles.abm.snapshot import load_snapshot
+        from laser.measles.abm.snapshot import load_snapshot  # noqa: PLC0415
 
         return load_snapshot(path, params, components=components, verbose=verbose)
 

@@ -125,7 +125,7 @@ def load_snapshot(
         A configured :class:`CompartmentalModel` instance.  Call
         ``model.run()`` to continue the simulation.
     """
-    from laser.measles.compartmental.model import CompartmentalModel
+    from laser.measles.compartmental.model import CompartmentalModel  # noqa: PLC0415
 
     path = Path(path)
     components = components or []
@@ -137,9 +137,7 @@ def load_snapshot(
         patch_states = f["patch_states"][:]  # (n_states, n_patches)
         implemented_sias: set[str] = set()
         if "implemented_sias" in f:
-            implemented_sias = {
-                s.decode() if isinstance(s, bytes) else s for s in f["implemented_sias"][:]
-            }
+            implemented_sias = {s.decode() if isinstance(s, bytes) else s for s in f["implemented_sias"][:]}
 
         scen_grp = f["scenario"]
         scen_data: dict = {}

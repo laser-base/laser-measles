@@ -15,12 +15,10 @@ Checks:
   - CompartmentalModel.from_snapshot classmethod alias works
 """
 
-import tempfile
-from pathlib import Path
+from typing import ClassVar
 
 import numpy as np
 import polars as pl
-import pytest
 
 import laser.measles as lm
 from laser.measles.compartmental import load_snapshot
@@ -29,11 +27,11 @@ from laser.measles.compartmental.components import InfectionProcess
 from laser.measles.compartmental.components import InfectionSeedingProcess
 from laser.measles.compartmental.components import VitalDynamicsProcess
 
-
 VERBOSE = False
 
 
 # ── Scenarios ─────────────────────────────────────────────────────────────────
+
 
 def _scenario() -> pl.DataFrame:
     return pl.DataFrame(
@@ -54,7 +52,7 @@ def _large_scenario() -> pl.DataFrame:
             "id": ["urban", "rural_a", "rural_b"],
             "pop": [50_000, 20_000, 10_000],
             "lat": [0.0, 1.0, -1.0],
-            "lon": [0.0, 1.0,  1.0],
+            "lon": [0.0, 1.0, 1.0],
             "mcv1": [0.5, 0.4, 0.3],
         }
     )
@@ -62,20 +60,20 @@ def _large_scenario() -> pl.DataFrame:
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
+
 def _seir_non_negative(model) -> None:
     for s in model.params.states:
-        assert (getattr(model.patches.states, s) >= 0).all(), (
-            f"Negative '{s}' counts"
-        )
+        assert (getattr(model.patches.states, s) >= 0).all(), f"Negative '{s}' counts"
 
 
 # ── Tests ─────────────────────────────────────────────────────────────────────
 
+
 class TestSnapshotBasic:
     """Round-trip with InfectionProcess only (no vital dynamics)."""
 
-    COMP_SEG1 = [InfectionSeedingProcess, InfectionProcess]
-    COMP_SEG2 = [InfectionProcess]  # no seeding in resumed run
+    COMP_SEG1: ClassVar = [InfectionSeedingProcess, InfectionProcess]
+    COMP_SEG2: ClassVar = [InfectionProcess]  # no seeding in resumed run
     TICKS_SEG1 = 30
     TICKS_SEG2 = 20
 
@@ -115,8 +113,8 @@ class TestSnapshotBasic:
 class TestSnapshotClassmethod:
     """CompartmentalModel.from_snapshot is a working alias for load_snapshot."""
 
-    COMP_SEG1 = [InfectionSeedingProcess, InfectionProcess]
-    COMP_SEG2 = [InfectionProcess]
+    COMP_SEG1: ClassVar = [InfectionSeedingProcess, InfectionProcess]
+    COMP_SEG2: ClassVar = [InfectionProcess]
 
     def test_from_snapshot(self, tmp_path):
         snap = tmp_path / "snap_classmethod.h5"
@@ -139,8 +137,8 @@ class TestSnapshotVitalDynamics:
 
     TICKS_SEG1 = 60
     TICKS_SEG2 = 30
-    COMP_SEG1 = [InfectionSeedingProcess, InfectionProcess, VitalDynamicsProcess]
-    COMP_SEG2 = [InfectionProcess, VitalDynamicsProcess]
+    COMP_SEG1: ClassVar = [InfectionSeedingProcess, InfectionProcess, VitalDynamicsProcess]
+    COMP_SEG2: ClassVar = [InfectionProcess, VitalDynamicsProcess]
 
     def test_roundtrip(self, tmp_path):
         snap = tmp_path / "snap_vital.h5"
@@ -164,12 +162,12 @@ class TestSnapshotTopLevelAPI:
     """save_snapshot / load_snapshot are importable from laser.measles.compartmental."""
 
     def test_imports(self):
-        from laser.measles.compartmental import load_snapshot, save_snapshot  # noqa: F401
         assert callable(save_snapshot)
         assert callable(load_snapshot)
 
 
 # ── Continuity test ───────────────────────────────────────────────────────────
+
 
 class TestSnapshotContinuity:
     """
@@ -183,10 +181,10 @@ class TestSnapshotContinuity:
       6. Run seg2 to completion and verify SEIR counts remain non-negative.
     """
 
-    SNAP_TICKS = 60   # at epidemic peak (total I peaks ~tick 60)
-    SEG2_TICKS = 55   # long enough to witness the full post-peak decline
-    COMP_SEG1 = [InfectionSeedingProcess, InfectionProcess]
-    COMP_SEG2 = [InfectionProcess]
+    SNAP_TICKS = 60  # at epidemic peak (total I peaks ~tick 60)
+    SEG2_TICKS = 55  # long enough to witness the full post-peak decline
+    COMP_SEG1: ClassVar = [InfectionSeedingProcess, InfectionProcess]
+    COMP_SEG2: ClassVar = [InfectionProcess]
 
     def test_seir_continuity_at_boundary(self, tmp_path):
         snap = tmp_path / "continuity.h5"
@@ -213,10 +211,7 @@ class TestSnapshotContinuity:
         # Epidemic must be active at the snapshot boundary.
         I_idx = m1.params.states.index("I")
         total_I = int(seir_end_seg1[I_idx].sum())
-        assert total_I > 0, (
-            f"No active infections at snapshot boundary (I={total_I}). "
-            "Increase SNAP_TICKS or seed more infections."
-        )
+        assert total_I > 0, f"No active infections at snapshot boundary (I={total_I}). Increase SNAP_TICKS or seed more infections."
 
         save_snapshot(m1, snap, verbose=VERBOSE)
 
@@ -282,7 +277,4 @@ class TestSnapshotContinuity:
         m2 = load_snapshot(snap, p2, components=self.COMP_SEG2, verbose=VERBOSE)
 
         total_pop_seg2 = int(m2.patches.states.sum(axis=0).sum())
-        assert total_pop_seg2 == total_pop_seg1, (
-            f"Total population changed at boundary: "
-            f"seg1={total_pop_seg1:,}, seg2={total_pop_seg2:,}"
-        )
+        assert total_pop_seg2 == total_pop_seg1, f"Total population changed at boundary: seg1={total_pop_seg1:,}, seg2={total_pop_seg2:,}"

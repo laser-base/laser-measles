@@ -15,26 +15,22 @@ Checks:
     the epidemic is active (I > 0) so the test cannot trivially pass
 """
 
-import tempfile
-from pathlib import Path
+from typing import ClassVar
 
 import numpy as np
 import polars as pl
-import pytest
 
 import laser.measles as lm
 from laser.measles.abm.components import InfectionProcess
 from laser.measles.abm.components import InfectionSeedingProcess
-from laser.measles.abm.components import VitalDynamicsParams
 from laser.measles.abm.components import VitalDynamicsProcess
 from laser.measles.abm.snapshot import load_snapshot
 from laser.measles.abm.snapshot import save_snapshot
-from laser.measles.components import create_component
-
 
 VERBOSE = False
 
 # ── Minimal 2-patch scenario ──────────────────────────────────────────────────
+
 
 def _scenario() -> pl.DataFrame:
     return pl.DataFrame(
@@ -50,6 +46,7 @@ def _scenario() -> pl.DataFrame:
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
+
 def _seir_consistent(model) -> bool:
     """Patch SEIR sums == number of active people per patch (if active prop exists)."""
     patch_total = model.patches.states.sum(axis=0)  # (n_patches,)
@@ -59,10 +56,11 @@ def _seir_consistent(model) -> bool:
 
 # ── Tests ─────────────────────────────────────────────────────────────────────
 
+
 class TestSnapshotNoBirths:
     """Round-trip with NoBirthsProcess (static population, no vital dynamics)."""
 
-    COMP = [InfectionSeedingProcess, InfectionProcess]
+    COMP: ClassVar = [InfectionSeedingProcess, InfectionProcess]
     TICKS_SEG1 = 30
     TICKS_SEG2 = 20
 
@@ -117,7 +115,7 @@ class TestSnapshotVitalDynamics:
     # Vital dynamics only — enough to exercise snapshot of people properties and
     # vaccination queue without triggering the known small-population overflow
     # that affects VitalDynamics + InfectionProcess in tiny scenarios.
-    COMP = [VitalDynamicsProcess]
+    COMP: ClassVar = [VitalDynamicsProcess]
 
     def test_roundtrip(self, tmp_path):
         snap = tmp_path / "snap_vital.h5"
@@ -163,16 +161,13 @@ class TestSnapshotVitalDynamics:
         null_val = int(np.iinfo(np.int32).max)
         pending = m2.people.date_of_vaccination[: m2.people.count].astype(np.int64) < null_val
         n_pending = int(pending.sum())
-        assert len(vd_inst.vaccination_queue) == n_pending, (
-            f"Queue length {len(vd_inst.vaccination_queue)} != pending agents {n_pending}"
-        )
+        assert len(vd_inst.vaccination_queue) == n_pending, f"Queue length {len(vd_inst.vaccination_queue)} != pending agents {n_pending}"
 
 
 class TestSnapshotTopLevelAPI:
     """save_snapshot / load_snapshot are importable from laser.measles directly."""
 
     def test_top_level_import(self):
-        import laser.measles as lm
         assert hasattr(lm, "save_snapshot")
         assert hasattr(lm, "load_snapshot")
 
@@ -190,6 +185,7 @@ class TestSnapshotTopLevelAPI:
 
 # ── Continuity test ───────────────────────────────────────────────────────────
 
+
 def _large_scenario() -> pl.DataFrame:
     """Larger scenario to ensure the epidemic is well under way at snap time."""
     return pl.DataFrame(
@@ -197,7 +193,7 @@ def _large_scenario() -> pl.DataFrame:
             "id": ["urban", "rural_a", "rural_b"],
             "pop": [50_000, 20_000, 10_000],
             "lat": [0.0, 1.0, -1.0],
-            "lon": [0.0, 1.0,  1.0],
+            "lon": [0.0, 1.0, 1.0],
             "mcv1": [0.5, 0.4, 0.3],
         }
     )
@@ -216,9 +212,9 @@ class TestSnapshotContinuity:
       6. Run seg2 to completion and verify SEIR counts remain non-negative.
     """
 
-    SNAP_TICKS = 55   # at epidemic peak (I is maximal around tick 56)
-    SEG2_TICKS = 50   # long enough to witness the full post-peak decline
-    COMP = [InfectionSeedingProcess, InfectionProcess]
+    SNAP_TICKS = 55  # at epidemic peak (I is maximal around tick 56)
+    SEG2_TICKS = 50  # long enough to witness the full post-peak decline
+    COMP: ClassVar = [InfectionSeedingProcess, InfectionProcess]
 
     def test_seir_continuity_at_boundary(self, tmp_path):
         snap = tmp_path / "continuity.h5"
@@ -247,10 +243,7 @@ class TestSnapshotContinuity:
         # Epidemic must be active at the snapshot boundary.
         I_idx = m1.params.states.index("I")
         total_I = int(seir_end_seg1[I_idx].sum())
-        assert total_I > 0, (
-            f"No active infections at snapshot boundary (I={total_I}). "
-            "Increase SNAP_TICKS or seed more infections."
-        )
+        assert total_I > 0, f"No active infections at snapshot boundary (I={total_I}). Increase SNAP_TICKS or seed more infections."
 
         save_snapshot(m1, snap, verbose=VERBOSE)
 
@@ -284,9 +277,7 @@ class TestSnapshotContinuity:
         # ── Seg2 runs cleanly ──────────────────────────────────────────────────
         m2.run()
         for s in m2.params.states:
-            assert (getattr(m2.patches.states, s) >= 0).all(), (
-                f"Negative '{s}' counts after seg2 run"
-            )
+            assert (getattr(m2.patches.states, s) >= 0).all(), f"Negative '{s}' counts after seg2 run"
 
     def test_people_count_boundary(self, tmp_path):
         """
@@ -320,6 +311,5 @@ class TestSnapshotContinuity:
         m2 = load_snapshot(snap, p2, components=self.COMP, verbose=VERBOSE)
 
         assert m2.people.count == count_after_snap, (
-            f"People count changed at boundary: "
-            f"seg1 post-squash={count_after_snap}, seg2 start={m2.people.count}"
+            f"People count changed at boundary: seg1 post-squash={count_after_snap}, seg2 start={m2.people.count}"
         )

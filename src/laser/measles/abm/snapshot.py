@@ -175,8 +175,8 @@ def load_snapshot(
         A configured :class:`ABMModel` instance.  Call ``model.run()`` to
         continue the simulation.
     """
-    from laser.measles.abm.base import PeopleLaserFrame
-    from laser.measles.abm.model import ABMModel
+    from laser.measles.abm.base import PeopleLaserFrame  # noqa: PLC0415
+    from laser.measles.abm.model import ABMModel  # noqa: PLC0415
 
     path = Path(path)
     components = components or []
@@ -187,12 +187,9 @@ def load_snapshot(
         raw = f["snap_date"][()]
         snap_date = raw.decode() if isinstance(raw, bytes) else str(raw)
         patch_states = f["patch_states"][:]  # (n_states, n_patches)
-        cbr_per_1000 = float(f["cbr_per_1000"][()]) if "cbr_per_1000" in f else None
         implemented_sias: set[str] = set()
         if "implemented_sias" in f:
-            implemented_sias = {
-                s.decode() if isinstance(s, bytes) else s for s in f["implemented_sias"][:]
-            }
+            implemented_sias = {s.decode() if isinstance(s, bytes) else s for s in f["implemented_sias"][:]}
 
         scen_grp = f["scenario"]
         scen_data: dict = {}
@@ -219,8 +216,6 @@ def load_snapshot(
         cast_exprs.append(pl.col("id").cast(pl.String))
     if cast_exprs:
         scenario_df = scenario_df.with_columns(cast_exprs)
-
-    n_patches = patch_states.shape[1]
 
     # ── Load people LaserFrame ────────────────────────────────────────────────
     # Always use cbr=None so laser-core doesn't require a 'node_id' property

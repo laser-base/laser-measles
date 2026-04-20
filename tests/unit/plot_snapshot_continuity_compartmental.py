@@ -10,9 +10,12 @@ Run directly:
     # → tests/unit/snapshot_continuity_compartmental.png
 """
 
+import tempfile
 from pathlib import Path
 
 import matplotlib
+from matplotlib.lines import Line2D
+
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import matplotlib.ticker as mticker
@@ -29,11 +32,12 @@ from laser.measles.components import BaseStateTrackerParams
 
 # ── Scenario ──────────────────────────────────────────────────────────────────
 
-SNAP_TICKS = 60   # at epidemic peak (total I peaks ~tick 60)
-SEG2_TICKS = 55   # full post-peak decline visible
+SNAP_TICKS = 60  # at epidemic peak (total I peaks ~tick 60)
+SEG2_TICKS = 55  # full post-peak decline visible
 SEED = 42
 
 PATCH_NAMES = ["urban", "rural_a", "rural_b"]
+
 
 def _scenario() -> pl.DataFrame:
     return pl.DataFrame(
@@ -41,7 +45,7 @@ def _scenario() -> pl.DataFrame:
             "id": PATCH_NAMES,
             "pop": [50_000, 20_000, 10_000],
             "lat": [0.0, 1.0, -1.0],
-            "lon": [0.0, 1.0,  1.0],
+            "lon": [0.0, 1.0, 1.0],
             "mcv1": [0.5, 0.4, 0.3],
         }
     )
@@ -50,14 +54,16 @@ def _scenario() -> pl.DataFrame:
 _TRACKER_PARAMS = BaseStateTrackerParams(aggregation_level=0)
 
 
-def _run_segment(scenario, params, snap_path=None, load_from=None, comp_seg1=None, comp_seg2=None):
-    tracker_cls = lambda model, verbose=False: StateTracker(model, verbose=verbose, params=_TRACKER_PARAMS)
+def _tracker_cls(model, verbose=False):
+    return StateTracker(model, verbose=verbose, params=_TRACKER_PARAMS)
 
+
+def _run_segment(scenario, params, snap_path=None, load_from=None, comp_seg1=None, comp_seg2=None):
     if load_from is not None:
-        model = load_snapshot(load_from, params, components=(comp_seg2 or []) + [tracker_cls], verbose=True)
+        model = load_snapshot(load_from, params, components=[*(comp_seg2 or []), _tracker_cls], verbose=True)
     else:
         model = lm.CompartmentalModel(scenario, params)
-        model.components = (comp_seg1 or []) + [tracker_cls]
+        model.components = [*(comp_seg1 or []), _tracker_cls]
 
     model.run()
 
@@ -71,9 +77,8 @@ def _run_segment(scenario, params, snap_path=None, load_from=None, comp_seg1=Non
 
 # ── Main ──────────────────────────────────────────────────────────────────────
 
-def main():
-    import tempfile
 
+def main():
     with tempfile.TemporaryDirectory() as tmpdir:
         snap = Path(tmpdir) / "snap.h5"
         scenario = _scenario()
@@ -87,7 +92,9 @@ def main():
             verbose=False,
         )
         m1, df1 = _run_segment(
-            scenario, p1, snap_path=snap,
+            scenario,
+            p1,
+            snap_path=snap,
             comp_seg1=[InfectionSeedingProcess, InfectionProcess],
         )
 
@@ -99,8 +106,10 @@ def main():
             show_progress=False,
             verbose=False,
         )
-        m2, df2 = _run_segment(
-            scenario, p2, load_from=snap,
+        _, df2 = _run_segment(
+            scenario,
+            p2,
+            load_from=snap,
             comp_seg2=[InfectionProcess],
         )
 
@@ -118,7 +127,8 @@ def main():
     colors = {"S": "#2196F3", "E": "#FF9800", "I": "#F44336", "R": "#4CAF50"}
 
     fig, axes = plt.subplots(
-        n_patches, n_states,
+        n_patches,
+        n_states,
         figsize=(4 * n_states, 3 * n_patches),
         sharex=True,
     )
@@ -141,11 +151,9 @@ def main():
             seg1_mask = ticks < SNAP_TICKS
             seg2_mask = ticks >= SNAP_TICKS
             if seg1_mask.any():
-                ax.scatter([ticks[seg1_mask][-1]], [counts[seg1_mask][-1]],
-                           color=colors[state], s=40, zorder=5)
+                ax.scatter([ticks[seg1_mask][-1]], [counts[seg1_mask][-1]], color=colors[state], s=40, zorder=5)
             if seg2_mask.any():
-                ax.scatter([ticks[seg2_mask][0]], [counts[seg2_mask][0]],
-                           color=colors[state], marker="x", s=60, zorder=5)
+                ax.scatter([ticks[seg2_mask][0]], [counts[seg2_mask][0]], color=colors[state], marker="x", s=60, zorder=5)
 
             ax.yaxis.set_major_formatter(mticker.FuncFormatter(lambda x, _: f"{int(x):,}"))
             if pi == 0:
@@ -155,20 +163,19 @@ def main():
             if pi == n_patches - 1:
                 ax.set_xlabel("tick")
 
-    from matplotlib.lines import Line2D
     legend_elements = [
         Line2D([0], [0], color="black", ls="--", lw=1.2, label="snapshot boundary"),
         Line2D([0], [0], marker="o", color="gray", ls="none", ms=6, label="seg1 last tick"),
         Line2D([0], [0], marker="x", color="gray", ls="none", ms=8, mew=2, label="seg2 first tick"),
     ]
-    fig.legend(handles=legend_elements, loc="upper center", ncol=3, fontsize=9,
-               bbox_to_anchor=(0.5, 1.03))
+    fig.legend(handles=legend_elements, loc="upper center", ncol=3, fontsize=9, bbox_to_anchor=(0.5, 1.03))
 
     fig.suptitle(
         f"Compartmental snapshot continuity — SEIR by patch\n"
         f"seg1={SNAP_TICKS} ticks, seg2={SEG2_TICKS} ticks, seed={SEED}\n"
         "Dots = seg1 last tick | ×s = seg2 first tick (should overlap exactly at boundary)",
-        fontsize=10, y=1.04,
+        fontsize=10,
+        y=1.04,
     )
     fig.tight_layout()
 
