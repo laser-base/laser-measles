@@ -11,7 +11,7 @@ def pairwise_haversine(df):  # TODO: use angular separation formula instead
         df (pl.DataFrame): Polars DataFrame with 'lon' and 'lat' columns
 
     Returns:
-        Pairwise distances in kilometers
+        (np.ndarray): Pairwise distances in kilometers
     """
 
     # mean earth radius in km

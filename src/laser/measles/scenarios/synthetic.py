@@ -262,7 +262,7 @@ def satellites_scenario(
         seed (int): Random seed for reproducibility
 
     Returns:
-        pl.DataFrame: Scenario DataFrame.
+        (pl.DataFrame): Scenario DataFrame.
     """
     # Create one major city at the center
     towns = []

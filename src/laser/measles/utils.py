@@ -172,11 +172,12 @@ def cast_type(a, dtype, round: bool = False):
     Note that this casting truncates by default.
 
     Args:
-        a: The value to cast
-        dtype: The target data type
+        a (np.ndarray): The value to cast
+        dtype (np.dtype): The target data type
+        round (bool, optional): If True, rounds the values before casting. Defaults to False.
 
     Returns:
-        The value cast to the specified data type
+        (np.ndarray): The value cast to the specified data type
     """
     if isinstance(a, np.ndarray):
         if round:
@@ -201,15 +202,6 @@ class StateArray(np.ndarray):
         >>> prevalence = states.I / states.sum(axis=0)  # Calculate prevalence
         >>> states[0] += births  # Numeric indexing still works
         >>> N = states.sum(axis=states.state_axis)  # Sum over state axis to get total population per patch
-
-    Args:
-        state_names: List or tuple of state compartment names (e.g., ["S", "E", "I", "R"])
-        state_axis: The axis along which the state compartments are stored
-        source_array: The numpy array to wrap
-        shape: The shape of the array if source_array is not provided
-        dtype: The data type of the array
-        default_value: The default value to fill the array with if source_array is not provided
-
     """
 
     def __new__(
@@ -221,6 +213,24 @@ class StateArray(np.ndarray):
         dtype=np.uint32,
         default_value=0,
     ):
+        """
+            Create a new StateArray instance.
+
+                        The StateArray can be created either by providing a source_array or by specifying the shape and default_value.
+            The state_names parameter defines the names of the state compartments, and state_axis specifies the axis along which these states are stored.
+
+        Args:
+            state_names (list[str] | tuple[str, ...]): List or tuple of state compartment names (e.g., ["S", "E", "I", "R"])
+            state_axis (int): The axis along which the state compartments are stored
+            source_array (np.ndarray | None): The numpy array to wrap
+            shape (tuple[int, ...] | None): The shape of the array if source_array is not provided
+            dtype (np.dtype): The data type of the array
+            default_value (number): The default value to fill the array with if source_array is not provided
+
+        Returns:
+
+            (StateArray): An instance of StateArray with the specified properties
+        """
 
         if (source_array is not None) and (shape is not None):
             raise ValueError("specify either source_array or shape, but not both")

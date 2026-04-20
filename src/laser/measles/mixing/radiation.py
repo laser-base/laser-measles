@@ -11,7 +11,7 @@ class RadiationParams(BaseModel):
     """
     Parameters for the radiation migration model.
 
-    Args:
+    Attributes:
         include_home (bool): Whether to include home in the migration matrix
         k (float): Scale parameter (avg trip probability)
 
@@ -30,7 +30,7 @@ class RadiationMixing(BaseMixing):
         .. math::
             M_{i,j} = k \\frac{p_i p_j}{\\left(p_i + \\sum_{k \\in \\Omega(i,j)} p_k\\right)\\left(p_i + p_j + \\sum_{k \\in \\Omega(i,j)} p_k\\right)}
 
-    Args:
+    Attributes:
         include_home (bool): Whether to include home in the migration matrix
         k (float): Scale parameter (avg trip probability)
     """

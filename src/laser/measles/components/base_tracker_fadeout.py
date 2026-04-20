@@ -30,15 +30,15 @@ class BaseFadeOutTracker(BasePhase):
             nodes in state 0 at each time tick.
 
     Args:
-        model: The simulation model instance.
+        model (BaseLaserModel): The simulation model instance.
         verbose (bool, optional): Whether to enable verbose logging. Defaults to False.
     """
 
-    def __init__(self, model, verbose: bool = False) -> None:
+    def __init__(self, model: BaseLaserModel, verbose: bool = False) -> None:
         super().__init__(model, verbose)
         self.fade_out_tracker = np.zeros(model.params.num_ticks)
 
-    def __call__(self, model, tick: int) -> None:
+    def __call__(self, model: BaseLaserModel, tick: int) -> None:
         self.fade_out_tracker[tick] = np.sum(model.patches.states.I == 0)  # number of nodes with 0 in I state
 
     def initialize(self, model: BaseLaserModel) -> None:

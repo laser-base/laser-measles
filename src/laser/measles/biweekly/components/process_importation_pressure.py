@@ -178,8 +178,8 @@ class ImportationPressureProcess(BasePhase):
         Process importation pressure for the current tick.
 
         Args:
-            model: The simulation model instance
-            tick: The current simulation tick
+            model (BiweeklyModel): The simulation model instance
+            tick (int): The current simulation tick
         """
         if tick < (self.params.importation_start // model.params.time_step_days) or (
             self.params.importation_end != -1 and tick > (self.params.importation_end // model.params.time_step_days)

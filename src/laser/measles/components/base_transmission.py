@@ -11,6 +11,7 @@ import numpy as np
 from pydantic import BaseModel
 from pydantic import Field
 
+from ..base import BaseLaserModel
 from ..base import BasePhase
 
 
@@ -49,9 +50,9 @@ class BaseTransmission(BasePhase, ABC):
         """Initialize the transmission component.
 
         Args:
-            model: The model instance this component belongs to
-            verbose: Whether to enable verbose logging
-            params: Component parameters (uses defaults if None)
+            model (BaseLaserModel): The model instance this component belongs to
+            verbose (bool): Whether to enable verbose logging
+            params (BaseTransmissionParams | None): Component parameters (uses defaults if None)
         """
         super().__init__(model, verbose)
         self.params = params if params is not None else BaseTransmissionParams()
@@ -61,18 +62,18 @@ class BaseTransmission(BasePhase, ABC):
             np.random.seed(self.params.random_seed)
 
     @abstractmethod
-    def __call__(self, model, tick: int):
+    def __call__(self, model: BaseLaserModel, tick: int):
         """Execute transmission dynamics for one time step.
 
         This method must be implemented by each model type to define
         how transmission occurs in that specific mathematical framework.
 
         Args:
-            model: The model instance
-            tick: Current time step
+            model (BaseLaserModel): The model instance
+            tick (int): Current time step
         """
 
-    def get_force_of_infection(self, model, tick: int) -> np.ndarray:
+    def get_force_of_infection(self, model: BaseLaserModel, tick: int) -> np.ndarray:
         """Calculate force of infection for each patch.
 
         This method provides a common interface for calculating
@@ -80,8 +81,8 @@ class BaseTransmission(BasePhase, ABC):
         model-specific implementations.
 
         Args:
-            model: The model instance
-            tick: Current time step
+            model (BaseLaserModel): The model instance
+            tick (int): Current time step
 
         Returns:
             Array of force of infection values per patch

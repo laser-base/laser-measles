@@ -705,7 +705,7 @@ class BaseComponent:
             fig: Optional matplotlib figure to plot on.
 
         Yields:
-            None: Placeholder for plot objects.
+            None (Figure): Placeholder for plot objects.
         """
         yield None
 
@@ -734,8 +734,8 @@ class BasePhase(BaseComponent):
         Execute component logic for a given simulation tick.
 
         Args:
-            model: The model instance.
-            tick: The current simulation tick.
+            model (Any): The model instance.
+            tick (int): The current simulation tick.
         """
 
     @abstractmethod
@@ -765,10 +765,10 @@ class BaseScenario(ABC):
         Forward attribute access to the underlying DataFrame.
 
         Args:
-            attr: The attribute name.
+            attr (str): The attribute name.
 
         Returns:
-            The attribute value from the underlying DataFrame.
+            (Any): The attribute value from the underlying DataFrame.
         """
         # Forward attribute access to the underlying DataFrame
         return getattr(self._df, attr)
@@ -778,10 +778,10 @@ class BaseScenario(ABC):
         Forward item access to the underlying DataFrame.
 
         Args:
-            key: The key to access.
+            key (Any): The key to access.
 
         Returns:
-            The value from the underlying DataFrame.
+            (Any): The value from the underlying DataFrame.
         """
         return self._df[key]
 
@@ -790,7 +790,7 @@ class BaseScenario(ABC):
         Return string representation of the scenario.
 
         Returns:
-            String representation of the underlying DataFrame.
+            (str): String representation of the underlying DataFrame.
         """
         return repr(self._df)
 
@@ -799,7 +799,7 @@ class BaseScenario(ABC):
         Return the length of the underlying DataFrame.
 
         Returns:
-            The number of rows in the DataFrame.
+            (int): The number of rows in the DataFrame.
         """
         return len(self._df)
 
@@ -808,7 +808,7 @@ class BaseScenario(ABC):
         Return the underlying polars DataFrame.
 
         Returns:
-            The underlying polars DataFrame.
+            (pl.DataFrame): The underlying polars DataFrame.
         """
         return self._df
 
@@ -817,11 +817,11 @@ class BaseScenario(ABC):
         Find the row number (0-based index) of a target string in a DataFrame column.
 
         Args:
-            column: Column name to search in.
-            target_value: String value to find.
+            column (str): Column name to search in.
+            target_value (str): String value to find.
 
         Returns:
-            Row number (0-based index) of the target string.
+            (int): Row number (0-based index) of the target string.
 
         Raises:
             ValueError: If the target string is not found.
@@ -845,7 +845,7 @@ class BaseScenario(ABC):
         Validate required columns exist - derive from schema.
 
         Args:
-            df: The DataFrame to validate.
+            df (pl.DataFrame): The DataFrame to validate.
 
         Raises:
             NotImplementedError: Subclasses must implement this method.

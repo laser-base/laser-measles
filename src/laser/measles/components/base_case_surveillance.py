@@ -44,12 +44,12 @@ class BaseCaseSurveillanceTracker(BasePhase):
     to determine which nodes to include. Note that a single infection can be detected multiple times.
 
     Args:
-        model: The simulation model containing nodes, states, and parameters.
-        verbose: Whether to print verbose output during simulation. Defaults to False.
-        params: Component-specific parameters. If None, will use default parameters.
+        model (BaseLaserModel): The simulation model containing nodes, states, and parameters.
+        verbose (bool): Whether to print verbose output during simulation. Defaults to False.
+        params (BaseCaseSurveillanceParams | None): Component-specific parameters. If None, will use default parameters.
     """
 
-    def __init__(self, model, verbose: bool = False, params: BaseCaseSurveillanceParams | None = None) -> None:
+    def __init__(self, model: BaseLaserModel, verbose: bool = False, params: BaseCaseSurveillanceParams | None = None) -> None:
         super().__init__(model, verbose)
         self.params = params or BaseCaseSurveillanceParams()
         self._validate_params()
@@ -85,12 +85,12 @@ class BaseCaseSurveillanceTracker(BasePhase):
         if self.params.aggregation_level < -1:
             raise ValueError("aggregation_level must be at least -1")
 
-    def __call__(self, model, tick: int) -> None:
+    def __call__(self, model: BaseLaserModel, tick: int) -> None:
         """Process case surveillance for the current tick.
 
         Args:
-            model: The simulation model.
-            tick: Current time step.
+            model (BaseLaserModel): The simulation model.
+            tick (int): Current time step.
         """
         # Get current infected cases
         infected = model.patches.states.I  # Infected state is index 1
@@ -137,10 +137,10 @@ class BaseCaseSurveillanceTracker(BasePhase):
         """Create a heatmap visualization of log(cases+1) over time.
 
         Args:
-            fig: Existing figure to plot on. If None, a new figure will be created.
+            fig (Figure | None): Existing figure to plot on. If None, a new figure will be created.
 
-        Yields:
-            The figure containing the heatmap visualization.
+        Yields:tracker_
+            (Figure): The figure containing the heatmap visualization.
         """
         # Get the case data
         df = self.get_dataframe()

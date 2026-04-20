@@ -58,12 +58,12 @@ class BaseStateTracker(BasePhase):
     - aggregation_level >= 0: Group by geographic level and track separately
 
     Args:
-        model: The simulation model containing nodes, states, and parameters.
-        verbose: Whether to print verbose output during simulation. Defaults to False.
-        params: Component-specific parameters. If None, will use default parameters.
+        model (BaseLaserModel): The simulation model containing nodes, states, and parameters.
+        verbose (bool): Whether to print verbose output during simulation. Defaults to False.
+        params (BaseStateTrackerParams | None): Component-specific parameters. If None, will use default parameters.
     """
 
-    def __init__(self, model, verbose: bool = False, params: BaseStateTrackerParams | None = None) -> None:
+    def __init__(self, model: BaseLaserModel, verbose: bool = False, params: BaseStateTrackerParams | None = None) -> None:
         super().__init__(model, verbose)
         self.name = "StateTracker"
         self.params = params or BaseStateTrackerParams()
@@ -131,7 +131,7 @@ class BaseStateTracker(BasePhase):
             # Return (num_ticks, num_groups)
             return self.state_tracker[state_idx, :, :]
 
-    def __call__(self, model, tick: int) -> None:
+    def __call__(self, model: BaseLaserModel, tick: int) -> None:
         if self.params.aggregation_level >= 0:
             # For each group, aggregate states from its nodes
             for group_idx, (_, node_indices) in enumerate(self.node_mapping.items()):
@@ -156,11 +156,10 @@ class BaseStateTracker(BasePhase):
         in each state changes over time. Each state gets its own subplot for better visibility.
 
         Parameters:
-            fig (Figure, optional): A matplotlib Figure object. If None, a new figure will be created.
+            fig (Figure | None): A matplotlib Figure object. If None, a new figure will be created.
 
         Yields:
-            None: This function uses a generator to yield control back to the caller.
-            If used directly (not as a generator), it will show the plot immediately.
+            (None): This function uses a generator to yield control back to the caller. If used directly (not as a generator), it will show the plot immediately.
 
         Example:
             # Use as a generator (for model.visualize()):
@@ -204,10 +203,10 @@ class BaseStateTracker(BasePhase):
         Plots all SEIR states on a single plot for easy comparison.
 
         Parameters:
-            fig (Figure, optional): A matplotlib Figure object. If None, a new figure will be created.
+            fig (Figure | None): A matplotlib Figure object. If None, a new figure will be created.
 
         Yields:
-            None: This function uses a generator to yield control back to the caller.
+            (None): This function uses a generator to yield control back to the caller.
         """
         fig = plt.figure(figsize=(12, 6), dpi=128) if fig is None else fig
 
@@ -240,7 +239,7 @@ class BaseStateTracker(BasePhase):
         """Get a DataFrame of state counts over time.
 
         Returns:
-            DataFrame with columns:
+            (pl.DataFrame): DataFrame with columns:
                 - tick: Time step
                 - state: State name (S, E, I, R, etc.)
                 - patch_id: Patch/group identifier.  Matches the ``id`` column of the scenario

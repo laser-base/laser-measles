@@ -15,7 +15,7 @@ class GravityParams(BaseModel):
         .. math::
             M_{i,j} = k \\cdot p_i^{a-1} \\cdot p_j^b \\cdot d_{i,j}^{-c}
 
-    Args:
+    Attributes:
         a (float): Population source scale parameter
         b (float): Population target scale parameter
         c (float): Distance exponent
