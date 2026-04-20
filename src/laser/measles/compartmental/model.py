@@ -31,6 +31,8 @@ Model Class:
             Generates plots for the scenario patches and populations, distribution of day of birth, and update phase times.
 """
 
+from pathlib import Path
+
 import numpy as np
 import polars as pl
 
@@ -153,7 +155,9 @@ class CompartmentalModel(BaseLaserModel):
         pass
 
     @classmethod
-    def from_snapshot(cls, path, params, components=None, verbose=True):
+    def from_snapshot(
+        cls, path: str | Path, params: CompartmentalParams, components: list[str] | None = None, verbose: bool = True
+    ) -> "CompartmentalModel":
         """Load a CompartmentalModel from an HDF5 snapshot (alias for load_snapshot)."""
         from laser.measles.compartmental.snapshot import load_snapshot  # noqa: PLC0415
 
