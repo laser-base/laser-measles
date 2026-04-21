@@ -156,9 +156,43 @@ class CompartmentalModel(BaseLaserModel):
 
     @classmethod
     def from_snapshot(
-        cls, path: str | Path, params: CompartmentalParams, components: list[str] | None = None, verbose: bool = True
+        cls, path: str | Path, params: CompartmentalParams, components: list | None = None, verbose: bool = True
     ) -> "CompartmentalModel":
-        """Load a CompartmentalModel from an HDF5 snapshot (alias for load_snapshot)."""
+        """Load a CompartmentalModel from an HDF5 snapshot.
+
+        Convenience wrapper around
+        [`load_snapshot`][laser.measles.compartmental.snapshot.load_snapshot].
+        Use this to resume a simulation from a checkpoint saved with
+        [`save_snapshot`][laser.measles.compartmental.snapshot.save_snapshot].
+
+        Args:
+            path: Path to the HDF5 file written by
+                [`save_snapshot`][laser.measles.compartmental.snapshot.save_snapshot].
+            params:
+                [`CompartmentalParams`][laser.measles.compartmental.params.CompartmentalParams]
+                for the resumed segment.
+            components: Ordered list of component *classes* — same as the
+                original model, minus ``InfectionSeedingProcess``.
+            verbose: Print a loading summary.
+
+        Returns:
+            A configured
+                [`CompartmentalModel`][laser.measles.compartmental.model.CompartmentalModel]
+                ready for ``model.run()``.
+
+        **Example:**
+
+            ```python
+            import laser.measles as lm
+            from laser.measles.compartmental.components import InfectionProcess
+
+            params2 = lm.CompartmentalParams(num_ticks=365, seed=42, start_time="2001-01")
+            model2 = lm.CompartmentalModel.from_snapshot(
+                "checkpoint.h5", params2, components=[InfectionProcess]
+            )
+            model2.run()
+            ```
+        """
         from laser.measles.compartmental.snapshot import load_snapshot  # noqa: PLC0415
 
         return load_snapshot(path, params, components=components, verbose=verbose)
