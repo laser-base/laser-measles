@@ -165,6 +165,15 @@ def load_snapshot(
     if cast_exprs:
         scenario_df = scenario_df.with_columns(cast_exprs)
 
+    expected_shape = (len(params.states), len(scenario_df))
+    if patch_states.ndim != 2 or patch_states.shape != expected_shape:
+        raise ValueError(
+            "Snapshot patch_states shape is incompatible with the current model "
+            f"configuration: expected {expected_shape} for "
+            f"{len(params.states)} states and {len(scenario_df)} patches, "
+            f"got {patch_states.shape}."
+        )
+
     # Build a fresh model (initialises patches.states to S=pop, E=I=R=0)
     model = CompartmentalModel(scenario=scenario_df, params=params)
 
