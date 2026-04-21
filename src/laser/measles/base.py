@@ -705,7 +705,7 @@ class BaseComponent:
             fig: Optional matplotlib figure to plot on.
 
         Yields:
-            None (Figure): Placeholder for plot objects.
+            None (Figure | None): Placeholder yield for plot objects.
         """
         yield None
 

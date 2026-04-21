@@ -139,7 +139,7 @@ class BaseCaseSurveillanceTracker(BasePhase):
         Args:
             fig (Figure | None): Existing figure to plot on. If None, a new figure will be created.
 
-        Yields:tracker_
+        Yields:
             (Figure): The figure containing the heatmap visualization.
         """
         # Get the case data

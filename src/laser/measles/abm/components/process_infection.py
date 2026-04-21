@@ -108,8 +108,8 @@ class InfectionProcess(BaseInfectionProcess):
         Execute both transmission and disease progression for the given tick.
 
         Args:
-            model(ABMModel): The model object containing the population, patches, and parameters.
-            tick(int): The current time step in the simulation.
+            model (ABMModel): The model object containing the population, patches, and parameters.
+            tick (int): The current time step in the simulation.
         """
         # First handle disease progression (exposed -> infectious -> recovered)
         self.disease(model, tick)

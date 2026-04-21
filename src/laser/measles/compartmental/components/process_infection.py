@@ -12,6 +12,7 @@ from laser.measles.components import BaseInfectionParams
 from laser.measles.components import BaseInfectionProcess
 from laser.measles.mixing.gravity import GravityMixing
 from laser.measles.utils import cast_type
+from laser.measles.utils import matmul
 
 
 class InfectionParams(BaseInfectionParams):
@@ -134,9 +135,10 @@ class InfectionProcess(BaseInfectionProcess):
 
         # Calculate force of infection with seasonal variation
         seasonal_factor = 1 + self.params.seasonality * np.sin(2 * np.pi * (tick - self.params.season_start) / 365.0)
-        lambda_i = (
-            (self.params.beta * seasonal_factor * prevalence) @ self.params.mixer.mixing_matrix  # recall mixing is pij: i -> j
-        )
+        # lambda_i = (
+        #     (self.params.beta * seasonal_factor * prevalence) @ self.params.mixer.mixing_matrix  # recall mixing is pij: i -> j
+        # )
+        lambda_i = matmul(self.params.beta * seasonal_factor * prevalence, self.params.mixer.mixing_matrix)  # recall mixing is pij: i -> j
 
         # normalize by the population of the patch
         lambda_i /= total_patch_pop

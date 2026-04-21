@@ -159,7 +159,7 @@ class BaseStateTracker(BasePhase):
             fig (Figure | None): A matplotlib Figure object. If None, a new figure will be created.
 
         Yields:
-            (None): This function uses a generator to yield control back to the caller. If used directly (not as a generator), it will show the plot immediately.
+            (None): Yields control back to the caller once after preparing the figure, so it can be used in generator-based visualization workflows. The caller is responsible for displaying the plot, for example by calling `plt.show()`.
 
         Example:
             # Use as a generator (for model.visualize()):

@@ -25,6 +25,8 @@ Functions:
 """
 
 import os
+import platform
+import sys
 import warnings
 from collections.abc import Callable
 from functools import wraps
@@ -172,12 +174,12 @@ def cast_type(a, dtype, round: bool = False):
     Note that this casting truncates by default.
 
     Args:
-        a (np.ndarray): The value to cast
+        a (np.ndarray | Any): The value to cast
         dtype (np.dtype): The target data type
         round (bool, optional): If True, rounds the values before casting. Defaults to False.
 
     Returns:
-        (np.ndarray): The value cast to the specified data type
+        (np.ndarray | Any): The value cast to the specified data type
     """
     if isinstance(a, np.ndarray):
         if round:
@@ -213,11 +215,10 @@ class StateArray(np.ndarray):
         dtype=np.uint32,
         default_value=0,
     ):
-        """
-            Create a new StateArray instance.
+        """Create a new StateArray instance.
 
-                        The StateArray can be created either by providing a source_array or by specifying the shape and default_value.
-            The state_names parameter defines the names of the state compartments, and state_axis specifies the axis along which these states are stored.
+        The StateArray can be created either by providing a source_array or by specifying the shape and default_value.
+        In either case the state_names and state_axis parameters are required. state_names defines the names of the state compartments, and state_axis specifies the axis along which these states are stored.
 
         Args:
             state_names (list[str] | tuple[str, ...]): List or tuple of state compartment names (e.g., ["S", "E", "I", "R"])
@@ -444,3 +445,21 @@ def dual_implementation(numpy_func: Callable, numba_func: Callable) -> Callable:
     wrapper.numba_func = numba_func
 
     return wrapper
+
+
+# Certain NumPy implementations on MacOS with Apple Silicon link to Apple's math
+# libraries which erroneously raise a divide by zero warning on certain matmul
+# operations. Note that matmul doesn't involve a divide...
+# This only happens on MacOS Apple Silicon (arm64) on 3.10 (3.11 and higher user
+# later versions of NumPy which have a workaround).
+major, minor, *_ = sys.version_info
+if (major, minor) == (3, 10) and platform.system() == "Darwin" and platform.machine() == "arm64":
+
+    def matmul(v, m):
+        """Multiply a 1-D vector with a 2-D matrix"""
+        return (v[:, None] * m).sum(axis=0)
+else:
+
+    def matmul(v, m):
+        """Multiply a 1-D vector with a 2-D matrix"""
+        return v @ m
