@@ -52,13 +52,39 @@ def save_snapshot(
     path: str | Path,
     verbose: bool = True,
 ) -> None:
-    """
-    Save compartmental model patch state to an HDF5 snapshot file.
+    """Save compartmental model patch state to an HDF5 snapshot file.
+
+    Call this after
+    [`CompartmentalModel.run()`][laser.measles.compartmental.model.CompartmentalModel]
+    to persist the full patch SEIR state.  The resulting HDF5 file can be
+    resumed with
+    [`load_snapshot`][laser.measles.compartmental.snapshot.load_snapshot] to
+    continue the simulation from exactly where it left off.
 
     Args:
-        model: A fully-run (or mid-run) :class:`CompartmentalModel` instance.
+        model: A fully-run (or mid-run)
+            [`CompartmentalModel`][laser.measles.compartmental.model.CompartmentalModel]
+            instance.
         path: Destination HDF5 file path (created or overwritten).
         verbose: Print a progress summary.
+
+    **Example:**
+
+        ```python
+        import laser.measles as lm
+        from laser.measles.compartmental import save_snapshot
+        from laser.measles.compartmental.components import (
+            InfectionSeedingProcess,
+            InfectionProcess,
+        )
+
+        params = lm.CompartmentalParams(num_ticks=365, seed=42, start_time="2000-01")
+        model = lm.CompartmentalModel(scenario, params)
+        model.components = [InfectionSeedingProcess, InfectionProcess]
+        model.run()
+
+        save_snapshot(model, "checkpoint.h5")
+        ```
     """
     path = Path(path)
 
@@ -108,23 +134,45 @@ def load_snapshot(
     components: list | None = None,
     verbose: bool = True,
 ) -> CompartmentalModel:
-    """
-    Load a compartmental model from an HDF5 snapshot file and return it ready to run.
+    """Load a compartmental model from an HDF5 snapshot file and return it ready to run.
+
+    Restores the patch SEIR state, scenario, and metadata saved by
+    [`save_snapshot`][laser.measles.compartmental.snapshot.save_snapshot].
+    Set ``params.start_time`` to the snapshot date printed by
+    ``save_snapshot``.  Do **not** include ``InfectionSeedingProcess`` in the
+    ``components`` list — infections are already encoded in the restored
+    patch states.
 
     Args:
-        path: Path to the HDF5 snapshot file written by :func:`save_snapshot`.
-        params: :class:`CompartmentalParams` for the resumed segment.  Set
-            ``start_time`` to the snapshot date and ``num_ticks`` to the
-            remaining duration.
+        path: Path to the HDF5 snapshot file written by
+            [`save_snapshot`][laser.measles.compartmental.snapshot.save_snapshot].
+        params:
+            [`CompartmentalParams`][laser.measles.compartmental.params.CompartmentalParams]
+            for the resumed segment.  Set ``start_time`` to the snapshot date
+            and ``num_ticks`` to the remaining duration.
         components: Ordered list of component *classes* to attach — same list
             as used when building the original model, minus
-            ``InfectionSeedingProcess`` (infections are already in the
-            restored patch states).
+            ``InfectionSeedingProcess``.
         verbose: Print a loading summary.
 
     Returns:
-        A configured :class:`CompartmentalModel` instance.  Call
-        ``model.run()`` to continue the simulation.
+        A configured
+            [`CompartmentalModel`][laser.measles.compartmental.model.CompartmentalModel]
+            instance.  Call ``model.run()`` to continue the simulation.
+
+    **Example:**
+
+        ```python
+        import laser.measles as lm
+        from laser.measles.compartmental import load_snapshot
+        from laser.measles.compartmental.components import InfectionProcess
+
+        params2 = lm.CompartmentalParams(num_ticks=365, seed=42, start_time="2001-01")
+        model2 = load_snapshot(
+            "checkpoint.h5", params2, components=[InfectionProcess]
+        )
+        model2.run()
+        ```
     """
     from laser.measles.compartmental.model import CompartmentalModel  # noqa: PLC0415
 

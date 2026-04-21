@@ -54,20 +54,43 @@ def save_snapshot(
     squash_recovered: bool = True,
     verbose: bool = True,
 ) -> None:
-    """
-    Save ABM state to an HDF5 snapshot file.
+    """Save ABM state to an HDF5 snapshot file.
 
-    .. warning::
-        This function **mutates** ``model``: recovered agents are squashed (if
-        ``squash_recovered=True``) and future vaccination dates are normalized.
-        Do not continue running the model after calling this function.
+    Call this after [`ABMModel.run()`][laser.measles.abm.model.ABMModel.run]
+    to persist the full population and patch state.  The resulting HDF5 file
+    can be resumed with
+    [`load_snapshot`][laser.measles.abm.snapshot.load_snapshot] to continue
+    the simulation from exactly where it left off — useful for warm-start
+    parameter sweeps, segmented cluster jobs, or reproducible checkpoints.
+
+    Warning:
+        This function **mutates** ``model``: recovered agents are squashed
+        (if ``squash_recovered=True``) and future vaccination dates are
+        normalized.  Do not continue running the model after calling this
+        function.
 
     Args:
-        model: A fully-run (or mid-run) :class:`ABMModel` instance.
+        model: A fully-run (or mid-run)
+            [`ABMModel`][laser.measles.abm.model.ABMModel] instance.
         path: Destination HDF5 file path (created or overwritten).
-        squash_recovered: If ``True`` (default), remove recovered agents before
-            saving.  This dramatically reduces file size for long measles runs.
+        squash_recovered: If ``True`` (default), remove recovered agents
+            before saving.  This dramatically reduces file size for long
+            measles runs.
         verbose: Print a progress summary.
+
+    **Example:**
+
+        ```python
+        import laser.measles as lm
+
+        params = lm.ABMParams(num_ticks=3650, seed=42, start_time="2000-01")
+        model = lm.ABMModel(scenario, params)
+        model.components = [lm.VitalDynamicsProcess, lm.InfectionProcess]
+        model.run()
+
+        lm.save_snapshot(model, "checkpoint.h5")
+        # Do not use model after this point.
+        ```
     """
     path = Path(path)
 
@@ -157,23 +180,43 @@ def load_snapshot(
     components: list | None = None,
     verbose: bool = True,
 ) -> ABMModel:
-    """
-    Load an ABM from an HDF5 snapshot file and return it ready to run.
+    """Load an ABM from an HDF5 snapshot file and return it ready to run.
+
+    Restores the population, patch state, scenario, and metadata saved by
+    [`save_snapshot`][laser.measles.abm.snapshot.save_snapshot].  Components
+    that modify the people frame (e.g.
+    [`VitalDynamicsProcess`][laser.measles.abm.components.VitalDynamicsProcess])
+    detect the snapshot context via ``model._from_snapshot`` and skip frame
+    setup.  Set ``params.start_time`` to the snapshot date printed by
+    ``save_snapshot``.
 
     Args:
-        path: Path to the HDF5 snapshot file written by :func:`save_snapshot`.
-        params: :class:`ABMParams` for the resumed segment.  Set
-            ``start_time`` to the snapshot date (printed by ``save_snapshot``
-            or ``load_snapshot``) and ``num_ticks`` to the remaining duration.
+        path: Path to the HDF5 snapshot file written by
+            [`save_snapshot`][laser.measles.abm.snapshot.save_snapshot].
+        params: [`ABMParams`][laser.measles.abm.params.ABMParams] for the
+            resumed segment.  Set ``start_time`` to the snapshot date and
+            ``num_ticks`` to the remaining duration.
         components: Ordered list of component *classes* to attach — same list
-            as used when building the original model.  Components that modify
-            the people frame (e.g. ``VitalDynamicsProcess``) detect the
-            snapshot context via ``model._from_snapshot`` and skip frame setup.
+            as used when building the original model.
         verbose: Print a loading summary.
 
     Returns:
-        A configured :class:`ABMModel` instance.  Call ``model.run()`` to
-        continue the simulation.
+        A configured [`ABMModel`][laser.measles.abm.model.ABMModel] instance.
+            Call ``model.run()`` to continue the simulation.
+
+    **Example:**
+
+        ```python
+        import laser.measles as lm
+
+        params2 = lm.ABMParams(num_ticks=1825, seed=42, start_time="2009-12")
+        model2 = lm.load_snapshot(
+            "checkpoint.h5",
+            params2,
+            components=[lm.VitalDynamicsProcess, lm.InfectionProcess],
+        )
+        model2.run()
+        ```
     """
     from laser.measles.abm.base import PeopleLaserFrame  # noqa: PLC0415
     from laser.measles.abm.model import ABMModel  # noqa: PLC0415
