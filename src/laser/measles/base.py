@@ -190,18 +190,22 @@ class BasePeopleLaserFrame(LaserFrame):
             source_property = getattr(source_frame, property_name)
 
             if source_property.ndim == 1:
-                # Scalar property
-                self.add_scalar_property(
-                    property_name, dtype=source_property.dtype, default=source_property[0] if len(source_property) > 0 else 0
-                )
+                # Scalar property — add then copy actual values
+                self.add_scalar_property(property_name, dtype=source_property.dtype, default=0)
+                target_property = getattr(self, property_name)
+                n = min(len(source_property), len(target_property))
+                target_property[:n] = source_property[:n]
             elif source_property.ndim == 2:
-                # Vector property
+                # Vector property — add then copy actual values
                 self.add_vector_property(
                     property_name,
                     len(source_property),
                     dtype=source_property.dtype,
-                    default=source_property[:, 0] if source_property.shape[1] > 0 else 0,
+                    default=0,
                 )
+                target_property = getattr(self, property_name)
+                n = min(source_property.shape[1], target_property.shape[1])
+                target_property[:, :n] = source_property[:, :n]
             else:
                 # Handle higher dimensional properties if needed
                 raise NotImplementedError(f"Property {property_name} has {source_property.ndim} dimensions, not supported")
