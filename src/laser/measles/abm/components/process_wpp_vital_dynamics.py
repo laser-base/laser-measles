@@ -36,9 +36,15 @@ class WPPVitalDynamicsProcess(BasePhase):
         if getattr(model, "_from_snapshot", False):
             # ── Snapshot-load path ────────────────────────────────────────────
             # The people frame is already populated from the HDF5 file.
-            # Skip frame resizing, property creation, and age initialization;
-            # just rebuild the vaccination queue from agents with pending dates.
+            # Skip property creation and age initialization, but ensure the
+            # frame has enough spare capacity for future births before
+            # rebuilding the vaccination queue.
             people = model.people
+            capacity = int(self.calculate_capacity(model=model))
+            if people.capacity < capacity:
+                model.initialize_people_capacity(capacity=capacity, initial_count=people.count)
+                people = model.people
+
             self.vaccination_queue = SortedQueue(capacity=people.capacity, values=people.date_of_vaccination)
             pending = people.date_of_vaccination[: people.count].astype(np.int64) < self.null_value
             for idx in np.where(pending)[0]:
