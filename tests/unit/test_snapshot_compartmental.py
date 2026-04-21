@@ -1,20 +1,107 @@
 """
-Tests for compartmental model snapshot save/load.
+Compartmental snapshot save/load — requirements traceability and test coverage.
 
-Tests run two segments:
-  seg1: run N ticks → save snapshot
-  seg2: load → run M ticks
+Each requirement is tagged with its test(s) or marked UNTESTED.
+INDIRECT means a test would catch a regression but is not named for that requirement.
+The compartmental model has no people frame (agents), so requirements around
+agent-level properties (DOB, vaccination dates, etimer/itimer) do not apply here.
+See test_snapshot.py for the ABM model.
 
-Checks:
-  - Patch SEIR counts are non-negative and consistent after each segment
-  - Resumed model advances current_date correctly
-  - Round-trip with InfectionProcess (standard case)
-  - Round-trip with VitalDynamicsProcess
-  - Exact continuity: all SEIR channels match at the snapshot boundary and
-    the epidemic is active (I > 0) so the test cannot trivially pass
-  - CompartmentalModel.from_snapshot classmethod alias works
+═══════════════════════════════════════════════════════════════════════════
+R1  PATCH STATE PRESERVATION
+═══════════════════════════════════════════════════════════════════════════
+
+R1.1  All four SEIR channels (S, E, I, R) loaded from snapshot exactly match
+      the values present at the end of seg1, per patch.
+      → TestSnapshotContinuity::test_seir_continuity_at_boundary
+
+R1.2  SEIR counts are non-negative at the snapshot boundary and after a full
+      seg2 run.
+      → TestSnapshotBasic::test_roundtrip (_seir_non_negative)
+      → TestSnapshotVitalDynamics::test_roundtrip (_seir_non_negative)
+      → TestSnapshotContinuity::test_seir_continuity_at_boundary
+
+R1.3  Total population (S+E+I+R) is conserved across the boundary when there
+      are no vital dynamics.
+      → TestSnapshotContinuity::test_population_conserved_at_boundary
+
+R1.4  S cannot increase between seg1 end and seg2 start (no infections
+      spontaneously reverse).
+      → TestSnapshotBasic::test_roundtrip (S_seg2 ≤ S_seg1_end)
+
+═══════════════════════════════════════════════════════════════════════════
+R2  SCENARIO PRESERVATION
+═══════════════════════════════════════════════════════════════════════════
+
+R2.1  Scenario DataFrame round-trips with correct values and dtypes for all
+      columns (id, pop, lat, lon, mcv1, and any extras).
+      UNTESTED — load_snapshot applies cast_exprs to fix known HDF5 dtype
+      drift, but no assertion verifies values are correct after load.
+
+R2.2  String patch IDs survive the HDF5 encode/decode round-trip.
+      UNTESTED
+
+═══════════════════════════════════════════════════════════════════════════
+R3  VITAL DYNAMICS ACROSS BOUNDARY
+═══════════════════════════════════════════════════════════════════════════
+
+R3.1  VitalDynamicsProcess round-trip runs without error (births/deaths not
+      disrupted by snapshot boundary).
+      → TestSnapshotVitalDynamics::test_roundtrip
+
+R3.2  Population changes due to vital dynamics in seg2 are internally
+      consistent (births increase S, deaths reduce compartments proportionally).
+      UNTESTED — no reference run comparison; only non-negativity is checked.
+
+═══════════════════════════════════════════════════════════════════════════
+R4  COMPONENT BEHAVIOR — SEEDING
+═══════════════════════════════════════════════════════════════════════════
+
+R4.1  InfectionSeedingProcess is not included in seg2 component list in any
+      current test (seeding only happens in seg1).
+      NOTE: There is no test that verifies InfectionSeedingProcess would
+      correctly handle being present in seg2 (idempotent or raises clearly).
+      UNTESTED
+
+═══════════════════════════════════════════════════════════════════════════
+R5  DATE / TIME
+═══════════════════════════════════════════════════════════════════════════
+
+R5.1  model.current_date in seg2 begins from params.start_time (the caller's
+      chosen resume date).
+      UNTESTED
+
+═══════════════════════════════════════════════════════════════════════════
+R6  FILE I/O & API
+═══════════════════════════════════════════════════════════════════════════
+
+R6.1  Snapshot file is created at the requested path and is non-empty.
+      → TestSnapshotBasic::test_file_created
+
+R6.2  CompartmentalModel.from_snapshot is a working alias for load_snapshot.
+      → TestSnapshotClassmethod::test_from_snapshot
+
+R6.3  save_snapshot and load_snapshot are callable (importable from the
+      compartmental sub-package).
+      → TestSnapshotTopLevelAPI::test_imports
+
+═══════════════════════════════════════════════════════════════════════════
+COVERAGE SUMMARY
+═══════════════════════════════════════════════════════════════════════════
+
+COVERED (direct):      R1.1, R1.2, R1.3, R1.4, R3.1, R6.1, R6.2, R6.3
+COVERED (indirect):    R4.1 (implicitly — seeding not present in seg2)
+UNTESTED:              R2.1, R2.2, R3.2, R4.1 (seg2 seeding), R5.1
+
+Priority gaps (correctness risk):
+  R2.1 / R2.2  — scenario dtype/value drift through HDF5
+                 → TestSnapshotScenario
+  R5.1         — current_date in seg2 reflects params.start_time
+                 → TestSnapshotCurrentDate
 """
 
+from datetime import date
+from datetime import timedelta
 from typing import ClassVar
 
 import numpy as np
@@ -156,6 +243,91 @@ class TestSnapshotVitalDynamics:
 
         m2.run()
         _seir_non_negative(m2)
+
+
+class TestSnapshotScenario:
+    """
+    R2.1 + R2.2: Scenario DataFrame values and dtypes survive the HDF5 round-trip.
+
+    Column order may differ after round-trip; comparison is column-name-based.
+    """
+
+    COMP_SEG1: ClassVar = [InfectionSeedingProcess, InfectionProcess]
+    COMP_SEG2: ClassVar = [InfectionProcess]
+
+    def test_scenario_values_preserved(self, tmp_path):
+        snap = tmp_path / "snap_scenario.h5"
+        scenario = _scenario()
+
+        p1 = lm.CompartmentalParams(num_ticks=5, seed=0, start_time="2000-01", show_progress=False, verbose=VERBOSE)
+        m1 = lm.CompartmentalModel(scenario, p1)
+        m1.components = self.COMP_SEG1
+        m1.run()
+        save_snapshot(m1, snap, verbose=VERBOSE)
+
+        p2 = lm.CompartmentalParams(num_ticks=5, seed=0, start_time="2000-01", show_progress=False, verbose=VERBOSE)
+        m2 = load_snapshot(snap, p2, components=self.COMP_SEG2, verbose=VERBOSE)
+
+        orig = scenario.sort("id")
+        loaded = m2.scenario.unwrap().sort("id")
+
+        assert set(orig.columns) == set(loaded.columns), (
+            f"Scenario columns changed after HDF5 round-trip: {set(orig.columns)} → {set(loaded.columns)}"
+        )
+        assert orig["id"].to_list() == loaded["id"].to_list(), f"Patch IDs changed: {orig['id'].to_list()} → {loaded['id'].to_list()}"
+        np.testing.assert_array_equal(orig["pop"].to_numpy(), loaded["pop"].to_numpy(), err_msg="'pop' changed after round-trip")
+        for col in ["lat", "lon", "mcv1"]:
+            np.testing.assert_allclose(orig[col].to_numpy(), loaded[col].to_numpy(), err_msg=f"'{col}' changed after round-trip")
+
+
+class TestSnapshotCurrentDate:
+    """
+    R5.1: model.current_date in seg2 begins from params.start_time, not snap_date.
+
+    Uses a deliberately different start_time in seg2 to confirm the resume date
+    is params-driven, not inherited from the file.
+    """
+
+    COMP_SEG1: ClassVar = [InfectionSeedingProcess, InfectionProcess]
+    COMP_SEG2: ClassVar = [InfectionProcess]
+    SEG1_TICKS = 30
+    SEG2_TICKS = 20
+
+    def test_current_date_before_run(self, tmp_path):
+        snap = tmp_path / "snap_date.h5"
+        scenario = _scenario()
+
+        p1 = lm.CompartmentalParams(num_ticks=self.SEG1_TICKS, seed=0, start_time="2000-01", show_progress=False, verbose=VERBOSE)
+        m1 = lm.CompartmentalModel(scenario, p1)
+        m1.components = self.COMP_SEG1
+        m1.run()
+        save_snapshot(m1, snap, verbose=VERBOSE)
+
+        p2 = lm.CompartmentalParams(num_ticks=self.SEG2_TICKS, seed=0, start_time="2003-07", show_progress=False, verbose=VERBOSE)
+        m2 = load_snapshot(snap, p2, components=self.COMP_SEG2, verbose=VERBOSE)
+
+        assert m2.current_date.date() == date(2003, 7, 1), (
+            f"current_date before run should be params.start_time=2003-07-01, got {m2.current_date}"
+        )
+
+    def test_current_date_after_run(self, tmp_path):
+        snap = tmp_path / "snap_date2.h5"
+        scenario = _scenario()
+
+        p1 = lm.CompartmentalParams(num_ticks=self.SEG1_TICKS, seed=0, start_time="2000-01", show_progress=False, verbose=VERBOSE)
+        m1 = lm.CompartmentalModel(scenario, p1)
+        m1.components = self.COMP_SEG1
+        m1.run()
+        save_snapshot(m1, snap, verbose=VERBOSE)
+
+        p2 = lm.CompartmentalParams(num_ticks=self.SEG2_TICKS, seed=0, start_time="2003-07", show_progress=False, verbose=VERBOSE)
+        m2 = load_snapshot(snap, p2, components=self.COMP_SEG2, verbose=VERBOSE)
+        m2.run()
+
+        expected = date(2003, 7, 1) + timedelta(days=self.SEG2_TICKS)
+        assert m2.current_date.date() == expected, (
+            f"After {self.SEG2_TICKS} ticks from 2003-07-01, expected {expected}, got {m2.current_date}"
+        )
 
 
 class TestSnapshotTopLevelAPI:

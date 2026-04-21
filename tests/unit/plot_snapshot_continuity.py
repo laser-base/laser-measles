@@ -1,9 +1,21 @@
 """
 Visual continuity check for the ABM snapshot save/load.
 
-Runs a 3-patch scenario in two segments (seg1 → snapshot → seg2), collects
-per-tick SEIR timeseries with a StateTracker, and plots all four channels
-for each patch with a vertical line at the snapshot boundary.
+Runs a 3-patch scenario in two segments (seg1 → snapshot → seg2) and plots
+all tracked channels for each patch with a vertical line at the snapshot
+boundary.
+
+Channels plotted
+----------------
+  Stock channels  (S, E, I, R, N)  — last seg1 dot and first seg2 x should
+                                      overlap exactly at the boundary.
+  Flow channels   (incidence)       — stochastic per-tick S→E transitions;
+                                      expect smooth trend, no slope jump.
+
+Note: births and deaths require VitalDynamicsProcess, which has a known
+incompatibility with InfectionProcess in the ABM (Numba frame-size assertion
+when the people frame grows from births mid-run).  Those channels are covered
+by the compartmental continuity plot instead.
 
 Run directly:
     python3.11 tests/unit/plot_snapshot_continuity.py
@@ -32,7 +44,7 @@ from laser.measles.components import BaseStateTrackerParams
 
 # ── Scenario ──────────────────────────────────────────────────────────────────
 
-SNAP_TICKS = 55  # at epidemic peak (total I across all patches peaks ~tick 56)
+SNAP_TICKS = 55  # at epidemic peak (total I peaks ~tick 56)
 SEG2_TICKS = 50  # full post-peak decline visible
 SEED = 42
 COMP_CLS = [InfectionSeedingProcess, InfectionProcess]
@@ -52,38 +64,69 @@ def _scenario() -> pl.DataFrame:
     )
 
 
-# ── Per-patch tracker params ──────────────────────────────────────────────────
+# ── Trackers ──────────────────────────────────────────────────────────────────
 
-# aggregation_level=0 with flat IDs → one row per (tick, patch, state)
 _TRACKER_PARAMS = BaseStateTrackerParams(aggregation_level=0)
 
 
-def _tracker_comp(model, verbose=False):
+def _state_tracker(model, verbose=False):
     return StateTracker(model, verbose=verbose, params=_TRACKER_PARAMS)
 
 
-def _run_segment(scenario, params, snap_path=None, load_from=None):
-    """
-    Run one segment.  Returns (model, dataframe).
+_FLOW_CHANNELS = ["births", "deaths", "incidence"]
 
-    * If load_from is set, load from that snapshot file.
-    * If snap_path is set, save a snapshot at the end.
-    """
+
+class PatchFlowRecorder:
+    """Records per-tick values of patch scalar flow properties (incidence, births, deaths)."""
+
+    def __init__(self, model, verbose: bool = False) -> None:
+        self._props = [p for p in _FLOW_CHANNELS if hasattr(model.patches, p)]
+        self._records: list[tuple] = []
+
+    def __call__(self, model, tick: int) -> None:
+        for prop in self._props:
+            vals = np.asarray(getattr(model.patches, prop))
+            for patch_idx, v in enumerate(vals):
+                self._records.append((tick, prop, patch_idx, int(v)))
+
+    def get_dataframe(self) -> pl.DataFrame:
+        if not self._records:
+            return pl.DataFrame({"tick": [], "channel": [], "patch_idx": [], "value": []})
+        ticks, channels, patch_idxs, values = zip(*self._records, strict=True)
+        return pl.DataFrame(
+            {
+                "tick": list(ticks),
+                "channel": list(channels),
+                "patch_idx": list(patch_idxs),
+                "value": list(values),
+            }
+        )
+
+
+# ── Run helpers ───────────────────────────────────────────────────────────────
+
+
+def _run_segment(scenario, params, snap_path=None, load_from=None):
+    """Run one segment. Returns (model, seir_df, flow_df)."""
+    components = [*COMP_CLS, _state_tracker, PatchFlowRecorder]
     if load_from is not None:
-        model = load_snapshot(load_from, params, components=[*COMP_CLS, _tracker_comp], verbose=True)
+        model = load_snapshot(load_from, params, components=components, verbose=True)
     else:
         model = lm.ABMModel(scenario, params)
-        model.components = [*COMP_CLS, _tracker_comp]
+        model.components = components
 
     model.run()
 
     if snap_path is not None:
         save_snapshot(model, snap_path, verbose=True)
 
-    # Find the StateTracker instance
     tracker = next(inst for inst in model.instances if isinstance(inst, StateTracker))
-    df = tracker.get_dataframe()
-    return model, df
+    seir_df = tracker.get_dataframe()
+
+    recorder = next(inst for inst in model.instances if isinstance(inst, PatchFlowRecorder))
+    flow_df = recorder.get_dataframe()
+
+    return model, seir_df, flow_df
 
 
 # ── Main ──────────────────────────────────────────────────────────────────────
@@ -102,7 +145,7 @@ def main():
             show_progress=False,
             verbose=False,
         )
-        m1, df1 = _run_segment(scenario, p1, snap_path=snap)
+        m1, seir1, flow1 = _run_segment(scenario, p1, snap_path=snap)
 
         # ── Segment 2 (loaded from snapshot) ──────────────────────────────────
         p2 = lm.ABMParams(
@@ -112,80 +155,98 @@ def main():
             show_progress=False,
             verbose=False,
         )
-        _, df2 = _run_segment(scenario, p2, load_from=snap)
+        _, seir2, flow2 = _run_segment(scenario, p2, load_from=snap)
 
     # Offset seg2 ticks so they continue from where seg1 left off
-    df2 = df2.with_columns((pl.col("tick") + SNAP_TICKS).alias("tick"))
+    seir2 = seir2.with_columns((pl.col("tick") + SNAP_TICKS).alias("tick"))
+    flow2 = flow2.with_columns((pl.col("tick") + SNAP_TICKS).alias("tick"))
 
-    df = pl.concat([df1, df2])
+    seir_df = pl.concat([seir1, seir2])
+    flow_df = pl.concat([flow1, flow2])
 
-    # ── Plot ──────────────────────────────────────────────────────────────────
+    # Derive N (total population) from SEIR sum per tick per patch
+    patch_order = {name: i for i, name in enumerate(PATCH_NAMES)}
+    n_df = (
+        seir_df.group_by(["tick", "patch_id"])
+        .agg(pl.col("count").sum().alias("value"))
+        .with_columns(pl.lit("N").alias("channel"))
+        .rename({"patch_id": "patch_idx"})
+        .with_columns(pl.col("patch_idx").replace(patch_order).cast(pl.Int64))
+    )
+
+    # ── Plot layout ───────────────────────────────────────────────────────────
     states = m1.params.states  # ["S", "E", "I", "R"]
-    # Preserve scenario order (not alphabetical)
-    all_ids = PATCH_NAMES
-    patches = [p for p in all_ids if p in df["patch_id"].unique().to_list()]
-    n_patches = len(patches)
-    n_states = len(states)
+    flow_channels_present = sorted(flow_df["channel"].unique().to_list())
+    all_channels = [*states, "N", *flow_channels_present]
+    n_patches = len(PATCH_NAMES)
+    n_cols = len(all_channels)
 
-    colors = {"S": "#2196F3", "E": "#FF9800", "I": "#F44336", "R": "#4CAF50"}
+    state_colors = {"S": "#2196F3", "E": "#FF9800", "I": "#F44336", "R": "#4CAF50"}
+    flow_colors = {"N": "#607D8B", "births": "#9C27B0", "deaths": "#795548", "incidence": "#E91E63"}
+
     fig, axes = plt.subplots(
         n_patches,
-        n_states,
-        figsize=(4 * n_states, 3 * n_patches),
+        n_cols,
+        figsize=(2.8 * n_cols, 3 * n_patches),
         sharex=True,
     )
-    if n_patches == 1:
-        axes = [axes]
 
-    for pi, patch in enumerate(patches):
-        for si, state in enumerate(states):
-            ax = axes[pi][si]
-            subset = df.filter((pl.col("patch_id") == patch) & (pl.col("state") == state))
-            ticks = subset["tick"].to_numpy()
-            counts = subset["count"].to_numpy()
+    for pi, patch_name in enumerate(PATCH_NAMES):
+        patch_idx = pi
 
-            # Sort by tick
+        for ci, channel in enumerate(all_channels):
+            ax = axes[pi][ci]
+            is_stock = channel in states or channel == "N"
+
+            if channel in states:
+                subset = seir_df.filter((pl.col("patch_id") == patch_name) & (pl.col("state") == channel))
+                ticks = subset["tick"].to_numpy()
+                counts = subset["count"].to_numpy()
+            elif channel == "N":
+                subset = n_df.filter(pl.col("patch_idx") == patch_idx)
+                ticks = subset["tick"].to_numpy()
+                counts = subset["value"].to_numpy()
+            else:
+                subset = flow_df.filter((pl.col("channel") == channel) & (pl.col("patch_idx") == patch_idx))
+                ticks = subset["tick"].to_numpy()
+                counts = subset["value"].to_numpy()
+
             order = np.argsort(ticks)
             ticks, counts = ticks[order], counts[order]
 
-            ax.plot(ticks, counts, color=colors[state], lw=1.5, label=state)
-            ax.axvline(SNAP_TICKS, color="black", lw=1.2, ls="--", label="snapshot" if si == 0 else None)
+            color = state_colors.get(channel, flow_colors.get(channel, "gray"))
+            ax.plot(ticks, counts, color=color, lw=1.4)
+            ax.axvline(SNAP_TICKS, color="black", lw=1.0, ls="--")
 
-            # Mark boundary values explicitly
-            if len(ticks) > 0:
-                # last tick of seg1 and first tick of seg2
+            if is_stock:
                 seg1_mask = ticks < SNAP_TICKS
                 seg2_mask = ticks >= SNAP_TICKS
                 if seg1_mask.any():
-                    t_end = ticks[seg1_mask][-1]
-                    c_end = counts[seg1_mask][-1]
-                    ax.scatter([t_end], [c_end], color=colors[state], s=40, zorder=5)
+                    ax.scatter([ticks[seg1_mask][-1]], [counts[seg1_mask][-1]], color=color, s=30, zorder=5)
                 if seg2_mask.any():
-                    t_start = ticks[seg2_mask][0]
-                    c_start = counts[seg2_mask][0]
-                    ax.scatter([t_start], [c_start], color=colors[state], marker="x", s=60, zorder=5)
+                    ax.scatter([ticks[seg2_mask][0]], [counts[seg2_mask][0]], color=color, marker="x", s=50, zorder=5)
 
             ax.yaxis.set_major_formatter(mticker.FuncFormatter(lambda x, _: f"{int(x):,}"))
             if pi == 0:
-                ax.set_title(state, fontsize=11, fontweight="bold", color=colors[state])
-            if si == 0:
-                ax.set_ylabel(patch, fontsize=9)
+                ax.set_title(channel, fontsize=9, fontweight="bold", color=color)
+            if ci == 0:
+                ax.set_ylabel(patch_name, fontsize=8)
             if pi == n_patches - 1:
-                ax.set_xlabel("tick")
+                ax.set_xlabel("tick", fontsize=8)
 
-    # Legend for boundary markers
     legend_elements = [
-        Line2D([0], [0], color="black", ls="--", lw=1.2, label="snapshot boundary"),
-        Line2D([0], [0], marker="o", color="gray", ls="none", ms=6, label="seg1 last tick"),
-        Line2D([0], [0], marker="x", color="gray", ls="none", ms=8, mew=2, label="seg2 first tick"),
+        Line2D([0], [0], color="black", ls="--", lw=1.0, label="snapshot boundary"),
+        Line2D([0], [0], marker="o", color="gray", ls="none", ms=5, label="seg1 last tick (stock)"),
+        Line2D([0], [0], marker="x", color="gray", ls="none", ms=7, mew=2, label="seg2 first tick (stock)"),
     ]
-    fig.legend(handles=legend_elements, loc="upper center", ncol=3, fontsize=9, bbox_to_anchor=(0.5, 1.03))
+    fig.legend(handles=legend_elements, loc="upper center", ncol=3, fontsize=8, bbox_to_anchor=(0.5, 1.03))
 
     fig.suptitle(
-        f"Snapshot continuity — SEIR by patch\n"
+        f"ABM snapshot continuity — all channels by patch\n"
         f"seg1={SNAP_TICKS} ticks, seg2={SEG2_TICKS} ticks, seed={SEED}\n"
-        "Dots = seg1 last tick | ×s = seg2 first tick (should overlap exactly at boundary)",
-        fontsize=10,
+        "Stock channels: dots=seg1 last, ×s=seg2 first (should overlap). "
+        "Flow channels: smooth trend only.",
+        fontsize=9,
         y=1.04,
     )
     fig.tight_layout()

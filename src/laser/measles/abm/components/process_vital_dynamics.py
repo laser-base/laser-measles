@@ -38,6 +38,7 @@ class VitalDynamicsProcess(BaseVitalDynamicsProcess):
             # People properties are already present; skip re-adding them.
             # patches are always freshly constructed, so add births property.
             model.patches.add_scalar_property("births", dtype=np.uint32)
+            model.patches.add_scalar_property("deaths", dtype=np.uint32)
             # Resize frame to accommodate projected births during the resumed run.
             needed_capacity = self.calculate_capacity(model=model)
             current_count = model.people.count
@@ -63,6 +64,7 @@ class VitalDynamicsProcess(BaseVitalDynamicsProcess):
         people.add_scalar_property("date_of_birth", dtype=date_of_birth_dtype, default=self.null_value)
         people.add_scalar_property("date_of_vaccination", dtype=np.uint32, default=self.null_value)
         patches.add_scalar_property("births", dtype=np.uint32)
+        patches.add_scalar_property("deaths", dtype=np.uint32)
 
         self.vaccination_queue: SortedQueue = SortedQueue(capacity=capacity, values=people.date_of_vaccination)
 
@@ -103,6 +105,11 @@ class VitalDynamicsProcess(BaseVitalDynamicsProcess):
             if hasattr(model.people, "itimer"):
                 model.people.itimer[idx] = 0
 
+        # Record per-patch death count for tracking
+        patches.deaths[:] = (
+            cast_type(np.bincount(people.patch_id[idx], minlength=patches.states.shape[-1]), np.uint32) if len(idx) > 0 else 0
+        )
+
         if self.lambda_birth > 0:
             # Births
             # ------
@@ -121,6 +128,8 @@ class VitalDynamicsProcess(BaseVitalDynamicsProcess):
                 index += this_patch_births
             # update states
             patches.states.S += cast_type(births, patches.states.dtype)
+            # Record per-patch birth count for tracking
+            patches.births[:] = cast_type(births, np.uint32)
 
         # Routine immunization
         # --------------------

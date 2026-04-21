@@ -119,6 +119,9 @@ class InfectionProcess(BaseInfectionProcess):
         # set the scenario for the mixing object
         self.params.mixer.scenario = model.scenario
 
+        # per-patch new-exposure count, written every tick
+        model.patches.add_scalar_property("incidence", dtype=np.int32, default=0)
+
     def __call__(self, model: BaseLaserModel, tick: int) -> None:
         # Get state counts: states is (4, num_patches) for [S, E, I, R]
         states = model.patches.states
@@ -157,6 +160,9 @@ class InfectionProcess(BaseInfectionProcess):
         # prob_recovery = 1 - np.exp(-self.params.gamma)
         prob_recovery = -1 * np.expm1(-self.params.gamma)
         new_recoveries = cast_type(model.prng.binomial(states.I, prob_recovery), states.dtype, round=True)
+
+        # Record new exposures for tracking
+        model.patches.incidence[:] = new_exposures
 
         # Update compartments
         states.S -= new_exposures  # S decreases

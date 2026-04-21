@@ -109,6 +109,13 @@ def save_snapshot(
     if hasattr(model.people, "date_of_vaccination"):
         _normalize_vaccination_dates(model.people, t_snap)
 
+    # ── Normalize dates of birth so they are relative to t_snap ───────────────
+    # Agents born during seg1 have date_of_birth = tick (e.g. 30).  Without
+    # normalization seg2 computes age = current_tick - 30 = -30 at tick 0.
+    # After normalization: date_of_birth -= t_snap, so max DOB = -1 (<= 0).
+    if hasattr(model.people, "date_of_birth"):
+        _normalize_dobs(model.people, t_snap)
+
     # ── Optionally squash recovered agents ────────────────────────────────────
     if squash_recovered:
         r_idx = np.uint8(model.params.states.index("R"))
@@ -302,6 +309,22 @@ def load_snapshot(
 
 
 # ── Internal helpers ──────────────────────────────────────────────────────────
+
+
+def _normalize_dobs(people, t_snap: int) -> None:
+    """
+    Subtract *t_snap* from all non-null dates of birth so they are relative to
+    the start of the resumed segment (tick 0).
+
+    Agents with ``date_of_birth == _DATE_NULL`` (no DOB recorded) are not touched.
+    All other DOBs — including negative ones for agents born before the simulation
+    started — are shifted by *-t_snap*.
+    """
+    dob = people.date_of_birth[: people.count]
+    dob_i64 = dob.astype(np.int64)
+    non_null = dob_i64 != _DATE_NULL
+    if non_null.any():
+        dob[non_null] = (dob_i64[non_null] - t_snap).astype(dob.dtype)
 
 
 def _normalize_vaccination_dates(people, t_snap: int) -> None:
