@@ -1,5 +1,5 @@
 # %% [markdown]
-# # Creating Custom Components
+# # Create custom components
 #
 # This tutorial demonstrates how to create custom components for the compartmental model.
 # We'll build a PIRI component that periodically strengthens vaccination coverage.

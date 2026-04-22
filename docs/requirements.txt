@@ -1,4 +1,4 @@
-mkdocs-material # doc theme that includes extensive functionality
+mkdocs-material~=9.7.0 # doc theme that includes extensive functionality
 mkdocs-include-markdown-plugin # include files outside /docs
 mkdocs-autorefs # create automatic linkable references to sections, etc.
 mkdocs-api-autonav # automatically add API ref to navigation
@@ -13,3 +13,11 @@ mkdocs-table-reader-plugin # directly insert csv and other formats as tables
 mkdocs-exclude # exclude files from the rendered docs tree
 jupytext
 markdownify
+
+
+# packages for notebook tutorials
+matplotlib
+numpy
+polars
+seaborn
+laser.core

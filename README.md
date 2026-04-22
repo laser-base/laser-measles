@@ -29,4 +29,4 @@ Our recommended first example is the [Quick Start Tutorial]([https://laser-measl
 
 ## Documentation
 
-Full documentation is available at [here](https://institutefordiseasemodeling.github.io/laser-measles/).
+Full documentation is available at [laser.idmod.org/laser-measles](https://laser.idmod.org/laser-measles/).

@@ -32,23 +32,24 @@ theme:
 
 nav:
   - Home: index.md
+  - What's new: whatsnew.md
   - Installation: install.md
   - Usage: usage.md
   - Tutorials:
     - tutorials/index.md
-    - Quick Start: tutorials/tut_quickstart_hello_world.ipynb
+    - Quick start: tutorials/tut_quickstart_hello_world.ipynb
     - Beginning tutorials:
-      - Basic Model: tutorials/tut_basic_model.ipynb
-      - Model Structure: tutorials/tut_model_structure.ipynb
-      - ABM Introduction: tutorials/tut_abm_intro.ipynb
+      - Basic model: tutorials/tut_basic_model.ipynb
+      - Model structure: tutorials/tut_model_structure.ipynb
+      - ABM introduction: tutorials/tut_abm_intro.ipynb
       - Scenarios: tutorials/tut_scenarios.ipynb
     - Feature tutorials:
-      - Random Numbers: tutorials/tut_random_numbers.ipynb
-      - Creating a Component: tutorials/tut_creating_component.ipynb
-      - ABM Vital Dynamics: tutorials/tut_abm_vital_dynamics.ipynb
-      - Spatial Mixing: tutorials/tut_spatial_mixing.ipynb
-      - Pydantic Component Parameters: tutorials/tut_pydantic_component_parameters.ipynb
-      - State Arrays: tutorials/tut_state_arrays.ipynb
+      - Random numbers: tutorials/tut_random_numbers.ipynb
+      - Create a component: tutorials/tut_creating_component.ipynb
+      - ABM vital dynamics: tutorials/tut_abm_vital_dynamics.ipynb
+      - Spatial mixing: tutorials/tut_spatial_mixing.ipynb
+      - Pydantic component parameters: tutorials/tut_pydantic_component_parameters.ipynb
+      - State arrays: tutorials/tut_state_arrays.ipynb
     - End-to-end tutorials:
       - Vaccination: tutorials/tut_vaccination.ipynb
   - API reference: reference/

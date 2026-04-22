@@ -13,7 +13,7 @@ Key features include:
 - **High-performance computing**: Optimized data structures and Numba JIT compilation
 - **Type-safe parameters**: Pydantic-based configuration management
 
-## Installation and Setup
+## Installation and setup
 
 Install laser-measles using pip (requires Python 3.10+):
 
@@ -33,7 +33,7 @@ uv pip install -e ".[full]"
 pip install -e ".[dev]"
 ```
 
-**Major Dependencies:**
+**Major dependencies:**
 
 - `laser-core>=1.0.0`: Core LASER framework
 - `pydantic>=2.0`: Parameter validation and serialization
@@ -44,7 +44,7 @@ pip install -e ".[dev]"
 
 ---
 
-## Model Types
+## Model types
 
 laser-measles provides three complementary modeling approaches, each optimized for different use cases:
 
@@ -56,11 +56,11 @@ Each model type offers different trade-offs between computational efficiency, te
 
 ---
 
-### ABM (Agent-Based Model)
+### ABM (agent-based model)
 
 The ABM model provides individual-level simulation with stochastic agents, allowing for detailed tracking of disease dynamics at the person level.
 
-**Key Characteristics:**
+**Key characteristics:**
 
 - **Individual agents**: Each person is represented as a discrete agent with properties like age, location, and disease state
 - **Daily timesteps**: Fine-grained temporal resolution for precise modeling
@@ -86,11 +86,11 @@ model.run()
 
 ---
 
-### Biweekly Model
+### Biweekly model
 
-The Biweekly Model is a compartmental model optimized for fast simulation and parameter exploration with 2-week timesteps.
+The biweekly model is a compartmental model optimized for fast simulation and parameter exploration with 2-week timesteps.
 
-**Key Characteristics:**
+**Key characteristics:**
 
 - **Compartmental approach**: SIR (Susceptible-Infected-Recovered) structure.
   The exposed (E) compartment is omitted because the 14-day timestep is
@@ -121,11 +121,11 @@ model.run()
 
 ---
 
-### Compartmental Model
+### Compartmental model
 
-The Compartmental Model provides population-level SEIR dynamics with daily timesteps, optimized for parameter estimation and detailed outbreak modeling.
+The compartmental model provides population-level SEIR dynamics with daily timesteps, optimized for parameter estimation and detailed outbreak modeling.
 
-**Key Characteristics:**
+**Key characteristics:**
 
 - **Daily timesteps**: Fine-grained temporal resolution (365 ticks per year)
 - **SEIR dynamics**: Detailed compartmental structure with exposed compartment
@@ -176,18 +176,18 @@ model.run()
 
 ---
 
-## Demographics Package
+## Demographics package
 
 The demographics package provides comprehensive geographic data handling capabilities for spatial epidemiological modeling.
 
-**Core Features:**
+**Core features:**
 
 - **GADM Integration**: `GADMShapefile` class for administrative boundary management
-- **Raster Processing**: `RasterPatchGenerator` for population distribution handling
-- **Shapefile Utilities**: Functions for geographic data visualization and analysis
-- **Flexible Geographic Scales**: Support from national to sub-district administrative levels
+- **Raster processing**: `RasterPatchGenerator` for population distribution handling
+- **Shapefile utilities**: Functions for geographic data visualization and analysis
+- **Flexible geographic scales**: Support from national to sub-district administrative levels
 
-**Key Classes:**
+**Key classes:**
 
 - `GADMShapefile`: Manages administrative boundaries from GADM database
 - `RasterPatchParams`: Configuration for raster-based population patches
@@ -213,19 +213,19 @@ generator = RasterPatchGenerator(params)
 patches = generator.generate_patches()
 ```
 
-## Technical Features
+## Technical features
 
-### Pydantic Integration
+### Pydantic integration
 
 laser-measles uses Pydantic for type-safe parameter management, providing automatic validation and documentation.
 
-**Parameter Classes:**
+**Parameter classes:**
 
 - `ABMParams`: Configuration for agent-based models with individual-level parameters
 - `BiweeklyParams`: Configuration for biweekly models with epidemiological parameters
 - `CompartmentalParams`: Configuration for compartmental models with daily dynamics
 
-**Component Classes:**
+**Component classes:**
 Components come in "process" and "tracker" categories and each component has a corresponding parameter class.
 Each model (ABM, Biweekly, or Compartmental) has its own set of components. See the API reference section for more details.
 
@@ -250,40 +250,40 @@ params = BiweeklyParams(
 config_json = params.model_dump_json()
 ```
 
-### High-Performance Computing
+### High-performance computing
 
 laser-measles is optimized for performance through several technical approaches:
 
-**LaserFrame Architecture:**
-High-performance array-based structure for agent populations, built on the LASER framework
+**LaserFrame architecture:**
+High-performance array-based structure for agent populations, built on the LASER framework.
 
-**numba JIT Compilation:**
-Performance-critical operations implemented in numba for maximum speed
+**numba JIT compilation:**
+Performance-critical operations implemented in numba for maximum speed.
 
 **Polars DataFrames:**
-Efficient data manipulation using Polars for biweekly model operations with Arrow backend
+Efficient data manipulation using Polars for biweekly model operations with Arrow backend.
 
-**Component Modularity:**
-Modular architecture allows for selective component usage and optimization
+**Component modularity:**
+Modular architecture allows for selective component usage and optimization.
 
-**Progress Tracking:**
-Integrated progress bars using alive-progress for long-running simulations
+**Progress tracking:**
+Integrated progress bars using alive-progress for long-running simulations.
 
-**Python 3.10+ Support:**
-Optimized for modern Python features and performance improvements
+**Python 3.10+ support:**
+Optimized for modern Python features and performance improvements.
 
-### Component System
+### Component system
 
 The component system provides a uniform interface for disease dynamics with interchangeable modules built on a hierarchical base class architecture.
 
-**Base Architecture:**
+**Base architecture:**
 
 - **BaseLaserModel**: Abstract base class for all model types with common functionality
 - **BaseComponent**: Base class for all components with standardized interface
 - **BasePhase**: Components that execute every tick (inherit from BaseComponent)
 - **Inheritance-based design**: Base components define shared functionality and abstract interfaces
 
-**Base Component Classes:**
+**Base component classes:**
 
 - `base_transmission.py`: Base transmission/infection logic
 - `base_vital_dynamics.py`: Base births/deaths logic
@@ -292,7 +292,7 @@ The component system provides a uniform interface for disease dynamics with inte
 - `base_infection.py`: Base infection state transitions
 - `base_tracker_state.py`: Base state tracking functionality
 
-**Component Naming Convention:**
+**Component naming convention:**
 
 - **Process components**: `process_*.py` - Modify model state (births, deaths, infection, transmission)
 - **Tracker components**: `tracker_*.py` - Record metrics and state over time
@@ -314,7 +314,7 @@ model.components = [MyInfectionProcess]
 
 ---
 
-## Complete Worked Examples {: #complete-examples }
+## Complete worked examples {: #complete-examples }
 
 These end-to-end scripts are copy-paste runnable. Each one shows the
 **full** pattern — imports, scenario, params, model construction, component
@@ -330,7 +330,7 @@ every line that commonly causes errors.
     These three facts are the source of the most common runtime failures.
     They apply to every model type without exception.
 
-**Fact 1 — The only three model classes are** `ABMModel`, `BiweeklyModel`, `CompartmentalModel`
+**The only three model classes are** `ABMModel`, `BiweeklyModel`, `CompartmentalModel`
 
 Import them from their respective subpackages:
 
@@ -357,7 +357,7 @@ from laser.measles.compartmental import CompartmentalModel, CompartmentalParams
 
     There is no convenience shortcut. Always import from the subpackage.
 
-**Fact 2 — The constructor signature is always** `Model(scenario, params)`
+**The constructor signature is always** `Model(scenario, params)`
 
 ```python
 params = ABMParams(num_ticks=365, seed=42)      # ALL settings go here
@@ -393,7 +393,7 @@ model  = ABMModel(scenario, params)              # then params goes here
     goes into the `*Params` object. Then the populated `*Params`
     object is the second argument to the model constructor.
 
-**Fact 3 —** `start_time` **must be** `"YYYY-MM"`, **never** `"YYYY-MM-DD"`
+`start_time` **must be** `"YYYY-MM"`, **never** `"YYYY-MM-DD"`
 
 ```python
 # CORRECT — "YYYY-MM" format
@@ -408,7 +408,7 @@ params = ABMParams(num_ticks=365, seed=42, start_time="2000-01")
     Do not pass a full date string like `"2000-01-01"` — it raises
     `ValidationError: start_time must be in 'YYYY-MM' format`.
 
-### Example 1 — ABM: single-patch outbreak with StateTracker
+### Example 1 — ABM: Single-patch outbreak with StateTracker
 
 One population of 100,000 people, no births, outbreak seeded from
 `InfectionSeedingProcess`, peak infectious tracked with `StateTracker`.
@@ -476,7 +476,7 @@ peak_day = int(tracker.I.argmax())
 print(f"Peak infectious: {peak_I} on day {peak_day}")
 ```
 
-### Example 2 — Biweekly: five-patch endemic run with per-patch StateTracker
+### Example 2 — Biweekly: Five-patch endemic run with per-patch StateTracker
 
 Five communities, births/deaths, importation, 5 years. Uses
 `BiweeklyModel` (26 ticks per year) and a per-patch `StateTracker`
@@ -631,7 +631,7 @@ component configuration errors, check the items below first.
 These issues occur frequently when users are learning the component system
 or adapting code between the ABM, biweekly, and compartmental models.
 
-### 1. Where does `create_component` come from?
+### Where does `create_component` come from?
 
 `create_component` is available from both the top-level
 `laser.measles` namespace and the shared `laser.measles.components`
@@ -652,7 +652,7 @@ from laser.measles.compartmental import create_component
 from laser.measles.components import create_component
 ```
 
-### 2. How do I access component classes and their parameter classes?
+### How do I access component classes and their parameter classes?
 
 Import component classes and their parameter classes directly from the
 subpackage. Each subpackage's `__init__` re-exports everything from its
@@ -720,7 +720,7 @@ The same pattern applies to biweekly and compartmental — import directly from
     `NoBirthsProcess` and `SIACalendarProcess` exist in the ABM subpackage only —
     there is no equivalent in the biweekly or compartmental subpackages.
 
-### 3. `model.components` is assigned *after* construction
+### `model.components` is assigned *after* construction
 
 The model constructors only accept `scenario` and `params`.
 
@@ -753,7 +753,7 @@ This applies to all three model types:
 - `BiweeklyModel`
 - `CompartmentalModel`
 
-### 4. There is no `lm` object in `laser.measles`
+### There is no `lm` object in `laser.measles`
 
 The top-level `laser.measles` package does **not** export a convenience
 object such as `lm`.
@@ -769,7 +769,7 @@ Import the specific model class directly:
 from laser.measles.abm import ABMModel, ABMParams
 ```
 
-### 5. `StateTracker` output shape depends on `aggregation_level`
+### `StateTracker` output shape depends on `aggregation_level`
 
 The `StateTracker` component stores time-series data differently depending
 on how it is configured.
@@ -812,7 +812,7 @@ Retrieve the tracker instance after `model.run()`:
 tracker = model.get_instance("StateTracker")[0]
 ```
 
-### 6. Cast NumPy scalars before building a Polars DataFrame
+### Cast NumPy scalars before building a Polars DataFrame
 
 Tracker arrays are NumPy arrays, so operations like `.max()` return
 NumPy scalar types (`np.int64`, `np.float64`).
@@ -835,7 +835,7 @@ An alternative is to use `.item()`:
 rows.append([patch_id, tracker.I[:, p].max().item()])
 ```
 
-### 7. Components are classes, not instances
+### Components are classes, not instances
 
 Components should be passed as **classes**, not instantiated objects.
 
@@ -865,7 +865,7 @@ model.components = [
 ]
 ```
 
-### 8. Scenario DataFrame must contain required columns
+### Scenario DataFrame must contain required columns
 
 All models expect the scenario DataFrame to contain at least the following
 columns:
@@ -888,7 +888,7 @@ scenario = pl.DataFrame({
 })
 ```
 
-### 9. Use `laser.measles.scenarios.synthetic` for test scenarios
+### Use `laser.measles.scenarios.synthetic` for test scenarios
 
 The `synthetic` module provides ready-made scenario DataFrames for
 testing and development. It is available via several import paths:
@@ -957,7 +957,7 @@ Available helpers: `single_patch_scenario`, `two_patch_scenario`,
 `two_cluster_scenario`, `satellites_scenario`. See the
 API reference for full parameter details.
 
-### 10. Retrieving results from `StateTracker`
+### Retrieval of results from `StateTracker`
 
 The `StateTracker` component does **not** expose a `.data`, `.results`,
 or `.to_polars()` attribute. These names do not exist.
@@ -1025,7 +1025,7 @@ The following attributes do not exist on any tracker and will raise
 `tracker.df`. Use `get_dataframe()` for global trackers or `.state_tracker`
 for per-patch trackers.
 
-### 11. `VitalDynamicsProcess` must be the first component
+### `VitalDynamicsProcess` must be the first component
 
 When using vital dynamics (births and deaths), `VitalDynamicsProcess` must
 be the **first** component added to the model.
@@ -1049,7 +1049,7 @@ before `VitalDynamicsProcess`. If `VitalDynamicsProcess` is not first,
 the `LaserFrame` is already initialized at the wrong capacity and will
 crash at runtime.
 
-### 12. `lat` and `lon` columns must be `Float64`, not `Int64`
+### `lat` and `lon` columns must be `Float64`, not `Int64`
 
 The scenario schema requires `lat` and `lon` to be floating-point.
 Using Python's `range()` or integer literals produces `Int64` columns,
@@ -1070,7 +1070,7 @@ scenario = pl.DataFrame({
 })
 ```
 
-### 13. Tick granularity: daily vs biweekly
+### Tick granularity: Daily vs. biweekly
 
 `ABMModel` and `CompartmentalModel` use **daily** ticks (1 tick = 1 day).
 `BiweeklyModel` uses **14-day** ticks (1 tick = 2 weeks, 26 ticks = 1 year).
@@ -1084,7 +1084,7 @@ BiweeklyParams(num_ticks=5 * 26)      # 130 biweekly ticks
 CompartmentalParams(num_ticks=5 * 365) # 1825 daily ticks
 ```
 
-### 14. Scenario `id` must be a string; `pop` must be `Int32`
+### Scenario `id` must be a string; `pop` must be `Int32`
 
 Two dtype requirements that produce cryptic errors if violated:
 
@@ -1124,7 +1124,7 @@ scenario = pl.DataFrame({"pop": [100_000, 80_000, 60_000], ...}).with_columns(
 The scenario helper functions (`single_patch_scenario`, `two_patch_scenario`, etc.)
 handle these dtypes correctly and are the safest way to build test scenarios.
 
-### 15. Do NOT add `TransmissionProcess` separately when using `InfectionProcess` (ABM)
+### Do NOT add `TransmissionProcess` separately when using `InfectionProcess` (ABM)
 
 `InfectionProcess` already instantiates `TransmissionProcess` internally and
 registers the `etimer` property on the population. Adding `TransmissionProcess`
@@ -1142,7 +1142,7 @@ model.add_component(InfectionProcess)
 The same applies to any component that is a sub-component of another: check the
 docs to see which components are stand-alone vs. internally managed.
 
-### 16. `StateTracker` values are `StateArray` objects, not plain Python scalars
+### `StateTracker` values are `StateArray` objects, not plain Python scalars
 
 When you index into a tracker's `.S`, `.I`, `.R` (etc.) arrays you get a
 `StateArray`, not a `float`. Passing a `StateArray` to an f-string format spec
@@ -1164,7 +1164,7 @@ For per-patch trackers (`aggregation_level=0`) the shape is
 `(n_states, n_ticks, n_patches)` — index with `[state_idx, tick, patch_idx]`
 and wrap with `int()` or `float()` before arithmetic or formatting.
 
-### 17. SIA schedule date column must use `datetime.date` values, not strings
+### SIA schedule date column must use `datetime.date` values, not strings
 
 `SIACalendarProcess` filters the schedule by comparing a polars date column
 to the current simulation date. If the column contains Python `str` values
@@ -1192,7 +1192,7 @@ sia_df = pl.DataFrame({
 sia_df = sia_df.with_columns(pl.col("date").str.to_date())
 ```
 
-### 18. `AgePyramidTracker` — reading the age distribution data
+### Read the age distribution data from `AgePyramidTracker`
 
 `AgePyramidTracker` stores snapshots in its `.age_pyramid` dict, keyed by
 date string (`"YYYY-MM-DD"`), with numpy histogram arrays as values.
@@ -1222,7 +1222,7 @@ change = end_counts.astype(float) - start_counts.astype(float)
 The bin edges are set by `AgePyramidTrackerParams.age_bins` (in days).
 Default bins come from `pyvd.constants.MORT_XVAL[::2]`.
 
-### 19. Per-patch attack rates from `StateTracker` (multi-patch models)
+### Per-patch attack rates from `StateTracker` (multi-patch models)
 
 When using a per-patch tracker (`aggregation_level=0`), the raw array has
 shape `(n_states, n_ticks, n_patches)`. To compute attack rates per patch
@@ -1260,7 +1260,7 @@ attack_rate = final_R / pop_from_scenario.astype(float)
 in the tracker array. Do not mix a 100-patch scenario with a tracker
 configured for 2 patches, or vice versa.
 
-### 20. `two_cluster_scenario` returns 100 patches by default (2 × 50)
+### `two_cluster_scenario` returns 100 patches by default (2 × 50)
 
 `two_cluster_scenario(n_nodes_per_cluster=50)` creates **100 patches** (2
 clusters × 50 nodes each). A per-patch StateTracker will have shape
@@ -1297,7 +1297,7 @@ For a smaller scenario pass `n_nodes_per_cluster`:
 scenario = two_cluster_scenario(n_nodes_per_cluster=5)  # 10 patches
 ```
 
-### 21. Multiprocessing workers must be defined at module level
+### Multiprocessing workers must be defined at module level
 
 Python's `multiprocessing` module uses pickle to transfer functions to worker
 processes. Functions defined inside another function (closures / nested defs)
@@ -1328,7 +1328,7 @@ def run_all_models():
 Alternatively, use `concurrent.futures.ProcessPoolExecutor` with
 `functools.partial` if you need to pass extra arguments.
 
-### 22. Scenario helpers are in `laser.measles` or `laser.measles.scenarios`, not in subpackages
+### Scenario helpers are in `laser.measles` or `laser.measles.scenarios`, not in subpackages
 
 Scenario generators (`single_patch_scenario`, `two_patch_scenario`,
 `two_cluster_scenario`, etc.) are exported from `laser.measles` and
@@ -1347,7 +1347,7 @@ from laser.measles import single_patch_scenario
 from laser.measles.scenarios import single_patch_scenario
 ```
 
-### 23. `SIACalendarParams.aggregation_level` must be ≥ 1
+### `SIACalendarParams.aggregation_level` must be ≥ 1
 
 `SIACalendarParams` validates that `aggregation_level >= 1`. Passing 0 raises:
 
@@ -1364,7 +1364,7 @@ params = SIACalendarParams(aggregation_level=1, sia_schedule=schedule_df, ...)
 
 For hierarchical IDs like `"country:state:lga"`, use `aggregation_level=3`.
 
-### 24. Custom components added via `add_component` must accept `verbose`
+### Custom components added via `add_component` must accept `verbose`
 
 `ABMModel.add_component(ComponentClass)` instantiates the class as
 `ComponentClass(model, verbose=False)`. Any custom component class must
@@ -1403,7 +1403,7 @@ age_years  = age_ticks / 365.0
 Available people properties: `state`, `susceptibility`, `patch_id`,
 `active`, `date_of_birth`, `date_of_vaccination`.
 
-### 26. Scenario `pop` column must be integer (`Int32`), not float
+### Scenario `pop` column must be integer (`Int32`), not float
 
 The scenario DataFrame validator requires `pop` to be an integer type.
 Passing a float column raises:
@@ -1428,9 +1428,9 @@ scenario = pl.DataFrame({
 scenario = scenario.with_columns(pl.col("pop").cast(pl.Int32))
 ```
 
-### 27. polars `with_column` (singular) was removed — use `with_columns`
+### Polars `with_column` (singular) was removed — use `with_columns`
 
-Older polars had `DataFrame.with_column(expr)` (singular). Current polars only
+Older Polars had `DataFrame.with_column(expr)` (singular). Current Polars only
 has `with_columns(*exprs)` (plural). Using the singular form raises:
 
 ```
@@ -1445,7 +1445,7 @@ Always use the plural form `with_columns` (not `with_column`):
 df = df.with_columns(pl.col("pop").cast(pl.Int32))
 ```
 
-### 28. `get_mixing_matrix()` takes no arguments — pass `scenario` at construction
+### `get_mixing_matrix()` takes no arguments — pass `scenario` at construction
 
 All mixing models (GravityMixing, RadiationMixing, etc.) accept the scenario
 at construction time, not at `get_mixing_matrix()` call time. Calling
@@ -1464,7 +1464,7 @@ mixer = RadiationMixing(scenario=scenario, params=RadiationParams())
 mixing_matrix = mixer.get_mixing_matrix()   # no arguments
 ```
 
-### 29. `lookup_state_idx` does not exist — use `params.states.index()`
+### `lookup_state_idx` does not exist — use `params.states.index()`
 
 There is no `lookup_state_idx` function exported from `laser.measles`. To find
 state indices, use the `states` list on the model params:
@@ -1478,7 +1478,7 @@ R_IDX = params.states.index('R')
 
 For the biweekly model the default order is `['S', 'I', 'R']` (indices 0, 1, 2).
 
-### 30. `AgePyramidTracker.age_pyramid` is a dict keyed by date strings — not an array
+### `AgePyramidTracker.age_pyramid` is a dict keyed by date strings — not an array
 
 `AgePyramidTracker.age_pyramid` returns a `dict[str, np.ndarray]` where the
 keys are date strings (e.g. `"2000-01-01"`). Indexing with an integer raises
@@ -1499,7 +1499,7 @@ Or iterate:
 first_array = next(iter(tracker.age_pyramid.values()))
 ```
 
-### 31. `numpy` has no `cummax` — use `np.maximum.accumulate`
+### `numpy` has no `cummax` — use `np.maximum.accumulate`
 
 `np.cummax` does not exist in NumPy. The equivalent is `np.maximum.accumulate`:
 
@@ -1511,7 +1511,7 @@ Do not use `np.cummax` — it does not exist in NumPy and raises
 result = np.maximum.accumulate(arr)
 ```
 
-### 32. `AgePyramidTracker.age_pyramid` key format — do not hardcode date strings
+### `AgePyramidTracker.age_pyramid` key format — do not hard code date strings
 
 The keys of `age_pyramid` are date strings generated internally and may not
 match the format you expect (e.g. `'2005-01-01'` vs `'2005-1-1'`). Always
@@ -1525,7 +1525,7 @@ end_pyramid   = tracker.age_pyramid[keys[-1]]  # last snapshot
 
 Never do `tracker.age_pyramid['2005-01-01']` — use `keys[-1]` instead.
 
-### 33. Never pass a plain dict as `params` to `create_component` or model constructors
+### Never pass a plain dict as `params` to `create_component` or model constructors
 
 All params objects (`ABMParams`, `BiweeklyParams`, `InfectionParams`, etc.)
 are **Pydantic models**, not plain dicts. Passing a dict raises
@@ -1555,7 +1555,7 @@ model.components = [
 Do not write `params={"beta": 1.2}` — this will fail immediately at model
 construction with `AttributeError: 'dict' object has no attribute 'verbose'`.
 
-### 34. Do not use try/except import blocks or dict fallbacks for params
+### Do not use try/except import blocks or dict fallbacks for params
 
 Do not write defensive import blocks like:
 

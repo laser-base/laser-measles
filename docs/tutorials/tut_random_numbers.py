@@ -1,5 +1,5 @@
 # %% [markdown]
-# # Random Numbers and Reproducibility
+# # Random numbers and reproducibility
 #
 # This tutorial covers how random numbers are handled in laser-measles models to ensure reproducibility.
 # Understanding this is crucial for debugging, testing, and scientific reproducibility.
@@ -7,7 +7,7 @@
 # %% [markdown]
 # ## Core concepts
 #
-# ### Model Seeding
+# ### Model seeding
 #
 # All laser-measles models automatically seed their random number generator from the `seed` parameter.
 # If no seed is provided, the model uses the current microsecond timestamp.
@@ -26,13 +26,13 @@ model = CompartmentalModel(scenario, params)
 print(f"Model PRNG seeded with: {params.seed}")
 
 # %% [markdown]
-# ### How laser.core Handles Seeding
+# ### How laser.core handles seeding
 #
 # Behind the scenes, laser-measles uses `laser.core.random.seed()` to create the random number generator.
 # This function does two important things:
 #
-# 1. **Creates a NumPy Generator**: Returns a `numpy.random.Generator` object seeded with the given value
-# 2. **Seeds global random state**: Also seeds `numpy.random` and numba's random number generator
+# 1. **Creates a NumPy Generator**: Returns a `numpy.random.Generator` object seeded with the given value.
+# 2. **Seeds global random state**: Also seeds `numpy.random` and numba's random number generator.
 #
 # This ensures both `model.prng` and `np.random` operations are reproducible.
 
@@ -48,7 +48,7 @@ print(f"Available methods: {len([m for m in dir(prng) if not m.startswith('_')])
 print("Key methods:", ["random", "binomial", "poisson", "normal", "exponential", "lognormal"])
 
 # %% [markdown]
-# ### Reproducible Random Numbers
+# ### Reproducible random numbers
 #
 # The `model.prng` object provides access to the seeded random number generator.
 # This ensures all random operations are reproducible when using the same seed.
@@ -71,7 +71,7 @@ print("Are they identical?", np.allclose(random1, random2))
 # %% [markdown]
 # ## Usage patterns
 #
-# ### Using model.prng in Components
+# ### Using model.prng in components
 #
 # Components should use `model.prng` for random number generation to maintain reproducibility.
 # This is how the biweekly infection process samples new infections:
@@ -94,7 +94,7 @@ new_infections = simulate_infections(model, S, prob)
 print("New infections by patch:", new_infections)
 
 # %% [markdown]
-# ### NumPy Random Functions
+# ### NumPy random functions
 #
 # For performance-critical code, especially with Numba, use `np.random` functions directly.
 # This is common in ABM transmission processes for sampling exposure times:
@@ -122,7 +122,7 @@ exposure_times = sample_exposure_times(10, mu_underlying, sigma_underlying)
 print("Exposure times (days):", exposure_times)
 
 # %% [markdown]
-# ### Mixed Usage Example
+# ### Mixed usage example
 #
 # Real components often combine both approaches. Here's how the ABM transmission process works:
 
@@ -155,7 +155,7 @@ print("Newly infected agents:", infected)
 # %% [markdown]
 # ## Best practices
 #
-# ### When to Use Each Approach
+# ### When to use each approach
 #
 # **Use `model.prng`:**
 # - For high-level stochastic processes (infections, births, deaths)
@@ -168,7 +168,7 @@ print("Newly infected agents:", infected)
 # - When working with specialized distributions
 
 # %% [markdown]
-# ### Testing Reproducibility
+# ### Testing reproducibility
 #
 # Always test that your models produce identical results with the same seed:
 
@@ -200,7 +200,7 @@ def test_reproducibility():
 test_reproducibility()
 
 # %% [markdown]
-# ### Numba Compatibility
+# ### Numba compatibility
 #
 # When using numba, set numpy's global seed before calling compiled functions:
 

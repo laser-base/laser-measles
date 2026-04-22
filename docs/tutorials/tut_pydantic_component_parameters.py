@@ -1,5 +1,5 @@
 # %% [markdown]
-# # Parameter Validation
+# # Parameter validation
 #
 # This tutorial demonstrates the strengths of using Pydantic's `BaseModel` to define simulation
 # parameters. Pydantic provides type
@@ -7,12 +7,12 @@
 # robust and user-friendly.
 #
 # Benefits:
-# 1. Type Validation: Automatic validation of parameter types and values
-# 2. Range Constraints: Built-in support for numerical bounds (gt, ge, lt, le)
+# 1. Type validation: Automatic validation of parameter types and values
+# 2. Range constraints: Built-in support for numerical bounds (gt, ge, lt, le)
 # 3. Documentation: Self-documenting parameters with descriptions
-# 4. Default Values: Clear default parameter values
-# 5. Error Messages: Detailed error messages for validation failures
-# 6. IDE Support: Better autocomplete and type hints
+# 4. Default values: Clear default parameter values
+# 5. Error messages: Detailed error messages for validation failures
+# 6. IDE support: Better autocomplete and type hints
 # 7. Serialization: Easy conversion to/from JSON and dictionaries
 
 # %%
@@ -189,7 +189,7 @@ except ValidationError:
     print("✗ Invalid string conversion:")
     print(traceback.format_exc())
 
-# Common mistake: out of range values
+# Common mistake: Out of range values
 # Note: ImportationPressureParams validation happens in the component's _validate_params method
 # Let's demonstrate with a negative importation rate instead:
 try:

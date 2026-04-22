@@ -1,14 +1,14 @@
 # %% [markdown]
-# # Vital Dynamics
+# # Vital dynamics
 #
 # This tutorial serves as an introduction to the different options for incorporating
 # vital dynamics (births, deaths, and age structure) into the ABM model.
 #
 # Vital dynamics is an essential component of modeling measles transmission, particularly
-# the birth rate. The ABM model is the best for modeling age-pbased transmission so this
+# the birth rate. The ABM model is the best for modeling age-based transmission so this
 # tutorial goes over some of the components you can use to setup the models.
 #
-# We start with some basic imports
+# We start with some basic imports.
 # %%
 from laser.measles.abm import ABMModel, ABMParams, VitalDynamicsProcess, ConstantPopProcess, VitalDynamicsParams, ConstantPopParams, PopulationTracker, WPPVitalDynamicsProcess, AgePyramidTracker
 from laser.measles.scenarios import synthetic
@@ -19,9 +19,9 @@ import numpy as np
 params = ABMParams(num_ticks=365)
 scenario = synthetic.two_patch_scenario()
 # %% [markdown]
-# And define a custom component to track the lentht of the
-# laserframe. This does not indicate the total size of the
-# people laserframe (the capacity), but rather the number of agents
+# And define a custom component to track the length of the
+# LaserFrame. This does not indicate the total size of the
+# people LaserFrame (the capacity), but rather the number of agents
 # who have entered the simulation.
 # %%
 from laser.measles.base import BasePhase
@@ -34,9 +34,9 @@ class PeopleLengthTracker(BasePhase):
 # %% [markdown]
 # ## VitalDynamics and ContantPop processes
 # The `VitalDynamicsProcess` and `ConstantPopProcess` take constant crude birth rates (births per 1k pop per year)
-# as well as death rates (in the case of the former). Below we compare how the length of the laserframe increases
+# as well as death rates (in the case of the former). Below we compare how the length of the LaserFrame increases
 # compared to the total population. Using the `VitalDynamicsProcess` we see that the length
-# of the laserframe is greater than the population size because agents that die remain in the computer memory while
+# of the LaserFrame is greater than the population size because agents that die remain in the computer memory while
 # the `ConstantPopProcess` recycles elements in the arrays as agents enter and leave the simulation.
 # %%
 with plt.style.context('sciris.simple'):

@@ -1,5 +1,5 @@
 # %% [markdown]
-# # Creating And Running Models
+# # Create and run models
 #
 # This tutorial demonstrates how to initialize and run a model using
 # the laser-measles framework.
@@ -21,8 +21,8 @@
 # We will also divide the nodes into clusters using colon convention: (cluster_i:node_j).
 # This is useful for doing spatial aggregation of e.g., case counts.
 #
-# laser-measles comes with a few simple scenarios which you can access
-# from the `scenarios` module (e.g. `from laser.measles import scenarios`).
+# laser-measles comes with a few simple scenarios that you can access
+# from the `scenarios` module (for example, `from laser.measles import scenarios`).
 # For this demo we will use one of the `synthetic` scenarios.
 
 # %%

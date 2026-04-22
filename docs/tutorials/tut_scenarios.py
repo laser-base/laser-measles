@@ -1,18 +1,18 @@
 # %% [markdown]
-# # Creating Model Scenarios
+# # Create model scenarios
 #
-# The initial conditions of the simulation are dictated by demographics (e.g., population, age distribution, etc.).
+# The initial conditions of the simulation are dictated by demographics (for example, population, age distribution, etc.).
 # The laser-measles package provides a number of tools to help you generate demographics for your simulation.
 # These can be used for the *abm*, *compartmental*, and *biweekly* models.
 #
 # In this tutorial, we'll download and process a shapefile of Ethiopia at administrative level 1 boundaries
-# to estimate intitial populations per patch. We will also show how we can sub-divide each boundary shape
+# to estimate initial populations per patch. We will also show how we can sub-divide each boundary shape
 # into roughly equal-area patches.
 
 # %% [markdown]
 # ## Setup and plot the shapefile
 #
-# laser-measles provides some functionality for downloading and plotting GADM shapefiles. Below we will download the data, print it as a dataframe, and then plot it. Note that we have constructed a `DOTNAME` attribute has the format `COUNTRY:REGION`. The data is located in the local directory.
+# laser-measles provides some functionality for downloading and plotting GADM shapefiles. Below we will download the data, print it as a dataframe, and then plot it. Note that we have constructed a `DOTNAME` attribute as the format `COUNTRY:REGION`. The data is located in the local directory.
 
 # %%
 from pathlib import Path
@@ -34,7 +34,7 @@ else:
     print("Shapefile already exists")
     shp = GADMShapefile(shapefile=shapefile, admin_level=1)
 
-# Access the shapfile and metadata as a polars dataframe
+# Access the shapefile and metadata as a polars dataframe
 # This looks like geopandas but is more limited.
 df = get_shapefile_dataframe(shp.shapefile)
 print(df.head(n=2).to_pandas().to_string())
@@ -114,7 +114,7 @@ print(f"Cache directory: {cache.get_cache_dir()}")
 # %% [markdown]
 # ## Sub-divide the regions
 #
-# Now we will generate roughtly equal area patches of 700 km using the original `shp` shapefile.
+# Now we will generate roughly equal area patches of 700 km using the original `shp` shapefile.
 # Now each shape has a unique identifier with the form `COUNTRY:REGION:ID`. We will also time how long this takes.
 
 # %%
