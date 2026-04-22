@@ -15,6 +15,7 @@ from laser.measles.scenarios import synthetic
 from laser.measles import create_component
 import matplotlib.pyplot as plt
 import numpy as np
+import sciris as sc
 
 params = ABMParams(num_ticks=365)
 scenario = synthetic.two_patch_scenario()

@@ -13,3 +13,11 @@ mkdocs-table-reader-plugin # directly insert csv and other formats as tables
 mkdocs-exclude # exclude files from the rendered docs tree
 jupytext
 markdownify
+
+# packages needed to run notebook tutorials
+sciris
+seaborn
+notebook
+ipykernel
+optuna
+plotly

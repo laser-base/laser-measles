@@ -72,18 +72,20 @@ except ValidationError as e:
 # This will fail - beta must be > 0
 try:
     invalid_params = InfectionParams(beta=-5.0)
-    print(f"✓ Invalid beta=-5.0: {invalid_params.beta}")
 except ValidationError:
     print("✗ Validation error for beta=-5.0:")
     print(traceback.format_exc())
+else:
+    raise AssertionError("Expected ValidationError for beta=-5.0")
 
 # This will fail - seasonality must be 0 <= value <= 1
 try:
     invalid_params = InfectionParams(seasonality=1.5)
-    print(f"✓ Invalid seasonality=1.5: {invalid_params.seasonality}")
 except ValidationError:
     print("✗ Validation error for seasonality=1.5:")
     print(traceback.format_exc())
+else:
+    raise AssertionError("Expected ValidationError for seasonality=1.5")
 
 # %% [markdown]
 # ## Self-documenting parameters
@@ -184,20 +186,22 @@ except ValidationError as e:
 try:
     # This will fail - can't convert non-numeric string
     params = CaseSurveillanceParams(detection_rate="high")
-    print(f"✓ String 'high' converted: {params.detection_rate}")
 except ValidationError:
     print("✗ Invalid string conversion:")
     print(traceback.format_exc())
+else:
+    raise AssertionError("Expected ValidationError for detection_rate='high'")
 
 # Common mistake: out of range values
 # Note: ImportationPressureParams validation happens in the component's _validate_params method
 # Let's demonstrate with a negative importation rate instead:
 try:
     params = ImportationPressureParams(crude_importation_rate=-1.0)
-    print(f"✓ Negative importation rate accepted: {params.crude_importation_rate}")
 except ValidationError:
     print("✗ Negative importation rate caught:")
     print(traceback.format_exc())
+else:
+    raise AssertionError("Expected ValidationError for crude_importation_rate=-1.0")
 
 # Time range validation happens at component level, not parameter level
 params_with_bad_time_range = ImportationPressureParams(importation_start=10, importation_end=5)
@@ -237,6 +241,8 @@ try:
     invalid_seasonal = SeasonalInfectionParams(humidity_effect=0.8)  # > 0.5
 except ValidationError as e:
     print(f"\n✗ Extended validation works: {e.errors()[0]['msg']}")
+else:
+    raise AssertionError("Expected ValidationError for humidity_effect=0.8")
 
 # %% [markdown]
 # ## Configuration management
