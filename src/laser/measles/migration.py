@@ -4,7 +4,7 @@ import numpy as np
 import polars as pl
 
 
-def pairwise_haversine(df):  # TODO: use angular separation formula instead
+def pairwise_haversine(df: pl.DataFrame) -> np.ndarray:  # TODO: use angular separation formula instead
     """Pairwise distances for all (lon, lat) points using the Haversine formula.
 
     Args:

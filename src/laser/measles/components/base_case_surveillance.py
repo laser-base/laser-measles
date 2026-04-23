@@ -49,7 +49,7 @@ class BaseCaseSurveillanceTracker(BasePhase):
         params: Component-specific parameters. If None, will use default parameters.
     """
 
-    def __init__(self, model, verbose: bool = False, params: BaseCaseSurveillanceParams | None = None) -> None:
+    def __init__(self, model: BaseLaserModel, verbose: bool = False, params: BaseCaseSurveillanceParams | None = None) -> None:
         super().__init__(model, verbose)
         self.params = params or BaseCaseSurveillanceParams()
         self._validate_params()
@@ -85,7 +85,7 @@ class BaseCaseSurveillanceTracker(BasePhase):
         if self.params.aggregation_level < -1:
             raise ValueError("aggregation_level must be at least -1")
 
-    def __call__(self, model, tick: int) -> None:
+    def __call__(self, model: BaseLaserModel, tick: int) -> None:
         """Process case surveillance for the current tick.
 
         Args:
