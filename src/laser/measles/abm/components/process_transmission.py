@@ -13,6 +13,7 @@ from laser.measles.base import BasePhase
 from laser.measles.migration import init_gravity_diffusion
 from laser.measles.mixing.gravity import GravityMixing
 from laser.measles.utils import cast_type
+from laser.measles.utils import matmul
 
 # Import numba conditionally for the numba implementation
 try:
@@ -195,7 +196,8 @@ class TransmissionProcess(BasePhase):
         # transfer between and w/in patches
         # NB: this assumes that the mixing matrix is properly normalized
         # i.e., that the sum of each row is 1 (self.mixing.sum(axis=1) == 1)
-        forces = (beta_effective * patches.states.I) @ self.params.mixer.mixing_matrix
+        # forces = (beta_effective * patches.states.I) @ self.params.mixer.mixing_matrix
+        forces = matmul(beta_effective * patches.states.I, self.params.mixer.mixing_matrix)
 
         # normalize by the population of the patch
         forces /= patches.states.sum(axis=0)
