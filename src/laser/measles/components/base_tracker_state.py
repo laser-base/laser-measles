@@ -63,7 +63,7 @@ class BaseStateTracker(BasePhase):
         params: Component-specific parameters. If None, will use default parameters.
     """
 
-    def __init__(self, model, verbose: bool = False, params: BaseStateTrackerParams | None = None) -> None:
+    def __init__(self, model: BaseLaserModel, verbose: bool = False, params: BaseStateTrackerParams | None = None) -> None:
         super().__init__(model, verbose)
         self.name = "StateTracker"
         self.params = params or BaseStateTrackerParams()
@@ -131,7 +131,7 @@ class BaseStateTracker(BasePhase):
             # Return (num_ticks, num_groups)
             return self.state_tracker[state_idx, :, :]
 
-    def __call__(self, model, tick: int) -> None:
+    def __call__(self, model: BaseLaserModel, tick: int) -> None:
         if self.params.aggregation_level >= 0:
             # For each group, aggregate states from its nodes
             for group_idx, (_, node_indices) in enumerate(self.node_mapping.items()):

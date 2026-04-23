@@ -173,7 +173,7 @@ class ImportationPressureProcess(BasePhase):
         self.params = params or ImportationPressureParams()
         self.patch_rates_per_year_per_1k: np.ndarray | None = None
 
-    def __call__(self, model, tick: int) -> None:
+    def __call__(self, model: BiweeklyModel, tick: int) -> None:
         """
         Process importation pressure for the current tick.
 
