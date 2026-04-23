@@ -11,9 +11,11 @@ class StoufferParams(BaseModel):
     """
     Parameters for the stouffer migration model.
 
-    Args:
+    Attributes:
         include_home (bool): Whether to include home in the migration matrix
         k (float): Scale parameter (avg trip probability)
+        a (float): Population source exponent
+        b (float): Population target exponent
 
     """
 
@@ -31,8 +33,10 @@ class StoufferMixing(BaseMixing):
         .. math::
             M_{i,j} = k p_i^a \\sum_j \\left(\\frac{p_j}{\\sum_{k \\in \\Omega(i,j)} p_k}\\right)^b
 
-    Args:
+    Attributes:
         include_home (bool): Whether to include home in the migration matrix
+        a (float): Population source exponent
+        b (float): Population target exponent
     """
 
     def __init__(self, scenario: pl.DataFrame | None = None, params: StoufferParams | None = None):
