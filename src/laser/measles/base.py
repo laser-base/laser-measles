@@ -229,7 +229,7 @@ class BaseLaserModel(ABC):
         """
         self.tinit = datetime.now(tz=None)  # noqa: DTZ005
         if params.verbose:
-            print(f"{self.tinit}: Creating the {name} model…")
+            print(f"{self.tinit}: Creating the {name} model\u2026")
 
         # Auto-wrap polars DataFrame in appropriate scenario class if needed
         if isinstance(scenario, pl.DataFrame) and self.scenario_wrapper_class is not None:
@@ -388,7 +388,7 @@ class BaseLaserModel(ABC):
         num_ticks = self.params.num_ticks
         self._tstart = datetime.now(tz=None)  # noqa: DTZ005
         if self.params.verbose:
-            print(f"{self._tstart}: Running the {self.name} model for {num_ticks} ticks…")
+            print(f"{self._tstart}: Running the {self.name} model for {num_ticks} ticks\u2026")
 
         self.metrics = []
 
@@ -405,7 +405,7 @@ class BaseLaserModel(ABC):
 
         self._tfinish = datetime.now(tz=None)  # noqa: DTZ005
         if self.params.verbose:
-            print(f"Completed the {self.name} model at {self._tfinish}…")
+            print(f"Completed the {self.name} model at {self._tfinish}\u2026")
             self._print_timing_summary()
 
     def time_elapsed(self, units: str = "days") -> int | float:
@@ -554,7 +554,7 @@ class BaseLaserModel(ABC):
                 for _plot in instance.plot():
                     plt.show()
         else:
-            print("Generating PDF output…")
+            print("Generating PDF output\u2026")
             pdf_filename = f"{self.name} {self._tstart:%Y-%m-%d %H%M%S}.pdf"
             with PdfPages(pdf_filename) as pdf_file:
                 for instance in self.instances:
@@ -615,7 +615,7 @@ class BaseLaserModel(ABC):
             sum_columns = metrics[plot_columns].sum()
             width = max(map(len, sum_columns.index))
             for key in sum_columns.index:
-                print(f"{key:{width}}: {sum_columns[key]:13,} µs")
+                print(f"{key:{width}}: {sum_columns[key]:13,} \u00b5s")
             print("=" * (width + 2 + 13 + 3))
             print(f"{'Total:':{width + 1}} {sum_columns.sum():13,} microseconds")
         except ImportError:
@@ -729,7 +729,7 @@ class BasePhase(BaseComponent):
     """
 
     @abstractmethod
-    def __call__(self, model, tick: int) -> None:
+    def __call__(self, model: Any, tick: int) -> None:
         """
         Execute component logic for a given simulation tick.
 
@@ -760,7 +760,7 @@ class BaseScenario(ABC):
         """
         self._df = df
 
-    def __getattr__(self, attr):
+    def __getattr__(self, attr: str) -> Any:
         """
         Forward attribute access to the underlying DataFrame.
 
@@ -773,7 +773,7 @@ class BaseScenario(ABC):
         # Forward attribute access to the underlying DataFrame
         return getattr(self._df, attr)
 
-    def __getitem__(self, key):
+    def __getitem__(self, key: Any) -> Any:
         """
         Forward item access to the underlying DataFrame.
 
@@ -785,7 +785,7 @@ class BaseScenario(ABC):
         """
         return self._df[key]
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         """
         Return string representation of the scenario.
 
@@ -794,7 +794,7 @@ class BaseScenario(ABC):
         """
         return repr(self._df)
 
-    def __len__(self):
+    def __len__(self) -> int:
         """
         Return the length of the underlying DataFrame.
 
