@@ -28,6 +28,7 @@ import os
 import warnings
 from collections.abc import Callable
 from functools import wraps
+from typing import Any
 
 import numpy as np
 from laser.core.laserframe import LaserFrame
@@ -105,9 +106,9 @@ def calc_capacity(population: np.uint32, nticks: np.uint32, cbr: np.float32, ver
     capacity = np.uint32(population * (1 + daily_rate) ** nticks)
 
     if verbose:
-        print(f"Population growth: {population:,} … {capacity:,}")
+        print(f"Population growth: {population:,} \u2026 {capacity:,}")
         alternate = np.uint32(population * (1 + cbr / 1000) ** (nticks / 365))
-        print(f"Alternate growth:  {population:,} … {alternate:,}")
+        print(f"Alternate growth:  {population:,} \u2026 {alternate:,}")
 
     return int(capacity)
 
@@ -166,7 +167,7 @@ def seed_infections_in_patch(model, ipatch: int, ninfections: int = 100) -> None
     return
 
 
-def cast_type(a, dtype, round: bool = False):
+def cast_type(a: Any, dtype: np.dtype, round: bool = False) -> Any:
     """
     Cast a value to a specified data type.
     Note that this casting truncates by default.
