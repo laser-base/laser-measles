@@ -7,6 +7,7 @@ from laser.measles.base import BaseLaserModel
 from laser.measles.components import BaseInfectionParams
 from laser.measles.components import BaseInfectionProcess
 from laser.measles.mixing.gravity import GravityMixing
+from laser.measles.utils import matmul
 
 
 class InfectionParams(BaseInfectionParams):
@@ -78,11 +79,17 @@ class InfectionProcess(BaseInfectionProcess):
         # prevalence in each patch
         prevalence = states.I  # / states.sum(axis=0)  # I_j / N_j
 
-        lambda_i = (
+        # lambda_i = (
+        #     self.params.beta_per_tick
+        #     * (1 + self.params.seasonality * np.sin(2 * np.pi * (tick - self.params.season_start) / 26.0))
+        #     * prevalence
+        # ) @ self.params.mixer.mixing_matrix
+        lambda_i = matmul(
             self.params.beta_per_tick
             * (1 + self.params.seasonality * np.sin(2 * np.pi * (tick - self.params.season_start) / 26.0))
-            * prevalence
-        ) @ self.params.mixer.mixing_matrix
+            * prevalence,
+            self.params.mixer.mixing_matrix,
+        )
 
         # normalize by the population of the patch
         lambda_i /= states.sum(axis=0)
