@@ -34,8 +34,6 @@ nav:
   - Home: index.md
   - What's new: whatsnew.md
   - Installation: install.md
-  - Usage: usage.md
-  - Snapshotting: snapshotting.md
   - Tutorials:
     - tutorials/index.md
     - Quick start: tutorials/tut_quickstart_hello_world.ipynb
@@ -53,6 +51,13 @@ nav:
       - State arrays: tutorials/tut_state_arrays.ipynb
     - End-to-end tutorials:
       - Vaccination: tutorials/tut_vaccination.ipynb
+  - User guides:
+    - user-guides/index.md 
+    - Simulation snapshots: 
+      - user-guides/snapshots/index.md
+      - user-guides/snapshots/how-to-snapshot-compartmental.md
+      - user-guides/snapshots/how-to-snapshot-abm.md
+    - Usage: user-guides/usage.md
   - API reference: reference/
   - Authors: authors.md
 

@@ -4,7 +4,20 @@ Snapshot save/load for the laser-measles compartmental model.
 Snapshots capture the full patch SEIR state at a given point in time and
 allow the simulation to be resumed exactly from that point.
 
-Typical usage::
+Snapshots are standard [HDF5](https://www.hdfgroup.org/solutions/hdf5/) files
+(`.h5`), readable by any HDF5-compatible tool. The following data is saved for 
+compartmental model snapshots:
+
+| Dataset               | Description                                                                       |
+|-----------------------|-----------------------------------------------------------------------------------|
+| `patch_states`        | SEIR counts per patch, shape `(n_states, n_patches)`                              |
+| `scenario/*`          | Scenario DataFrame columns                                                        |
+| `t_snap`              | Elapsed ticks at save time                                                        |
+| `snap_date`           | Calendar date at save time (YYYY-MM-DD)                                           |
+| `implemented_sias`    | SIA campaign IDs already applied (present when `SIACalendarProcess` was active)   |
+
+
+Typical usage:
 
     import laser.measles as lm
     from laser.measles.compartmental import save_snapshot, load_snapshot
@@ -70,7 +83,6 @@ def save_snapshot(
 
     **Example:**
 
-        ```python
         import laser.measles as lm
         from laser.measles.compartmental import save_snapshot
         from laser.measles.compartmental.components import (
@@ -84,7 +96,6 @@ def save_snapshot(
         model.run()
 
         save_snapshot(model, "checkpoint.h5")
-        ```
     """
     path = Path(path)
 
@@ -162,7 +173,6 @@ def load_snapshot(
 
     **Example:**
 
-        ```python
         import laser.measles as lm
         from laser.measles.compartmental import load_snapshot
         from laser.measles.compartmental.components import InfectionProcess
@@ -172,7 +182,6 @@ def load_snapshot(
             "checkpoint.h5", params2, components=[InfectionProcess]
         )
         model2.run()
-        ```
     """
     from laser.measles.compartmental.model import CompartmentalModel  # noqa: PLC0415
 

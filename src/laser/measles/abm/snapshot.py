@@ -4,7 +4,21 @@ Snapshot save/load for the laser-measles ABM.
 Snapshots capture the full population and patch state at a given point in time
 and allow the simulation to be resumed exactly from that point.
 
-Typical usage::
+Snapshots are standard [HDF5](https://www.hdfgroup.org/solutions/hdf5/) files 
+(`.h5`), readable by any HDF5-compatible tool. The following data is saved for 
+ABM model snapshots:
+
+| Dataset               | Description                                                                       |
+|-----------------------|-----------------------------------------------------------------------------------|
+| `people/*`            | All agent properties (patch_id, state, age, date_of_vaccination, …)               |
+| `patch_states`        | SEIR counts per patch, shape `(n_states, n_patches)`                              |
+| `scenario/*`          | Scenario DataFrame columns (id, pop, lat, lon, mcv1, …)                           |
+| `t_snap`              | Elapsed ticks at save time                                                        |
+| `snap_date`           | Calendar date at save time (YYYY-MM-DD)                                           |
+| `cbr_per_1000`        | Crude birth rate (present when `VitalDynamicsProcess` was active)                 |
+| `implemented_sias`    | SIA campaign IDs already applied (present when `SIACalendarProcess` was active)   |
+
+Typical usage:
 
     import laser.measles as lm
 
@@ -80,7 +94,6 @@ def save_snapshot(
 
     **Example:**
 
-        ```python
         import laser.measles as lm
 
         params = lm.ABMParams(num_ticks=3650, seed=42, start_time="2000-01")
@@ -90,7 +103,6 @@ def save_snapshot(
 
         lm.save_snapshot(model, "checkpoint.h5")
         # Do not use model after this point.
-        ```
     """
     path = Path(path)
 
@@ -213,7 +225,6 @@ def load_snapshot(
 
     **Example:**
 
-        ```python
         import laser.measles as lm
 
         params2 = lm.ABMParams(num_ticks=1825, seed=42, start_time="2009-12")
@@ -223,7 +234,6 @@ def load_snapshot(
             components=[lm.VitalDynamicsProcess, lm.InfectionProcess],
         )
         model2.run()
-        ```
     """
     from laser.measles.abm.base import PeopleLaserFrame  # noqa: PLC0415
     from laser.measles.abm.model import ABMModel  # noqa: PLC0415
