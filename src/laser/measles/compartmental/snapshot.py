@@ -5,7 +5,7 @@ Snapshots capture the full patch SEIR state at a given point in time and
 allow the simulation to be resumed exactly from that point.
 
 Snapshots are standard [HDF5](https://www.hdfgroup.org/solutions/hdf5/) files
-(`.h5`), readable by any HDF5-compatible tool. The following data is saved for 
+(`.h5`), readable by any HDF5-compatible tool. The following data is saved for
 compartmental model snapshots:
 
 | Dataset               | Description                                                                       |
@@ -15,7 +15,6 @@ compartmental model snapshots:
 | `t_snap`              | Elapsed ticks at save time                                                        |
 | `snap_date`           | Calendar date at save time (YYYY-MM-DD)                                           |
 | `implemented_sias`    | SIA campaign IDs already applied (present when `SIACalendarProcess` was active)   |
-
 
 Typical usage:
 

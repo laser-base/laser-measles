@@ -4,8 +4,8 @@ Snapshot save/load for the laser-measles ABM.
 Snapshots capture the full population and patch state at a given point in time
 and allow the simulation to be resumed exactly from that point.
 
-Snapshots are standard [HDF5](https://www.hdfgroup.org/solutions/hdf5/) files 
-(`.h5`), readable by any HDF5-compatible tool. The following data is saved for 
+Snapshots are standard [HDF5](https://www.hdfgroup.org/solutions/hdf5/) files
+(`.h5`), readable by any HDF5-compatible tool. The following data is saved for
 ABM model snapshots:
 
 | Dataset               | Description                                                                       |

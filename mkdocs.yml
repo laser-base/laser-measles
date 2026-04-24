@@ -51,13 +51,13 @@ nav:
       - State arrays: tutorials/tut_state_arrays.ipynb
     - End-to-end tutorials:
       - Vaccination: tutorials/tut_vaccination.ipynb
-  - User guides:
+  - User guide:
     - user-guides/index.md 
     - Simulation snapshots: 
-      - user-guides/snapshots/index.md
-      - user-guides/snapshots/how-to-snapshot-compartmental.md
-      - user-guides/snapshots/how-to-snapshot-abm.md
-    - Usage: user-guides/usage.md
+      - user-guide/snapshots/index.md
+      - user-guide/snapshots/how-to-snapshot-compartmental.md
+      - user-guide/snapshots/how-to-snapshot-abm.md
+    - Usage: user-guide/usage.md
   - API reference: reference/
   - Authors: authors.md
 
