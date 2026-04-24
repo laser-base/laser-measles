@@ -1,6 +1,6 @@
 # How to snapshot an ABM
 
-This topic describes how to save, load, resume, and inspect a saved snapshot of an ABM model simulation. 
+This topic describes how to save, load, resume, and inspect a saved snapshot of an ABM model simulation.
 See [lm.abm.snapshot][laser.measles.abm.snapshot] for full reference information.
 
 ### Save a snapshot
@@ -55,8 +55,8 @@ model2 = lm.ABMModel.from_snapshot("checkpoint.h5", params2,
 
 ## Inspect a snapshot file
 
-Snapshots are standard [HDF5](https://www.hdfgroup.org/solutions/hdf5/) files 
-(`.h5`), readable by any HDF5-compatible tool. 
+Snapshots are standard [HDF5](https://www.hdfgroup.org/solutions/hdf5/) files
+(`.h5`), readable by any HDF5-compatible tool.
 Because snapshots are plain HDF5, you can inspect them with standard tools:
 
 ```python

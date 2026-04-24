@@ -52,8 +52,8 @@ nav:
     - End-to-end tutorials:
       - Vaccination: tutorials/tut_vaccination.ipynb
   - User guide:
-    - user-guides/index.md 
-    - Simulation snapshots: 
+    - user-guides/index.md
+    - Simulation snapshots:
       - user-guide/snapshots/index.md
       - user-guide/snapshots/how-to-snapshot-compartmental.md
       - user-guide/snapshots/how-to-snapshot-abm.md

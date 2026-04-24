@@ -16,8 +16,8 @@ Common use cases:
 
 ### Align start_time with the snapshot date
 
-A snapshot divides a run into two **segments**: one before the snapshot and the 
-second after the snapshot. Each segment is a fully independent `ABMModel` (or 
+A snapshot divides a run into two **segments**: one before the snapshot and the
+second after the snapshot. Each segment is a fully independent `ABMModel` (or
 `CompartmentalModel`) instance with its own `params` object.
 
 The most important rule: **set `params.start_time` for segment 2 to the snapshot
@@ -36,8 +36,8 @@ incorrect times.
 
 ### Do not re-seed the infection in segment 2
 
-Do not include `InfectionSeedingProcess` in the segment 2 component list. 
-Infections are already encoded in the restored patch states and agent states; 
+Do not include `InfectionSeedingProcess` in the segment 2 component list.
+Infections are already encoded in the restored patch states and agent states;
 re-seeding would add spurious infections on top of an already active epidemic.
 
 ```python
@@ -49,12 +49,12 @@ model2 = lm.load_snapshot(snap, params2, components=[InfectionProcess])
 ```
 
 ### Do not re-initialize the population equilibrium in segment 2
-    
+
 Do not include `InitializeEquilibriumStatesProcess` in the segment 2 component
 list. It re-initializes the population to equilibrium values and would
 overwrite the loaded state.
 
-### SIA calendars can exist across the snapshot boundary 
+### SIA calendars can exist across the snapshot boundary
 
 When `SIACalendarProcess` is in the component list, the snapshot saves the set of
 campaign IDs that were already applied before the save point
@@ -68,7 +68,7 @@ boundary remain eligible.
 ### Recovered agents are squashed
 
 `save_snapshot` **modifies the model in place**: Recovered (R) agents are removed
-from the people frame before writing to disk. This *squashing* dramatically reduces 
+from the people frame before writing to disk. This *squashing* dramatically reduces
 the file size for long measles runs where the majority of agents
 have recovered.
 
