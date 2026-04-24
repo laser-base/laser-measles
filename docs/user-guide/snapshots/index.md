@@ -95,3 +95,4 @@ printed by `load_snapshot` will be larger than `people.count` for this reason.
 If `VitalDynamicsProcess` was active, each agent's scheduled vaccination date is
 saved relative to the snapshot boundary (tick 0 of segment 2 = the snapshot
 date). The vaccination queue is rebuilt automatically on load.
+
