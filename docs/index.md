@@ -2,7 +2,7 @@
 
 [![PyPI Package latest release](https://img.shields.io/pypi/v/laser-measles.svg)](https://pypi.org/project/laser-measles/)
 [![MIT License](https://img.shields.io/github/license/InstituteforDiseaseModeling/laser-measles.svg)](https://github.com/InstituteforDiseaseModeling/laser-measles/blob/main/LICENSE)
-[![Documentation Status](https://readthedocs.org/projects/laser-measles/badge/?style=flat)](https://laser-measles.readthedocs.io/en/latest/)
+[![Documentation Status](https://github.com/laser-base/laser-measles/actions/workflows/github-actions.yml/badge.svg)](https://laser.idmod.org/laser-measles/)
 [![Coverage Status](https://codecov.io/gh/InstituteforDiseaseModeling/laser-measles/graph/badge.svg?branch=main)](https://app.codecov.io/github/InstituteforDiseaseModeling/laser-measles)
 
 laser-measles helps you build and analyze spatial models of measles implemented with the [LASER framework](https://github.com/InstituteforDiseaseModeling/laser).

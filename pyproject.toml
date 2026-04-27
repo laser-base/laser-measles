@@ -61,7 +61,7 @@ source-include = ["AUTHORS.rst", "CHANGELOG.rst", "CONTRIBUTING.rst"]
 
 [project.urls]
 Homepage = "https://example.com"
-Documentation = "https://laser-measles.readthedocs.io/en/latest/"
+Documentation = "https://laser.idmod.org/laser-measles/"
 Repository = "https://github.com/InstituteforDiseaseModeling/laser-measles.git"
 Issues = "https://github.com/InstituteforDiseaseModeling/laser-measles/issues"
 Changelog = "https://github.com/InstituteforDiseaseModeling/laser-measles/blob/master/CHANGELOG.md"
