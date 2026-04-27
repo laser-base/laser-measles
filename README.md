@@ -30,6 +30,3 @@ Our recommended first example is the [Quick Start Tutorial](https://laser.idmod.
 ## Documentation
 
 Full documentation is available at [laser.idmod.org/laser-measles](https://laser.idmod.org/laser-measles/).
-
-
-[![build](https://github.com/laser-base/laser-measles/actions/workflows/github-actions.yml/badge.svg)](https://github.com/laser-base/laser-measles/actions/workflows/github-actions.yml)
