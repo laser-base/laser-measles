@@ -10,7 +10,11 @@ import sys
 def convert_tutorials():
     """Convert all tut_*.py files to notebooks."""
     # Change to the tutorials directory
-    script_dir = os.path.dirname(os.path.abspath(__file__))
+    try:
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+    except NameError:
+        # Running in notebook / nbclient
+        script_dir = os.getcwd()
     os.chdir(script_dir)
 
     # Find all tutorial Python files
