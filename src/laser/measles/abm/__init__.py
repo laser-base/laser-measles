@@ -9,6 +9,8 @@ from .model import ABMModel
 from .model import Model
 from .params import ABMParams
 from .params import Params
+from .snapshot import load_snapshot
+from .snapshot import save_snapshot
 
 __all__ = [  # noqa: PLE0604
     "ABMModel",
@@ -19,5 +21,7 @@ __all__ = [  # noqa: PLE0604
     "Params",
     "components",
     "create_component",
+    "load_snapshot",
+    "save_snapshot",
     *_components_all,
 ]

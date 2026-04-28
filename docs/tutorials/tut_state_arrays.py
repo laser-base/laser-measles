@@ -1,7 +1,7 @@
 # %% [markdown]
-# # State Arrays
+# # State arrays
 #
-# This tutorial covers StateArray, a key data structure in laser-measles that provides
+# This tutorial covers `StateArray``, a key data structure in laser-measles that provides
 # convenient access to epidemiological state compartments.
 
 # %% [markdown]
@@ -135,12 +135,12 @@ print("States in first patch:", patch_states[:, 0])
 #
 # `StateArray` provides several key advantages:
 #
-# 1. **Readable Code**: `states.S` is more intuitive than `states[0]`
-# 2. **Maintainability**: Adding/removing states doesn't break numeric indices
-# 3. **Backward Compatibility**: Existing code using numeric indexing still works
-# 4. **Full NumPy Support**: All numpy operations work seamlessly
-# 5. **Error Prevention**: Typos in state names raise `AttributeError` immediately
-# 6. **Flexibility**: Works with different model types (SIR, SEIR, etc.)
+# 1. **Readable code**: `states.S` is more intuitive than `states[0]`.
+# 2. **Maintainability**: Adding/removing states doesn't break numeric indices.
+# 3. **Backward compatibility**: Existing code using numeric indexing still works
+# 4. **Full NumPy support**: All numpy operations work seamlessly.
+# 5. **Error prevention**: Typos in state names raise `AttributeError` immediately.
+# 6. **Flexibility**: Works with different model types (SIR, SEIR, etc.).
 
 # %%
 # Example: Error handling for invalid state names

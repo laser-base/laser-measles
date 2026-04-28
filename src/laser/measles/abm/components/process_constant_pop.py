@@ -43,6 +43,13 @@ class ConstantPopProcess(BaseConstantPopProcess):
 
         self.params = params if params is not None else ConstantPopParams()
 
+        if getattr(model, "_from_snapshot", False):
+            # ── Snapshot-load path ────────────────────────────────────────────
+            # People frame already populated; only add fresh patch property.
+            model.patches.add_scalar_property("births", dtype=np.uint32)
+            return
+
+        # ── Normal initialization ─────────────────────────────────────────────
         # re-initialize people frame with correct capacity
         capacity = self.calculate_capacity(model=model)
         model.initialize_people_capacity(capacity=int(capacity), initial_count=model.scenario["pop"].sum())
@@ -111,6 +118,10 @@ class ConstantPopProcess(BaseConstantPopProcess):
         Args:
             model: The ABM model instance to initialize
         """
+        if getattr(model, "_from_snapshot", False):
+            # Population state already loaded from snapshot.
+            return
+
         people = model.people
         scenario = model.scenario
 

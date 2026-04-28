@@ -12,7 +12,7 @@ You can also install the in-development version with:
 pip install git+https://github.com/InstituteforDiseaseModeling/laser-measles.git@main
 ```
 
-## Optional Dependencies
+## Optional dependencies
 
 The package supports several optional dependency groups that can be installed for additional functionality:
 
@@ -30,7 +30,7 @@ pip install laser-measles[examples]
 pip install laser-measles[full]
 ```
 
-### Dependency Groups
+### Dependency groups
 
 **dev**: Development tools for testing and code quality
 
@@ -57,7 +57,7 @@ pip install laser-measles[full]
 
 ## Development
 
-You can use this github codespace for fast development:
+You can use this GitHub Codespace for fast development:
 
 <a href='https://codespaces.new/InstituteforDiseaseModeling/laser-measles'><img src='https://github.com/codespaces/badge.svg' alt='Open in GitHub Codespaces' style='max-width: 100%;'></a>
 

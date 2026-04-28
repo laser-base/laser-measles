@@ -1,5 +1,5 @@
 # %% [markdown]
-# # Vaccination Modeling Approaches
+# # Vaccination modeling approaches
 #
 # This tutorial demonstrates three approaches for modeling vaccination
 # in laser-measles and explains when to use each one.
@@ -12,9 +12,9 @@
 #
 # The three approaches covered here are:
 #
-# 1. **Pre-existing immunity** — Set initial S/R split to reflect historical vaccination
-# 2. **Routine immunization (MCV1)** — Vaccinate newborns over a long simulation
-# 3. **SIA campaigns** — Discrete supplementary immunization activities
+# 1. **Pre-existing immunity**: Set initial S/R split to reflect historical vaccination
+# 2. **Routine immunization (MCV1)**: Vaccinate newborns over a long simulation
+# 3. **SIA campaigns**: Discrete supplementary immunization activities
 #
 # We use the **compartmental model** (daily timesteps) for all examples.
 
@@ -110,7 +110,7 @@ plt.tight_layout()
 plt.show()
 
 # %% [markdown]
-# Notice the dramatic difference: with no pre-existing immunity the
+# Notice the dramatic difference: With no pre-existing immunity the
 # entire population experiences a large epidemic, while with high
 # immunity (R0=16, ~94% initially immune) outbreaks are small and
 # quickly contained.

@@ -206,6 +206,47 @@ class ABMModel(BaseLaserModel):
         yield
         return
 
+    @classmethod
+    def from_snapshot(cls, path, params: "ABMParams", components: list | None = None, verbose: bool = True) -> "ABMModel":
+        """Restore an ABMModel from an HDF5 snapshot file.
+
+        Convenience wrapper around
+        [`load_snapshot`][laser.measles.abm.snapshot.load_snapshot].  Use
+        this to resume a simulation from a checkpoint saved with
+        [`save_snapshot`][laser.measles.abm.snapshot.save_snapshot].
+
+        Args:
+            path: Path to the HDF5 file written by
+                [`save_snapshot`][laser.measles.abm.snapshot.save_snapshot].
+            params: [`ABMParams`][laser.measles.abm.params.ABMParams] for the
+                resumed segment.  Set ``start_time`` to the snapshot date and
+                ``num_ticks`` to the remaining simulation duration.
+            components: Ordered list of component *classes* — same as the
+                original model.
+            verbose: Print a loading summary.
+
+        Returns:
+            A configured [`ABMModel`][laser.measles.abm.model.ABMModel]
+                ready for ``model.run()``.
+
+        **Example:**
+
+            ```python
+            import laser.measles as lm
+
+            params2 = lm.ABMParams(num_ticks=1825, seed=42, start_time="2009-12")
+            model2 = lm.ABMModel.from_snapshot(
+                "checkpoint.h5",
+                params2,
+                components=[lm.VitalDynamicsProcess, lm.InfectionProcess],
+            )
+            model2.run()
+            ```
+        """
+        from laser.measles.abm.snapshot import load_snapshot  # noqa: PLC0415
+
+        return load_snapshot(path, params, components=components, verbose=verbose)
+
     def _setup_components(self) -> None:
         pass
 

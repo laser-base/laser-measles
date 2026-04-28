@@ -108,6 +108,8 @@ __all__.extend(
 from .abm import ABMModel
 from .abm import ABMParams
 from .abm import BaseABMScenario
+from .abm import load_snapshot
+from .abm import save_snapshot
 from .biweekly import BiweeklyModel
 from .biweekly import BiweeklyParams
 from .compartmental import CompartmentalModel
@@ -122,6 +124,8 @@ __all__.extend(
         "BiweeklyParams",
         "CompartmentalModel",
         "CompartmentalParams",
+        "load_snapshot",
+        "save_snapshot",
     ]
 )
 

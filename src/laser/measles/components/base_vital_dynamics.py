@@ -104,6 +104,12 @@ class BaseVitalDynamicsProcess(BasePhase, ABC):
         # make sure that all states >= 0
         np.maximum(states, 0, out=states)
 
+        # Record per-patch births/deaths for tracking components (no-op if properties absent)
+        if hasattr(model.patches, "births"):
+            model.patches.births[:] = cast_type(unvaccinated_births + vaccinated_births, np.uint32)
+        if hasattr(model.patches, "deaths"):
+            model.patches.deaths[:] = cast_type(deaths.sum(axis=0), np.uint32)
+
     @abstractmethod
     def calculate_capacity(self, model) -> int:
         """

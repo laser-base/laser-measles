@@ -1,20 +1,20 @@
 # %% [markdown]
-# # Model Structure
+# # Model structure
 #
 # This tutorial goes over how a laser-measles models run.
 # It compares the structure of compartmental and agent-based models,
 # focusing on their LaserFrame data structures and how they operate.
 
 # ## Overview
-# Laser-measles takes a stochastic, distrete-time approach that is
+# Laser-measles takes a stochastic, discrete-time approach that is
 # focused on incorporating spatial structure and data to model measles transmission.
 #
 # laser-measles provides two primary modeling approaches:
-# - **Compartmental/state-transision approach**: Population-level SEIR dynamics using aggregated patch data
+# - **Compartmental/state-transmission approach**: Population-level SEIR dynamics using aggregated patch data
 # - **Agent-based approach**: Individual-level simulation with stochastic agents
 #
-# The comprtmental approach is taken by the *compartmental* and *biweekly* models while the
-# agent-based is taken by the *abm* model. The key difference lies in their
+# The compartmental approach is taken by the *compartmental* and *biweekly* models while the
+# agent-based is taken by the ABM model. The key difference lies in their
 # data organization and LaserFrame structures.
 # You can choose which model (*abm*, *compartmental*, or *biweekly*) to import by importing
 # the submodule directly from laser-measles:
@@ -39,14 +39,14 @@ from laser.measles.abm import Model
 # ### Components and phases
 #
 # Each time step the model loops over the components that define what will happen in the simulation. Laser-measles
-# diffentiates between a `BaseComponent` and a `BasePhase`. Most components will be a `BasePhase` which is called
+# differentiates between a `BaseComponent` and a `BasePhase`. Most components will be a `BasePhase` which is called
 # every time step. A `BaseComponent` will be called at the beginning of the simulation but not necessarily every
 # time step (e.g., useful for initialization).
 #
 # A `Phase` (e.g. `InfectionProcess` or `StateTracker`) executes every time step the `__call__` method
 # defined in the class. Both a `Phase` and a `Component` has an `__init__` method that executes on initialization
 # as well as an `_initialize` method that run at the beginning of the simulation (`model.run()`). These are
-# particularly important for the abm model.
+# particularly important for the ABM model.
 #
 # To see/access all components available for a model you use the associated `components` sub-module.
 # %%
@@ -57,7 +57,7 @@ for c in sorted([c for c in dir(abm_components) if 'Process' in c]):
 # %% [markdown]
 # ## Patches
 #
-# Patches represent a spatial unit (e.g., administraive unit) and
+# Patches represent a spatial unit (for example, administrative unit) and
 # exist for both the compartmental and ABM models. They track the spatial
 # data and aggregates in the model.
 # The `patches` use a `BasePatchLaserFrame` (or child class) for population-level aggregates.
@@ -115,7 +115,7 @@ comp_infections_df = case_tracker_instance.get_dataframe()
 print(f"\nCompartmental model total infections: {comp_infections_df['cases'].sum()}")
 
 # %% [markdown]
-# ### Key Features of patches (e.g., BasePatchLaserFrame):
+# ### Key features of patches (e.g., BasePatchLaserFrame):
 # - `states` **property**: StateArray with shape `(num_states, num_patches)`
 # - **Attribute access**: `states.S`, `states.E`, `states.I`, `states.R`
 # - **Population aggregates**: Each patch contains total counts by disease state
@@ -165,7 +165,7 @@ print(f"\nABM model total infections: {abm_infections_df['cases'].sum()}")
 
 
 # %% [markdown]
-# ### Key Features of BasePeopleLaserFrame:
+# ### Key features of BasePeopleLaserFrame:
 # - **Individual agents**: Each row represents one person
 # - **Agent properties**: `patch_id`, `state`, `susceptibility`, `active`
 # - **Dynamic capacity**: Can grow/shrink as agents are born/die
@@ -176,24 +176,24 @@ print(f"\nABM model total infections: {abm_infections_df['cases'].sum()}")
 #
 # | Aspect | Compartmental | ABM |
 # |--------|---------------|-----|
-# | **Data Structure** | `BasePatchLaserFrame` | `BasePeopleLaserFrame` |
-# | **Population Storage** | Aggregated counts by patch | Individual agents |
-# | **State Representation** | `states.S[patch_id]` | `people.state[agent_id]` |
-# | **Spatial Organization** | Patch-level mixing matrix | Agent patch assignment |
+# | **Data structure** | `BasePatchLaserFrame` | `BasePeopleLaserFrame` |
+# | **Population storage** | Aggregated counts by patch | Individual agents |
+# | **State representation** | `states.S[patch_id]` | `people.state[agent_id]` |
+# | **Spatial organization** | Patch-level mixing matrix | Agent patch assignment |
 # | **Transitions** | Binomial sampling | Individual stochastic events |
 # | **Performance** | Faster (fewer calculations) | Slower (more detailed) |
-# | **Memory Usage** | Lower (aggregates) | Higher (individual records) |
+# | **Memory usage** | Lower (aggregates) | Higher (individual records) |
 
 # %% [markdown]
 # ## When to use each model
 #
-# **Use a Patches model only (e.g., Compartmental Model) when:**
+# **Use a Patches model only (compartmental model) when:**
 # - Analyzing population-level dynamics
 # - Running many scenarios quickly
 # - Interested in aggregate outcomes
 # - Working with large populations
 #
-# **Use a Patches+People Model (e.g., ABM Model) when:**
+# **Use a Patches+People model (ABM model) when:**
 # - Modeling individual heterogeneity
 # - Studying contact networks
 # - Tracking individual histories

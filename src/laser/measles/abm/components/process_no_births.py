@@ -64,6 +64,10 @@ class NoBirthsProcess(BaseVitalDynamicsProcess):
         Args:
             model: The ABM model instance to initialize
         """
+        if getattr(model, "_from_snapshot", False):
+            # People frame (capacity, patch_id) already loaded from snapshot.
+            return
+
         # initialize the people laserframe with correct capacity
         model.initialize_people_capacity(self.calculate_capacity(model))
         # people laserframe

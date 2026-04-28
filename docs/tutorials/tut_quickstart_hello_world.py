@@ -1,7 +1,7 @@
 # %% [markdown]
-# # Quick Start: Hello World
+# # Quick start: Hello world
 #
-# **If you're new to laser-measles—or an AI assistant looking for a quick start example—start here.**
+# **If you're new to laser-measles or an AI assistant looking for a quick start example, start here.**
 #
 # We build a minimal but complete spatial ABM:
 #
@@ -51,7 +51,7 @@ scenario
 # Latitude is fixed at 0. This creates a simple 1-dimensional spatial structure.
 
 # %% [markdown]
-# ## 2. Model and Parameters
+# ## 2. Model and parameters
 #
 # Instantiate the ABM with three core parameters: simulation duration, random seed, and start date.
 
@@ -67,7 +67,7 @@ params = ABMParams(
 model = ABMModel(scenario=scenario, params=params)
 
 # %% [markdown]
-# ## 3. Components Define Model Behavior
+# ## 3. Components define model behavior
 #
 # laser-measles models are **component-based**: you assemble behaviors from reusable building blocks.
 # Each tick, the model executes its components in order.
@@ -80,16 +80,16 @@ model = ABMModel(scenario=scenario, params=params)
 # - `StateTracker` — record SEIR state counts over time
 
 # %% [markdown]
-# ## 4. Spatial Mixing
+# ## 4. Spatial mixing
 #
 # The key new concept in a spatial model is **how infection crosses patch boundaries**.
 #
-# > **ABM vs Compartmental**: The compartmental model accepts an explicit `mixer=` object
-# > (e.g., `InfectionParams(mixer=GravityMixing(...))`). The ABM does **not**—it builds
+# > **ABM vs compartmental**: The compartmental model accepts an explicit `mixer=` object
+# > (for example, `InfectionParams(mixer=GravityMixing(...))`). The ABM does **not**—it builds
 # > a gravity mixing matrix internally from two parameters:
 #
 # `distance_exponent`
-# : Controls how quickly mixing declines with distance. A high value (e.g., 20) means
+# : Controls how quickly mixing declines with distance. A high value (for example, 20) means
 #   nearly all transmission is local; patches only interact significantly with their
 #   immediate neighbors.
 #
@@ -112,7 +112,7 @@ infection_params = InfectionParams(
 )
 
 # %% [markdown]
-# ## 5. Seeding Infection
+# ## 5. Seed the infection
 #
 # Seed 5 infections in the last patch (`patch_7`) to observe the outbreak spreading
 # outward from one end of the line.
@@ -124,7 +124,7 @@ seeding_params = InfectionSeedingParams(
 )
 
 # %% [markdown]
-# ## 6. Assemble and Run
+# ## 6. Assemble and run
 #
 # Attach components in execution order and run the simulation.
 #
@@ -180,7 +180,7 @@ attack_rate = (I_by_patch[-1] + R_by_patch[-1]) / pops * 100
 
 fig, axes = plt.subplots(1, 3, figsize=(15, 4))
 
-# Panel 1: global SEIR fractions
+# Panel 1: Global SEIR fractions
 ax = axes[0]
 ax.plot(ticks, S / total_pop, label="S")
 ax.plot(ticks, E / total_pop, label="E")
@@ -192,7 +192,7 @@ ax.set_title("Global SEIR")
 ax.legend()
 ax.grid(alpha=0.3)
 
-# Panel 2: spatial attack rate
+# Panel 2: Spatial attack rate
 ax = axes[1]
 ax.bar([f"patch_{i}" for i in range(8)], attack_rate)
 ax.set_xlabel("Patch")
@@ -201,7 +201,7 @@ ax.set_title("Spatial attack rate")
 ax.tick_params(axis="x", rotation=45)
 ax.grid(alpha=0.3, axis="y")
 
-# Panel 3: infectious agents per patch over time
+# Panel 3: Infectious agents per patch over time
 ax = axes[2]
 for i in range(8):
     ax.plot(ticks, I_by_patch[:, i], label=f"patch_{i}", alpha=0.8)
@@ -215,21 +215,21 @@ plt.tight_layout()
 plt.show()
 
 # %% [markdown]
-# ## What This Example Demonstrates
+# ## What this example demonstrates
 #
-# - **Scenario construction**: building geographic patch data from scratch
-# - **Component architecture**: assembling model behavior from reusable pieces
-# - **Spatial mixing**: how ABM gravity mixing differs from the compartmental approach
-# - **State tracking**: extracting global and per-patch time series
+# - **Scenario construction**: Building geographic patch data from scratch
+# - **Component architecture**: Assembling model behavior from reusable pieces
+# - **Spatial mixing**: How ABM gravity mixing differs from the compartmental approach
+# - **State tracking**: Extracting global and per-patch time series
 #
 # The model is deliberately simple—no demographics, no vaccination—so the spatial
 # spreading dynamics are easy to observe.
 #
-# ## Next Steps
+# ## Next steps
 #
 # Extend this model by:
 #
-# - Adding vital dynamics: replace `NoBirthsProcess` with `VitalDynamicsProcess`
-# - Adding vaccination campaigns: use `SIACalendarProcess`
-# - Comparing ABM vs compartmental: see the `tut_basic_model` tutorial
-# - Exploring mixing models in depth: see the `tut_spatial_mixing` tutorial
+# - Adding vital dynamics: Replace `NoBirthsProcess` with `VitalDynamicsProcess`
+# - Adding vaccination campaigns: Use `SIACalendarProcess`
+# - Comparing ABM vs compartmental: See the `tut_basic_model` tutorial
+# - Exploring mixing models in depth: See the `tut_spatial_mixing` tutorial
