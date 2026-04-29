@@ -18,13 +18,17 @@ jobs:
       - name: Execute tutorial notebooks
         run: |
           mkdir -p dist/executed_nbs
-          python -m jupyter nbconvert \
-            --to notebook \
-            --execute \
-            --allow-errors \
-            --ExecutePreprocessor.timeout=300 \
-            --output-dir dist/executed_nbs \
-            docs/tutorials/tut_*.ipynb
+          for nb in docs/tutorials/tut_*.ipynb; do
+            base="$(basename "$nb" .ipynb)"
+            python -m jupyter nbconvert \
+              --to notebook \
+              --execute \
+              --allow-errors \
+              --ExecutePreprocessor.timeout=300 \
+              --output-dir dist/executed_nbs \
+              --output "$base" \
+              "$nb"
+          done
       - name: Build MkDocs site
         run: mkdocs build
       - name: Generate combined_mkdocs.md
