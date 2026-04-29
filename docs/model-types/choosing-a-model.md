@@ -78,4 +78,4 @@ model = ABMModel(scenario, params)
 - [Worked examples](../components/worked-examples.md) — complete runnable scripts for all three models
 - [Configuring spatial mixing](configuring-spatial-mixing.md) — how to set up disease spread between patches
 - [Snapshotting](../snapshotting/index.md) — save and resume long simulations in segments
-- [Tutorials](../tutorials/index.md) — hands-on walkthroughs starting with the [Quick start](../tutorials/tut_quickstart_hello_world.ipynb)
+- [Tutorials](../tutorials/index.md) — hands-on walkthroughs starting with the [Quick start](../tutorials/tut_quickstart_hello_world.py)

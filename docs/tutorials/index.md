@@ -10,33 +10,33 @@ These tutorials walk you through laser-measles step by step, from your first sim
 New to laser-measles? Start here. This single example walks through a complete
 spatial ABM from scenario construction to visualization.
 
-- [Quick start: Hello world](tut_quickstart_hello_world.ipynb)
+- [Quick start: Hello world](tut_quickstart_hello_world.py)
 
 ## Beginning tutorials
 
 These tutorials cover the fundamentals of building and running models. They introduce the three model types, the scenario format, and the component system.
 
-- [Basic model](tut_basic_model.ipynb) — build your first compartmental model
-- [Model structure](tut_model_structure.ipynb) — understand model internals and data flow
-- [ABM introduction](tut_abm_intro.ipynb) — switch to agent-based modeling
-- [Scenarios](tut_scenarios.ipynb) — construct scenario DataFrames from geographic data
+- [Basic model](tut_basic_model.py) — build your first compartmental model
+- [Model structure](tut_model_structure.py) — understand model internals and data flow
+- [ABM introduction](tut_abm_intro.py) — switch to agent-based modeling
+- [Scenarios](tut_scenarios.py) — construct scenario DataFrames from geographic data
 
 ## Feature tutorials
 
 These tutorials highlight specific features of the library. Each one focuses on a single capability that you can combine with others.
 
-- [Random numbers](tut_random_numbers.ipynb) — reproducible stochastic simulations
-- [Creating a component](tut_creating_component.ipynb) — write a custom process or tracker ([how-to guide](../components/custom-component.md))
-- [ABM vital dynamics](tut_abm_vital_dynamics.ipynb) — births, deaths, and aging in agent-based models
-- [Spatial mixing](tut_spatial_mixing.ipynb) — model disease spread between patches ([concepts](../model-types/spatial-mixing.md))
-- [Pydantic component parameters](tut_pydantic_component_parameters.ipynb) — validated configuration with Pydantic
-- [State arrays](tut_state_arrays.ipynb) — efficient array operations on agent properties
+- [Random numbers](tut_random_numbers.py) — reproducible stochastic simulations
+- [Creating a component](tut_creating_component.py) — write a custom process or tracker ([how-to guide](../components/custom-component.md))
+- [ABM vital dynamics](tut_abm_vital_dynamics.py) — births, deaths, and aging in agent-based models
+- [Spatial mixing](tut_spatial_mixing.py) — model disease spread between patches ([concepts](../model-types/spatial-mixing.md))
+- [Pydantic component parameters](tut_pydantic_component_parameters.py) — validated configuration with Pydantic
+- [State arrays](tut_state_arrays.py) — efficient array operations on agent properties
 
 ## End-to-end tutorials
 
 These tutorials combine multiple features into realistic analysis workflows.
 
-- [Vaccination](tut_vaccination.ipynb) — model supplementary immunization activities and evaluate campaign impact
+- [Vaccination](tut_vaccination.py) — model supplementary immunization activities and evaluate campaign impact
 
 ## Next steps
 

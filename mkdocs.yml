@@ -36,21 +36,21 @@ nav:
   - Installation: install.md
   - Tutorials:
     - tutorials/index.md
-    - Quick start: tutorials/tut_quickstart_hello_world.ipynb
+    - Quick start: tutorials/tut_quickstart_hello_world.py
     - Beginning tutorials:
-      - Basic model: tutorials/tut_basic_model.ipynb
-      - Model structure: tutorials/tut_model_structure.ipynb
-      - ABM introduction: tutorials/tut_abm_intro.ipynb
-      - Scenarios: tutorials/tut_scenarios.ipynb
+      - Basic model: tutorials/tut_basic_model.py
+      - Model structure: tutorials/tut_model_structure.py
+      - ABM introduction: tutorials/tut_abm_intro.py
+      - Scenarios: tutorials/tut_scenarios.py
     - Feature tutorials:
-      - Random numbers: tutorials/tut_random_numbers.ipynb
-      - Create a component: tutorials/tut_creating_component.ipynb
-      - ABM vital dynamics: tutorials/tut_abm_vital_dynamics.ipynb
-      - Spatial mixing: tutorials/tut_spatial_mixing.ipynb
-      - Pydantic component parameters: tutorials/tut_pydantic_component_parameters.ipynb
-      - State arrays: tutorials/tut_state_arrays.ipynb
+      - Random numbers: tutorials/tut_random_numbers.py
+      - Create a component: tutorials/tut_creating_component.py
+      - ABM vital dynamics: tutorials/tut_abm_vital_dynamics.py
+      - Spatial mixing: tutorials/tut_spatial_mixing.py
+      - Pydantic component parameters: tutorials/tut_pydantic_component_parameters.py
+      - State arrays: tutorials/tut_state_arrays.py
     - End-to-end tutorials:
-      - Vaccination: tutorials/tut_vaccination.ipynb
+      - Vaccination: tutorials/tut_vaccination.py
   - Model types:
     - model-types/index.md
     - Choosing a model type: model-types/choosing-a-model.md

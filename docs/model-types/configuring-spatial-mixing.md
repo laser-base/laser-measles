@@ -107,7 +107,7 @@ The rest of your code — infection component setup, model construction, analysi
 ## See also
 
 - [Spatial mixing](spatial-mixing.md) — conceptual explanation of the four mixing models
-- [Tutorial: Spatial mixing](../tutorials/tut_spatial_mixing.ipynb) — hands-on tutorial on spatial mixing
+- [Tutorial: Spatial mixing](../tutorials/tut_spatial_mixing.py) — hands-on tutorial on spatial mixing
 - [Worked examples](../components/worked-examples.md) — complete runnable scripts showing component wiring
 - [Troubleshooting](../components/troubleshooting.md) — common issues with mixing and components
 - [API reference](../reference/laser/measles/mixing/index.md) — full parameter details

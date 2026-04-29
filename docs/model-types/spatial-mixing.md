@@ -134,5 +134,5 @@ The right value of `k` depends on your timestep length, the geographic scale of 
 - [How to configure spatial mixing](configuring-spatial-mixing.md) — step-by-step guide to setting up a mixer
 - [Model types](index.md) — overview of the three model types that use spatial mixing
 - [Demographics](demographics.md) — how scenario data (populations, coordinates) flows into the mixing matrix
-- [Tutorial: Spatial mixing](../tutorials/tut_spatial_mixing.ipynb) — hands-on tutorial on spatial mixing
+- [Tutorial: Spatial mixing](../tutorials/tut_spatial_mixing.py) — hands-on tutorial on spatial mixing
 - [API reference](../reference/laser/measles/mixing/index.md) — full class and parameter details

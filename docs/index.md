@@ -33,7 +33,7 @@ New users should install the latest 0.10.x release, which is the current stable 
 pip install "laser-measles>=0.10,<1.0"
 ```
 
-Our recommended first example is the [Quick Start Tutorial](tutorials/tut_quickstart_hello_world.ipynb).
+Our recommended first example is the [Quick Start Tutorial](tutorials/tut_quickstart_hello_world.py).
 
 ## AI-powered on-ramp: JENNER-MEASLES
 
