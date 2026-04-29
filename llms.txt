@@ -7,7 +7,7 @@ laser-measles is a spatial epidemiological modeling toolkit for measles transmis
 ## Key Features
 
 - **Spatial modeling**: Support for geographic regions with administrative boundaries and population distributions
-- **Multiple model types**: Agent-based (ABM), Biweekly, and Generic compartmental models for different use cases
+- **Multiple model types**: Agent-based (ABM), Biweekly, and Compartmental models for different use cases
 - **Component-based architecture**: Interchangeable disease dynamics components
 - **High-performance computing**: Optimized data structures and Numba JIT compilation
 - **Type-safe parameters**: Pydantic-based configuration management
@@ -15,7 +15,7 @@ laser-measles is a spatial epidemiological modeling toolkit for measles transmis
 ## Model Types
 
 1. **ABM (Agent-Based Model)**: Individual-level simulation with stochastic agents, daily timesteps
-2. **Biweekly Compartmental Model**: Population-level SEIR dynamics with 2-week timesteps
+2. **Biweekly Compartmental Model**: Population-level SIR dynamics with 2-week timesteps
 3. **Compartmental Model**: Population-level SEIR dynamics with daily timesteps
 
 ## Installation
@@ -31,9 +31,9 @@ pip install -e ".[dev]"
 
 ## Dependencies
 
-- **Core**: laser-core>=1.0.0, pydantic>=2.11.5, polars>=1.30.0
-- **Development**: pytest, ruff, mypy
-- **Documentation**: sphinx, sphinx-autodoc-typehints
+- **Core**: laser-core>=1.0.1, pydantic>=2.12.5, polars>=1.39.3, alive-progress>=3.0, rastertoolkit>=0.3.11, patito>=0.8.6, pyvd>=1.0
+- **Development**: pytest, ruff, mypy, pyright
+- **Documentation**: mkdocs-material, mkdocstrings, mkdocs-jupyter
 - **Examples**: jupyter, seaborn, optuna
 
 ## Usage Examples
@@ -42,7 +42,7 @@ pip install -e ".[dev]"
 ```python
 from laser.measles.abm import ABMModel, ABMParams
 
-params = ABMParams(num_ticks=7300, seed=12345)
+params = ABMParams(num_ticks=7300, seed=12345, start_time="2000-01")
 model = ABMModel(scenario_data, params)
 model.run()
 ```
@@ -51,7 +51,7 @@ model.run()
 ```python
 from laser.measles.biweekly import BiweeklyModel, BiweeklyParams
 
-params = BiweeklyParams(num_ticks=520, seed=12345)
+params = BiweeklyParams(num_ticks=520, seed=12345, start_time="2000-01")
 model = BiweeklyModel(scenario_data, params)
 model.run()
 ```
@@ -60,7 +60,7 @@ model.run()
 ```python
 from laser.measles.compartmental import CompartmentalModel, CompartmentalParams
 
-params = CompartmentalParams(num_ticks=7300, seed=12345)
+params = CompartmentalParams(num_ticks=7300, seed=12345, start_time="2000-01")
 model = CompartmentalModel(scenario_data, params)
 model.run()
 ```
@@ -82,7 +82,7 @@ patches = generator.generate_patches()
 
 ## Documentation
 
-- **Documentation**: https://laser-measles.readthedocs.io/en/latest/
+- **Documentation**: https://laser.idmod.org/laser-measles/
 - **Repository**: https://github.com/InstituteforDiseaseModeling/laser-measles
 - **Issues**: https://github.com/InstituteforDiseaseModeling/laser-measles/issues
 
@@ -91,8 +91,8 @@ patches = generator.generate_patches()
 - **Python**: 3.10+
 - **Testing**: pytest
 - **Linting**: ruff
-- **Type checking**: mypy
-- **Documentation**: Sphinx
+- **Type checking**: pyright, mypy
+- **Documentation**: MkDocs with Material for MkDocs theme
 
 ## License
 
@@ -100,7 +100,7 @@ MIT License - Copyright (c) 2024, Bill & Melinda Gates Foundation
 
 ## Contributing
 
-Contributions are welcome! Please see CONTRIBUTING.rst for guidelines. The project uses conventional commits and follows Google style docstrings.
+Contributions are welcome! Please see CONTRIBUTING.md for guidelines. The project uses conventional commits and follows Google style docstrings.
 
 ## Keywords
 
