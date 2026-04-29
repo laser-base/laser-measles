@@ -34,8 +34,6 @@ nav:
   - Home: index.md
   - What's new: whatsnew.md
   - Installation: install.md
-  - Usage: usage.md
-  - Snapshotting: snapshotting.md
   - Tutorials:
     - tutorials/index.md
     - Quick start: tutorials/tut_quickstart_hello_world.ipynb
@@ -53,7 +51,17 @@ nav:
       - State arrays: tutorials/tut_state_arrays.ipynb
     - End-to-end tutorials:
       - Vaccination: tutorials/tut_vaccination.ipynb
+  - Model types:
+    - model-types/index.md
+    - Demographics: model-types/demographics.md
+  - Components:
+    - components/index.md
+    - Worked examples: components/worked-examples.md
+    - Troubleshooting: components/troubleshooting.md
+  - Snapshotting: snapshotting.md
   - API reference: reference/
+  - Contributing: contributing.md
+  - Code of conduct: code-of-conduct.md
   - Authors: authors.md
 
 # icons, semantic markup, emojis
