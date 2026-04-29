@@ -11,7 +11,16 @@ from laser.measles.utils import cast_type
 
 
 class SIACalendarParams(BaseModel):
-    """Parameters specific to the SIA calendar component."""
+    """Parameters specific to the SIA calendar component.
+
+    **Example:**
+
+        ```python
+        from laser.measles.biweekly.components.process_sia_calendar import SIACalendarParams
+
+        params = SIACalendarParams()
+        ```
+    """
 
     model_config = {"arbitrary_types_allowed": True}
 
@@ -49,6 +58,21 @@ class SIACalendarProcess(BasePhase):
     - SIAs are implemented when the model's current_date has passed the scheduled date
     - Since the model steps in 14-day increments, SIAs are implemented on the first step after their scheduled date
     - Each SIA is implemented exactly once
+    
+
+    **Example:**
+
+        ```python
+        from laser.measles.scenarios.synthetic import single_patch_scenario
+        from laser.measles.biweekly import BiweeklyModel, BiweeklyParams
+        from laser.measles.biweekly import components
+        from laser.measles import create_component
+
+        scenario = single_patch_scenario(population=100_000, mcv1_coverage=0.85)
+        params = BiweeklyParams(num_ticks=52, seed=42, start_time="2000-01")
+        model = BiweeklyModel(scenario, params)
+        model.add_component(create_component(components.SIACalendarProcess, components.SIACalendarParams()))
+        ```
     """
 
     def __init__(self, model, verbose: bool = False, params: SIACalendarParams | None = None) -> None:
@@ -129,6 +153,7 @@ class SIACalendarProcess(BasePhase):
                         )
 
     def initialize(self, model: BaseLaserModel) -> None:
+        """No-op; SIA calendar state is set up during construction."""
         pass
 
     def get_sia_schedule(self) -> pl.DataFrame:

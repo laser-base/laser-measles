@@ -125,15 +125,27 @@ else:
 
 
 class DiseaseParams(BaseModel):
+    """Parameters for ABM disease progression (infectious duration distribution).
+
+    **Example:**
+
+        ```python
+        from laser.measles.abm.components.process_disease import DiseaseParams
+
+        params = DiseaseParams()
+        ```
+    """
     inf_mean: float = Field(default=8.0, description="Mean infectious period (days)")
     inf_sigma: float = Field(default=2.0, description="Shape of the infectious period (days)")
 
     @property
     def inf_shape(self) -> float:
+        """Gamma distribution shape parameter derived from ``inf_mean`` and ``inf_sigma``."""
         return (self.inf_mean / self.inf_sigma) ** 2
 
     @property
     def inf_scale(self) -> float:
+        """Gamma distribution scale parameter derived from ``inf_mean`` and ``inf_sigma``."""
         return self.inf_sigma**2 / self.inf_mean
 
 
@@ -141,6 +153,21 @@ class DiseaseProcess(BaseComponent):
     """
     This component provides disease progression (E->I->R)
     It is used to update the infectious timers and the exposed timers.
+    
+
+    **Example:**
+
+        ```python
+        from laser.measles.scenarios.synthetic import single_patch_scenario
+        from laser.measles.abm import ABMModel, ABMParams
+        from laser.measles.abm import components
+        from laser.measles import create_component
+
+        scenario = single_patch_scenario(population=50_000, mcv1_coverage=0.85)
+        params = ABMParams(num_ticks=365, seed=42, start_time="2000-01")
+        model = ABMModel(scenario, params)
+        model.add_component(create_component(components.DiseaseProcess, components.DiseaseParams()))
+        ```
     """
 
     def __init__(self, model, verbose: bool = False, params: DiseaseParams | None = None):

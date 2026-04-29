@@ -11,7 +11,16 @@ from laser.measles.base import BasePhase
 
 
 class SIACalendarParams(BaseModel):
-    """Parameters specific to the SIA calendar component."""
+    """Parameters specific to the SIA calendar component.
+
+    **Example:**
+
+        ```python
+        from laser.measles.abm.components.process_sia_calendar import SIACalendarParams
+
+        params = SIACalendarParams()
+        ```
+    """
 
     model_config = {"arbitrary_types_allowed": True}
 
@@ -50,6 +59,21 @@ class SIACalendarProcess(BasePhase):
     - Vaccination moves agents from susceptible (S=0) to recovered (R=3) state
     - Both individual agent states and patch-level state aggregations are updated
     - Each SIA is implemented exactly once
+    
+
+    **Example:**
+
+        ```python
+        from laser.measles.scenarios.synthetic import single_patch_scenario
+        from laser.measles.abm import ABMModel, ABMParams
+        from laser.measles.abm import components
+        from laser.measles import create_component
+
+        scenario = single_patch_scenario(population=50_000, mcv1_coverage=0.85)
+        params = ABMParams(num_ticks=365, seed=42, start_time="2000-01")
+        model = ABMModel(scenario, params)
+        model.add_component(create_component(components.SIACalendarProcess, components.SIACalendarParams()))
+        ```
     """
 
     def __init__(self, model: ABMModel, verbose: bool = False, params: SIACalendarParams | None = None) -> None:
@@ -162,6 +186,7 @@ class SIACalendarProcess(BasePhase):
         return len(selected_indices)
 
     def initialize(self, model: BaseLaserModel) -> None:
+        """No-op; SIA calendar state is set up during construction."""
         pass
 
     def get_sia_schedule(self) -> pl.DataFrame:

@@ -15,7 +15,16 @@ from laser.measles.utils import cast_type
 
 
 class BaseInfectionSeedingParams(BaseModel):
-    """Parameters for the infection seeding component."""
+    """Parameters for the infection seeding component.
+
+    **Example:**
+
+        ```python
+        from laser.measles.biweekly.components.process_infection_seeding import InfectionSeedingParams
+
+        params = InfectionSeedingParams()
+        ```
+    """
 
     num_infections: int = Field(default=1, description="Default number of infections to seed", ge=1)
     target_patches: list[str] | None = Field(default=None, description="List of specific patch IDs to seed")

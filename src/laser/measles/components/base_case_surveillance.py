@@ -24,6 +24,15 @@ class BaseCaseSurveillanceParams(BaseModel):
         filter_fn: Function to filter which nodes to include in aggregation.
         aggregate_cases: Whether to aggregate cases by geographic level.
         aggregation_level: Number of levels to use for aggregation (e.g., 2 for country:state:lga).
+    
+
+    **Example:**
+
+        ```python
+        from laser.measles.biweekly.components.tracker_case_surveillance import CaseSurveillanceParams
+
+        params = CaseSurveillanceParams()
+        ```
     """
 
     detection_rate: float = Field(default=0.1, description="Probability of detecting an infected case", ge=0.0, le=1.0)
@@ -47,6 +56,21 @@ class BaseCaseSurveillanceTracker(BasePhase):
         model: The simulation model containing nodes, states, and parameters.
         verbose: Whether to print verbose output during simulation. Defaults to False.
         params: Component-specific parameters. If None, will use default parameters.
+    
+
+    **Example:**
+
+        ```python
+        from laser.measles.scenarios.synthetic import single_patch_scenario
+        from laser.measles.biweekly import BiweeklyModel, BiweeklyParams
+        from laser.measles.biweekly import components
+        from laser.measles import create_component
+
+        scenario = single_patch_scenario(population=100_000, mcv1_coverage=0.85)
+        params = BiweeklyParams(num_ticks=52, seed=42, start_time="2000-01")
+        model = BiweeklyModel(scenario, params)
+        model.add_component(create_component(components.CaseSurveillanceTracker, components.CaseSurveillanceParams()))
+        ```
     """
 
     def __init__(self, model, verbose: bool = False, params: BaseCaseSurveillanceParams | None = None) -> None:
@@ -131,7 +155,7 @@ class BaseCaseSurveillanceTracker(BasePhase):
         return pl.DataFrame(data)
 
     def initialize(self, model: BaseLaserModel) -> None:
-        pass
+        """No-op — surveillance tracking requires no additional setup."""
 
     def plot(self, fig: Figure | None = None):
         """Create a heatmap visualization of log(cases+1) over time.

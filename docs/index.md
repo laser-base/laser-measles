@@ -73,11 +73,13 @@ For day-to-day exploration, scenario building, and learning the framework, your 
 
 ## Model types
 
-laser-measles provides three modeling approaches:
+laser-measles provides three modeling approaches, all sharing the same [component system](components/index.md) and [scenario format](model-types/demographics.md):
 
-- **ABM (Agent-Based Model)**: Individual-level simulation with stochastic agents. Best for detailed heterogeneity and contact structure.
+- **ABM (Agent-Based Model)**: Individual-level simulation with stochastic agents. Best for detailed heterogeneity and contact structure. Supports [snapshotting](snapshotting/index.md) for long runs.
 - **Biweekly Compartmental Model**: Population-level SIR dynamics with 2-week timesteps. Recommended for scenario building and policy analysis.
-- **Compartmental Model**: Population-level SEIR dynamics with daily timesteps. Recommended for parameter estimation and outbreak modeling.
+- **Compartmental Model**: Population-level SEIR dynamics with daily timesteps. Recommended for parameter estimation and outbreak modeling. Supports [snapshotting](snapshotting/index.md).
+
+Not sure which model to use? See [Choosing a model type](model-types/choosing-a-model.md) or start with the [model types overview](model-types/index.md).
 
 ## Contributing
 

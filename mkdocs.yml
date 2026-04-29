@@ -53,12 +53,18 @@ nav:
       - Vaccination: tutorials/tut_vaccination.ipynb
   - Model types:
     - model-types/index.md
+    - Choosing a model type: model-types/choosing-a-model.md
+    - Spatial mixing: model-types/spatial-mixing.md
+    - Configuring spatial mixing: model-types/configuring-spatial-mixing.md
     - Demographics: model-types/demographics.md
   - Components:
     - components/index.md
+    - How to create a custom component: components/custom-component.md
     - Worked examples: components/worked-examples.md
     - Troubleshooting: components/troubleshooting.md
-  - Snapshotting: snapshotting.md
+  - Snapshotting:
+    - snapshotting/index.md
+    - How to snapshot and resume: snapshotting/snapshot-resume.md
   - API reference: reference/
   - Contributing: contributing.md
   - Code of conduct: code-of-conduct.md

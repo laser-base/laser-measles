@@ -18,11 +18,50 @@ from laser.measles.utils import cast_type
 
 
 class WPPVitalDynamicsParams(BaseModel):
+    """Parameters for WPP-based vital dynamics (country code and reference year).
+
+    **Example:**
+
+        ```python
+        from laser.measles.abm.components.process_wpp_vital_dynamics import WPPVitalDynamicsParams
+
+        params = WPPVitalDynamicsParams()
+        ```
+    """
+
     country_code: str = Field(default="nga", description="Country code (ISO3)")
     year: int = Field(default=2000, description="Year to initialize the age distribution")
 
 
 class WPPVitalDynamicsProcess(BasePhase):
+    """Vital dynamics using UN World Population Prospects data for age-specific birth and death rates.
+
+    Initialises the age distribution of the population and enforces age
+    structure with age-based mortality throughout the simulation.  This
+    is an ABM-only component that belongs in the *per-timestep* stage
+    and should be listed **before** transmission components.
+
+    Args:
+        model: The ABM model instance.
+        verbose: Enable verbose logging.
+        params (WPPVitalDynamicsParams | None): Country and year settings.
+    
+
+    **Example:**
+
+        ```python
+        from laser.measles.scenarios.synthetic import single_patch_scenario
+        from laser.measles.abm import ABMModel, ABMParams
+        from laser.measles.abm import components
+        from laser.measles import create_component
+
+        scenario = single_patch_scenario(population=50_000, mcv1_coverage=0.85)
+        params = ABMParams(num_ticks=365, seed=42, start_time="2000-01")
+        model = ABMModel(scenario, params)
+        model.add_component(create_component(components.WPPVitalDynamicsProcess, components.WPPVitalDynamicsParams()))
+        ```
+    """
+
     def __init__(self, model, verbose: bool = False, params: WPPVitalDynamicsParams | None = None) -> None:
         super().__init__(model, verbose)
         if params is None:
@@ -156,9 +195,16 @@ class WPPVitalDynamicsProcess(BasePhase):
             model.patches.states.S[patch_id] += births
 
     def calculate_wpp_total_pop(self, year: int) -> int:
+        """Return the total WPP population for the given calendar year."""
         return int(np.sum(self.wpp.get_population_pyramid(year)))
 
     def calculate_capacity(self, model: ABMModel, buffer: float = 0.05) -> int:
+        """Estimate the agent-array capacity needed for the full simulation.
+
+        Args:
+            model: The ABM model instance.
+            buffer: Fractional safety margin above the projected population.
+        """
         sim_end_date = timedelta(days=model.params.num_ticks * model.params.time_step_days) + model.current_date
         return int(
             model.scenario["pop"].sum()

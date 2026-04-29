@@ -315,6 +315,10 @@ for target_r0 in [4.0, 8.0, 16.0]:
 ## See also
 
 - [Model types](../model-types/index.md) — overview of the three model types and when to use each
+- [Choosing a model type](../model-types/choosing-a-model.md) — decision guide for selecting the right model
 - [Components](index.md) — component architecture and design
+- [How to create a custom component](custom-component.md) — write your own process or tracker
+- [Configuring spatial mixing](../model-types/configuring-spatial-mixing.md) — set up disease spread between patches
+- [Snapshotting](../snapshotting/index.md) — save and resume long simulation runs
 - [Troubleshooting](troubleshooting.md) — common pitfalls and error resolution
 - [Tutorials](../tutorials/index.md) — interactive learning with Jupyter notebooks

@@ -1,113 +1,109 @@
 # Components
 
-laser-measles uses a component-based architecture where disease dynamics are built from interchangeable, modular pieces. This page explains the component system design, how components interact, and the technical infrastructure that supports them.
+laser-measles uses a component-based architecture where disease dynamics are built from interchangeable, modular pieces. Rather than embedding all epidemiological logic in a single monolithic model, each process — transmission, recovery, births, deaths, vaccination, case tracking — is implemented as a separate component that can be added, removed, or replaced independently.
 
-## Component system
+This page explains why the component system exists, how components interact, and the design decisions behind the architecture.
 
-The component system provides a uniform interface for disease dynamics with interchangeable modules built on a hierarchical base class architecture.
+## Why components?
 
-**Base architecture:**
+Measles models need to answer different questions for different audiences. A rapid scenario comparison might need only transmission and recovery. A detailed country analysis might add vital dynamics, vaccination campaigns, importation pressure, and multiple trackers. A methods paper might replace the transmission kernel entirely.
 
-- **BaseLaserModel**: Abstract base class for all model types with common functionality
-- **BaseComponent**: Base class for all components with standardized interface
-- **BasePhase**: Components that execute every tick (inherit from BaseComponent)
-- **Inheritance-based design**: Base components define shared functionality and abstract interfaces
-
-**Base component classes:**
-
-- `base_transmission.py`: Base transmission/infection logic
-- `base_vital_dynamics.py`: Base births/deaths logic
-- `base_importation.py`: Base importation pressure logic
-- `base_tracker.py`: Base tracking/metrics logic
-- `base_infection.py`: Base infection state transitions
-- `base_tracker_state.py`: Base state tracking functionality
-
-**Component naming convention:**
-
-- **Process components**: `process_*.py` — modify model state (births, deaths, infection, transmission)
-- **Tracker components**: `tracker_*.py` — record metrics and state over time
-
-**Component creation pattern:**
+The component system makes this possible without forking the codebase. You assemble exactly the processes you need for your analysis:
 
 ```python
-# Component with parameters using Pydantic
-from laser.measles.components.base_infection import BaseInfectionProcess
+# Minimal model: just transmission
+model.components = [InfectionSeedingProcess, InfectionProcess]
 
-class MyInfectionProcess(BaseInfectionProcess):
-    def __init__(self, model, verbose=False, **params):
-        super().__init__(model, verbose)
-        # Initialize with validated parameters
-
-# Add to model
-model.components = [MyInfectionProcess]
+# Full model: transmission + demographics + vaccination + tracking
+model.components = [
+    InitializeEquilibriumStatesProcess,
+    VitalDynamicsProcess,
+    InfectionProcess,
+    SIACalendarProcess,
+    ImportationPressureProcess,
+    StateTracker,
+    PopulationTracker,
+    CaseSurveillanceTracker,
+]
 ```
 
----
+## Component types
 
-## Pydantic integration
+Components fall into two categories, distinguished by naming convention:
 
-laser-measles uses Pydantic for type-safe parameter management, providing automatic validation and documentation.
+**Process components** (`process_*.py`) modify model state at each timestep. They move individuals between compartments, add or remove agents, and apply interventions. Examples:
 
-**Parameter classes:**
+- `InfectionProcess` — computes transmission and moves susceptibles to exposed/infectious
+- `VitalDynamicsProcess` — handles births, deaths, and aging
+- `SIACalendarProcess` — applies supplementary immunization activities on scheduled dates
+- `ImportationPressureProcess` — introduces external infections from outside the model
 
-- `ABMParams`: Configuration for agent-based models with individual-level parameters
-- `BiweeklyParams`: Configuration for biweekly models with epidemiological parameters
-- `CompartmentalParams`: Configuration for compartmental models with daily dynamics
+**Tracker components** (`tracker_*.py`) record metrics and state over time without modifying the simulation. They are used for output and analysis. Examples:
 
-**Component classes:**
-Components come in "process" and "tracker" categories and each component has a corresponding parameter class.
-Each model (ABM, Biweekly, or Compartmental) has its own set of components. See the [API reference](../reference/laser/measles/index.md) for more details.
+- `StateTracker` — records SEIR compartment counts at each timestep
+- `PopulationTracker` — records total population per patch
+- `CaseSurveillanceTracker` — records new cases for comparison with surveillance data
+- `FadeoutTracker` — detects when infection dies out in a patch
 
-**Benefits:**
+## Component execution order
 
-- **Type safety**: Automatic validation of parameter types and ranges
-- **Documentation**: Built-in parameter descriptions and constraints
-- **Serialization**: JSON export/import of model configurations
-- **IDE support**: Enhanced autocomplete and error detection
+Components execute in the order they appear in the component list, once per timestep. Order matters when components depend on each other's output:
 
-**Example:**
+1. **Initialization components** (e.g., `InitializeEquilibriumStatesProcess`) should come first — they set the initial SEIR distribution before the simulation loop begins.
+2. **Vital dynamics** (births, deaths) typically come before transmission — new susceptible births should be available for infection in the same timestep.
+3. **Infection/transmission** components use the current population state to compute new infections.
+4. **Intervention components** (SIA campaigns, importation) modify state after transmission.
+5. **Trackers** should come last — they record the state after all processes have run for the timestep.
+
+## The base class hierarchy
+
+All components inherit from a common base class hierarchy defined in `laser.measles.base`:
+
+- **`BaseComponent`** — provides the standard interface: `__init__(model, verbose)`, an `_initialize(model)` hook, and a `plot()` method.
+- **`BasePhase`** — extends `BaseComponent` with a `__call__(model, tick)` method. Components that execute every timestep inherit from this class.
+
+Each model type (ABM, biweekly, compartmental) has its own component implementations that inherit from shared base classes in `laser.measles.components`. For example, the infection logic in `laser.measles.components.base_infection` defines the shared algorithm, and `laser.measles.abm.components.process_infection` adapts it for individual agents while `laser.measles.compartmental.components.process_infection` adapts it for compartment counts.
+
+This means the same epidemiological logic is shared across model types — only the population representation differs.
+
+## Pydantic parameter validation
+
+Model parameters and component parameters use [Pydantic](https://docs.pydantic.dev/) for type-safe validation. Each model type has a params class (`ABMParams`, `BiweeklyParams`, `CompartmentalParams`) that validates configuration at construction time:
+
+- **Type checking**: passing a string where an integer is expected raises an error immediately, not during simulation.
+- **Range validation**: parameters with physical constraints (e.g., probabilities between 0 and 1) are enforced.
+- **Extra field protection**: misspelled parameter names are caught (`extra="forbid"` in the model config).
+- **Serialization**: parameters can be exported to JSON for reproducibility and logging.
 
 ```python
 from laser.measles.biweekly import BiweeklyParams
 
 params = BiweeklyParams(
-    num_ticks=520,  # Validated as positive integer
-    seed=12345      # Random seed for reproducibility
+    num_ticks=520,      # Validated as positive integer
+    seed=12345,         # Random seed for reproducibility
+    start_time="2000-01"  # Validated as YYYY-MM format
 )
 
-# Export configuration
-config_json = params.model_dump_json()
+# Export configuration for reproducibility
+config = params.model_dump_json()
 ```
 
----
+## Performance infrastructure
 
-## High-performance computing
+Several performance features are built into the component system:
 
-laser-measles is optimized for performance through several technical approaches:
-
-**LaserFrame architecture:**
-High-performance array-based structure for agent populations, built on the LASER framework.
-
-**numba JIT compilation:**
-Performance-critical operations implemented in numba for maximum speed.
-
-**Polars DataFrames:**
-Efficient data manipulation using Polars for biweekly model operations with Arrow backend.
-
-**Component modularity:**
-Modular architecture allows for selective component usage and optimization.
-
-**Progress tracking:**
-Integrated progress bars using alive-progress for long-running simulations.
-
-**Python 3.10+ support:**
-Optimized for modern Python features and performance improvements.
-
----
+- **Numba JIT compilation**: Performance-critical inner loops (transmission kernels, state updates) have both pure-NumPy and Numba-accelerated implementations. Components use `select_function()` to choose the right one based on the `use_numba` parameter.
+- **LaserFrame arrays**: Agent populations (in the ABM) use the LASER framework's `LaserFrame` structure for cache-friendly, contiguous memory layout.
+- **Polars DataFrames**: The biweekly model uses Polars with its Arrow backend for efficient column-oriented operations.
+- **Progress tracking**: Long simulations display progress bars via `alive-progress`.
 
 ## See also
 
-- [Model types](../model-types/index.md) — overview of the three model types
-- [Worked examples](worked-examples.md) — copy-paste runnable scripts showing component wiring
+- [How to create a custom component](custom-component.md) — step-by-step guide to writing your own component
+- [Worked examples](worked-examples.md) — runnable scripts showing component wiring for all three models
 - [Troubleshooting](troubleshooting.md) — common pitfalls with components and parameters
+- [Tutorial: Creating a component](../tutorials/tut_creating_component.ipynb) — hands-on tutorial for component creation
+- [Tutorial: Pydantic component parameters](../tutorials/tut_pydantic_component_parameters.ipynb) — validated configuration with Pydantic
+- [Model types](../model-types/index.md) — overview of the three model types
+- [Snapshotting](../snapshotting/index.md) — save and resume simulations with their component state
 - [API reference](../reference/laser/measles/index.md) — full class and parameter details

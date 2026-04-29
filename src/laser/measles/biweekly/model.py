@@ -14,24 +14,41 @@ from laser.measles.utils import cast_type
 
 
 class BiweeklyModel(BaseLaserModel):
-    """
-    A class to represent the biweekly model.
+    """Population-level measles model with 14-day (biweekly) timesteps.
+
+    Tracks SEIR compartment counts per patch without individual agents,
+    making it significantly faster than
+    [`ABMModel`][laser.measles.abm.model.ABMModel] for large-scale parameter
+    sweeps and multi-country analyses.  Choose this model when individual-level
+    detail is not required and computational speed is a priority.  For daily
+    timesteps with explicit SEIR compartment dynamics, see
+    [`CompartmentalModel`][laser.measles.compartmental.model.CompartmentalModel].
+
+    This is the first object created in the *build model* stage of the
+    researcher workflow.  After construction, attach components with
+    [`add_component`][laser.measles.base.BaseLaserModel.add_component] or
+    by setting the `components` property, then call `model.run()`.
 
     Args:
+        scenario (pl.DataFrame | BaseBiweeklyScenario): Metapopulation patch
+            data.  Required columns: ``id`` (str), ``pop`` (int),
+            ``lat`` (Float64), ``lon`` (Float64), ``mcv1`` (Float64).
+            A plain `polars.DataFrame` is automatically wrapped.
+        params (BiweeklyParams): Simulation parameters including
+            ``num_ticks``, ``seed``, and ``start_time``.
+        name (str): Display name for log messages.  Defaults to
+            ``"biweekly"``.
 
-        scenario (BaseScenario): A scenario containing the scenario data, including population, latitude, and longitude.
-        params (BiweeklyParams): A set of parameters for the model.
-        name (str, optional): The name of the model. Defaults to "biweekly".
+    **Example:**
 
-    Notes:
+        ```python
+        from laser.measles.biweekly import BiweeklyModel, BiweeklyParams
 
-        This class initializes the model with the given scenario and parameters. The scenario must include the following columns:
-
-            - `id` (string): The name of the patch or location.
-            - `pop` (integer): The population count for the patch.
-            - `lat` (float degrees): The latitude of the patches (e.g., from geographic or population centroid).
-            - `lon` (float degrees): The longitude of the patches (e.g., from geographic or population centroid).
-            - `mcv1` (float): The MCV1 coverage for the patches.
+        params = BiweeklyParams(num_ticks=26, seed=42, start_time="2000-01")
+        model = BiweeklyModel(scenario=df, params=params)
+        model.components = [InfectionSeedingProcess, InfectionProcess]
+        model.run()
+        ```
     """
 
     patches: PatchLaserFrame
@@ -40,19 +57,6 @@ class BiweeklyModel(BaseLaserModel):
     scenario_wrapper_class = BaseBiweeklyScenario
 
     def __init__(self, scenario: BaseBiweeklyScenario | pl.DataFrame, params: BiweeklyParams, name: str = "biweekly") -> None:
-        """
-        Initialize the disease model with the given scenario and parameters.
-
-        Args:
-
-            scenario (BaseScenario): A scenario containing the scenario data, including population, latitude, and longitude.
-            params (BiweeklyParams): A set of parameters for the model, including seed, nticks, k, a, b, c, max_frac, cbr, verbose, and pyramid_file.
-            name (str, optional): The name of the model. Defaults to "biweekly".
-
-        Returns:
-
-            None
-        """
         super().__init__(scenario, params, name)
 
         # Add patches to the model

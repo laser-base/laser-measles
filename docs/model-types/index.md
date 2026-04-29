@@ -1,138 +1,116 @@
 # Model types
 
-laser-measles provides three complementary modeling approaches for simulating measles transmission dynamics, each optimized for different use cases:
+laser-measles provides three complementary modeling approaches for simulating measles transmission dynamics. Each approach represents the same underlying epidemiology — susceptible individuals become exposed, then infectious, then recovered — but differs in how it tracks populations, how finely it resolves time, and how much computation it requires.
 
-1. **ABM (Agent-Based Model)**: Individual-level simulation with stochastic agents
-2. **Biweekly Compartmental Model**: Population-level SIR dynamics with 2-week timesteps
-3. **Compartmental Model**: Population-level SEIR dynamics with daily timesteps
+The three model types share a common interface: all accept a scenario DataFrame and a params object, use the same component system, and produce compatible output arrays. This means you can start with the fastest model for exploratory work and switch to a more detailed model for final analysis without rewriting your pipeline.
 
-Each model type offers different trade-offs between computational efficiency, temporal resolution, and modeling detail.
+## How the three models differ
+
+### ABM (agent-based model)
+
+The ABM represents every person as a discrete agent with individual properties — age, location, disease state, vaccination history. Transmission, recovery, and demographic events (births, deaths, aging) happen to individual agents via stochastic draws at each daily timestep.
+
+This level of detail makes the ABM the right choice when individual heterogeneity matters: when you need to track age-specific immunity profiles, model individual vaccination records, or capture stochastic fadeout in small populations. The cost is computation — simulating millions of individual agents is orders of magnitude slower than compartmental arithmetic.
+
+**Key properties:**
+
+- **Timestep**: 1 day
+- **Disease states**: SEIR (Susceptible → Exposed → Infectious → Recovered)
+- **Population representation**: Individual agents with properties (age, patch, state, vaccination date)
+- **Stochasticity**: Individual-level probabilistic events
+- **Snapshotting**: Supported (save/resume long runs)
+
+### Biweekly model
+
+The biweekly model tracks population *counts* in each compartment rather than individual agents. It uses 14-day timesteps and an SIR (not SEIR) structure — the exposed compartment is omitted because the 14-day timestep is comparable to measles' incubation period (~10–14 days), making the distinction between exposed and infectious negligible at this resolution.
+
+This model is the fastest of the three and is designed for parameter exploration, scenario comparison, and policy analysis where you need to run hundreds or thousands of parameter combinations. Binomial sampling provides realistic stochastic variability without the overhead of tracking individuals.
+
+**Key properties:**
+
+- **Timestep**: 14 days (26 ticks per year)
+- **Disease states**: SIR (Susceptible → Infectious → Recovered)
+- **Population representation**: Compartment counts per patch (Polars DataFrames)
+- **Stochasticity**: Binomial sampling at compartment level
+- **Snapshotting**: Not currently supported
+
+### Compartmental model
+
+The compartmental model also tracks population counts rather than individuals, but uses daily timesteps and a full SEIR structure. This gives it finer temporal resolution than the biweekly model while remaining faster than the ABM.
+
+This model is well suited for fitting to surveillance data (where daily or weekly case counts are available), detailed outbreak analysis, and situations where the exposed-to-infectious transition timing matters. Like the biweekly model, it uses efficient array arithmetic; unlike the biweekly model, it captures the incubation period explicitly.
+
+**Key properties:**
+
+- **Timestep**: 1 day (365 ticks per year)
+- **Disease states**: SEIR (Susceptible → Exposed → Infectious → Recovered)
+- **Population representation**: Compartment counts per patch
+- **Stochasticity**: Optional stochastic elements over a deterministic core
+- **Snapshotting**: Supported (save/resume long runs)
 
 ---
 
-## ABM (agent-based model)
+## Trade-offs at a glance
 
-The ABM model provides individual-level simulation with stochastic agents, allowing for detailed tracking of disease dynamics at the person level.
+| | ABM | Biweekly | Compartmental |
+|---|---|---|---|
+| **Resolution** | Individual agents | Compartment counts | Compartment counts |
+| **Timestep** | 1 day | 14 days | 1 day |
+| **Disease model** | SEIR | SIR | SEIR |
+| **Speed** | Slowest | Fastest | Middle |
+| **Memory** | Highest (one record per agent) | Lowest | Low |
+| **Individual tracking** | Yes (age, vaccination, location) | No | No |
+| **Stochastic fadeout** | Naturally captured | Approximated | Approximated |
+| **Parameter sweeps** | Expensive | Cheap | Moderate |
+| **Snapshotting** | ✅ | ❌ | ✅ |
 
-**Key characteristics:**
+---
 
-- **Individual agents**: Each person is represented as a discrete agent with properties like age, location, and disease state
-- **Daily timesteps**: Fine-grained temporal resolution for precise modeling
-- **Stochastic processes**: Individual-level probabilistic events for realistic variability
-- **Spatial heterogeneity**: Agents can move between patches and have location-specific interactions
-- **Flexible demographics**: Full support for births, deaths, aging, and migration
+## Shared interface
 
-**Example usage:**
+All three model types follow the same construction and execution pattern:
 
 ```python
+# 1. Import the model type and its params class
 from laser.measles.abm import ABMModel, ABMParams
+# or: from laser.measles.biweekly import BiweeklyModel, BiweeklyParams
+# or: from laser.measles.compartmental import CompartmentalModel, CompartmentalParams
 
-# Configure model parameters
-params = ABMParams(
-    num_ticks=7300,  # 20 years of daily timesteps
-    seed=12345
-)
+# 2. Create parameters
+params = ABMParams(num_ticks=365, seed=42, start_time="2000-01")
 
-# Initialize and run model
+# 3. Construct the model with scenario data and params
 model = ABMModel(scenario_data, params)
+
+# 4. Add components
+model.add_component(SomeProcess)
+model.add_component(AnotherProcess)
+
+# 5. Run
 model.run()
 ```
 
----
+All three constructors require both `scenario` and `params` — omitting `params` raises `TypeError`.
 
-## Biweekly model
+The scenario DataFrame must include these columns regardless of model type:
 
-The biweekly model is a compartmental model optimized for fast simulation and parameter exploration with 2-week timesteps.
-
-**Key characteristics:**
-
-- **Compartmental approach**: SIR (Susceptible-Infected-Recovered) structure.
-  The exposed (E) compartment is omitted because the 14-day timestep is
-  comparable to measles' typical incubation period (~10-14 days), making
-  the distinction between exposed and infectious states negligible at this
-  temporal resolution. For detailed SEIR dynamics with explicit incubation
-  periods, use the Compartmental Model with daily timesteps.
-- **Time resolution**: 14-day fixed time steps (26 ticks per year)
-- **High performance**: Uses Polars DataFrames for efficient data manipulation
-- **Stochastic sampling**: Binomial sampling for realistic variability
-- **Policy analysis**: Recommended for scenario building and intervention assessment
-
-**Example usage:**
-
-```python
-from laser.measles.biweekly import BiweeklyModel, BiweeklyParams
-
-# Configure model parameters
-params = BiweeklyParams(
-    num_ticks=520,  # 20 years of bi-weekly time steps
-    seed=12345
-)
-
-# Initialize and run model
-model = BiweeklyModel(scenario_data, params)
-model.run()
-```
-
----
-
-## Compartmental model
-
-The compartmental model provides population-level SEIR dynamics with daily timesteps, optimized for parameter estimation and detailed outbreak modeling.
-
-**Key characteristics:**
-
-- **Daily timesteps**: Fine-grained temporal resolution (365 ticks per year)
-- **SEIR dynamics**: Detailed compartmental structure with exposed compartment
-- **Parameter estimation**: Recommended for fitting to surveillance data
-- **Outbreak modeling**: Ideal for detailed temporal analysis of disease dynamics
-- **Deterministic core**: Efficient ODE-based dynamics with optional stochastic elements
-
-**Example usage:**
-
-```python
-from laser.measles.compartmental import CompartmentalModel, CompartmentalParams
-
-# Configure model parameters
-params = CompartmentalParams(
-    num_ticks=7300,  # 20 years of daily time steps
-    seed=12345
-)
-
-# Initialize and run model
-model = CompartmentalModel(scenario_data, params)
-model.run()
-```
-
-!!! warning
-
-    **All three model constructors require both** `scenario` **and** `params`.
-    There is no default — omitting `params` raises `TypeError` immediately:
-
-    Do not pass only `scenario` to the constructor — omitting `params`
-    raises `TypeError: missing 1 required positional argument: 'params'`.
-
-    Always create the `*Params` object first, then pass both to the constructor:
-
-    ```python
-    # CORRECT — both arguments are required
-    params = ABMParams(num_ticks=365, seed=42, start_time="2000-01")
-    model  = ABMModel(scenario=scenario, params=params)
-
-    params = BiweeklyParams(num_ticks=130, seed=42, start_time="2000-01")
-    model  = BiweeklyModel(scenario=scenario, params=params)
-
-    params = CompartmentalParams(num_ticks=730, seed=42, start_time="2000-01")
-    model  = CompartmentalModel(scenario=scenario, params=params)
-    ```
-
-    Components are added **after** construction via `model.add_component()`.
-    `params` configures duration, seed, and start date — not components.
+| Column | Type | Description |
+|---|---|---|
+| `id` | str | Patch identifier |
+| `pop` | int | Population count |
+| `lat` | Float64 | Latitude (degrees) |
+| `lon` | Float64 | Longitude (degrees) |
+| `mcv1` | Float64 | MCV1 vaccination coverage (0–1) |
 
 ---
 
 ## See also
 
+- [Choosing a model type](choosing-a-model.md) — decision guide for selecting the right model
+- [Spatial mixing](spatial-mixing.md) — how inter-patch transmission works across all model types
+- [Demographics](demographics.md) — preparing geographic scenario data
+- [Snapshotting](../snapshotting/index.md) — save and resume long ABM or compartmental runs
+- [Components](../components/index.md) — component architecture shared across all model types
 - [Tutorials](../tutorials/index.md) — hands-on learning with each model type
-- [Worked examples](../components/worked-examples.md) — copy-paste runnable scripts for all three models
-- [Demographics](demographics.md) — geographic data handling for spatial scenarios
+- [Worked examples](../components/worked-examples.md) — runnable scripts for all three models
 - [API reference](../reference/laser/measles/index.md) — full parameter and class details

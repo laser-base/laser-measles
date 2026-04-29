@@ -15,24 +15,51 @@ from laser.measles.base import BasePhase
 
 
 class AgePyramidTrackerParams(BaseModel):
+    """Parameters for the age-pyramid tracker (recording frequency and age bins).
+
+    **Example:**
+
+        ```python
+        from laser.measles.abm.components.tracker_age_pyramid import AgePyramidTrackerParams
+
+        params = AgePyramidTrackerParams()
+        ```
+    """
     frequency: str = Field(default="yearly", description="Frequency of the age pyramid tracker (yearly, monthly, daily)")
     age_bins: list[int] = Field(default=pyvd.constants.MORT_XVAL[::2], description="Age bins for the age pyramid (in days)")
 
     @field_validator("frequency")
     def validate_frequency(cls, v):
+        """Validate that ``frequency`` is one of ``yearly``, ``monthly``, or ``daily``."""
         if v not in ["yearly", "monthly", "daily"]:
             raise ValueError("Frequency must be one of: yearly, monthly, daily")
         return v
 
     @field_validator("age_bins")
     def validate_age_bins(cls, v):
+        """Validate that ``age_bins`` are in strictly increasing order."""
         if not np.all(np.diff(v) > 0):
             raise ValueError("Age bins must be in increasing order")
         return v
 
 
 class AgePyramidTracker(BasePhase):
-    """Track the age distribution of the population."""
+    """Track the age distribution of the population.
+
+    **Example:**
+
+        ```python
+        from laser.measles.scenarios.synthetic import single_patch_scenario
+        from laser.measles.abm import ABMModel, ABMParams
+        from laser.measles.abm import components
+        from laser.measles import create_component
+
+        scenario = single_patch_scenario(population=50_000, mcv1_coverage=0.85)
+        params = ABMParams(num_ticks=365, seed=42, start_time="2000-01")
+        model = ABMModel(scenario, params)
+        model.add_component(create_component(components.AgePyramidTracker, components.AgePyramidTrackerParams()))
+        ```
+    """
 
     def __init__(self, model, verbose: bool = False, params: AgePyramidTrackerParams | None = None):
         super().__init__(model, verbose)

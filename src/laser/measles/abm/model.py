@@ -19,33 +19,42 @@ from .params import ABMParams
 
 
 class ABMModel(BaseLaserModel):
-    """
-    Agent-based model for measles transmission with daily timesteps (SEIR).
+    """Agent-based model for measles transmission with daily timesteps.
 
-    **Both** ``scenario`` and ``params`` are required positional arguments.
-    There is no default constructor — omitting ``params`` raises ``TypeError``.
+    Tracks individual agents through SEIR states, supporting
+    heterogeneous vaccination, age structure, and stochastic transmission.
+    Use this model when you need individual-level resolution — for example,
+    tracking vaccination histories or age-dependent susceptibility.  For
+    faster population-level dynamics, see
+    [`BiweeklyModel`][laser.measles.biweekly.model.BiweeklyModel] or
+    [`CompartmentalModel`][laser.measles.compartmental.model.CompartmentalModel].
+
+    This is the first object created in the *build model* stage of the
+    researcher workflow.  After construction, attach components with
+    [`add_component`][laser.measles.base.BaseLaserModel.add_component] or
+    by setting the `components` property, then call `model.run()`.
 
     Args:
-
-        scenario (pl.DataFrame): A DataFrame containing the metapopulation patch data.
+        scenario (pl.DataFrame | BaseABMScenario): Metapopulation patch data.
             Required columns: ``id`` (str), ``pop`` (int), ``lat`` (Float64),
-            ``lon`` (Float64), ``mcv1`` (Float64).
-        params (ABMParams): Simulation parameters including ``num_ticks``, ``seed``,
-            and ``start_time``. This argument is **mandatory**.
-        name (str, optional): The name of the model. Defaults to ``"abm"``.
+            ``lon`` (Float64), ``mcv1`` (Float64).  A plain
+            `polars.DataFrame` is automatically wrapped in
+            [`BaseABMScenario`][laser.measles.abm.base.BaseABMScenario].
+        params (ABMParams): Simulation parameters including ``num_ticks``,
+            ``seed``, and ``start_time``.  This argument is **mandatory**.
+        name (str): Display name for log messages.  Defaults to ``"abm"``.
 
-    Notes:
+    **Example:**
 
-        Typical usage::
+        ```python
+        import laser.measles as lm
 
-            from laser.measles.abm import ABMModel, ABMParams
-            from laser.measles.abm import components
-
-            params = ABMParams(num_ticks=365, seed=42)
-            model = ABMModel(scenario=df, params=params)
-            model.add_component(components.InfectionSeedingProcess)
-            model.add_component(components.InfectionProcess)
-            model.run()
+        params = lm.ABMParams(num_ticks=365, seed=42, start_time="2000-01")
+        model = lm.ABMModel(scenario=df, params=params)
+        model.add_component(lm.InfectionSeedingProcess)
+        model.add_component(lm.InfectionProcess)
+        model.run()
+        ```
     """
 
     people: PeopleLaserFrame
@@ -54,19 +63,6 @@ class ABMModel(BaseLaserModel):
     scenario_wrapper_class = BaseABMScenario
 
     def __init__(self, scenario: BaseABMScenario | pl.DataFrame, params: ABMParams, name: str = "abm") -> None:
-        """
-        Initialize the disease model with the given scenario and parameters.
-
-        Args:
-
-            scenario (pl.DataFrame): A DataFrame containing the metapopulation patch data, including population, latitude, and longitude.
-            parameters (ABMParams): A set of parameters for the model and simulations.
-            name (str, optional): The name of the model. Defaults to "abm".
-
-        Returns:
-
-            None
-        """
         super().__init__(scenario, params, name)
 
         if self.params.verbose:

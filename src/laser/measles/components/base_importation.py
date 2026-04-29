@@ -11,7 +11,16 @@ from ..base import BasePhase
 
 
 class BaseImportationParams(BaseModel):
-    """Common parameters for importation components."""
+    """Common parameters for importation components.
+
+    **Example:**
+
+        ```python
+        from laser.measles.abm.components.process_importation import ImportationParams
+
+        params = ImportationParams()
+        ```
+    """
 
     importation_rate: float = Field(default=0.0, description="Rate of imported infections per time step", ge=0.0)
 
@@ -20,11 +29,28 @@ class BaseImportationParams(BaseModel):
     target_patches: list | None = Field(default=None, description="Patches that receive importations (None = all patches)")
 
     class Config:
+        """Pydantic config allowing numpy array fields."""
+
         arbitrary_types_allowed = True
 
 
 class BaseImportation(BasePhase, ABC):
-    """Abstract base class for importation components."""
+    """Abstract base class for importation components.
+
+    **Example:**
+
+        ```python
+        from laser.measles.scenarios.synthetic import single_patch_scenario
+        from laser.measles.abm import ABMModel, ABMParams
+        from laser.measles.abm import components
+        from laser.measles import create_component
+
+        scenario = single_patch_scenario(population=50_000, mcv1_coverage=0.85)
+        params = ABMParams(num_ticks=365, seed=42, start_time="2000-01")
+        model = ABMModel(scenario, params)
+        model.add_component(create_component(components.InfectRandomAgentsProcess, components.ImportationParams()))
+        ```
+    """
 
     def __init__(self, model, verbose: bool = False, params: BaseImportationParams | None = None):
         super().__init__(model, verbose)

@@ -11,7 +11,16 @@ from ..base import BaseComponent
 
 
 class BaseTrackerParams(BaseModel):
-    """Common parameters for tracker components."""
+    """Common parameters for tracker components.
+
+    **Example:**
+
+        ```python
+        from laser.measles.biweekly.components.tracker_state import StateTrackerParams
+
+        params = StateTrackerParams(track_states=True, output_frequency=1)
+        ```
+    """
 
     track_states: bool = Field(default=True, description="Whether to track disease states")
 
@@ -21,7 +30,22 @@ class BaseTrackerParams(BaseModel):
 
 
 class BaseTracker(BaseComponent, ABC):
-    """Abstract base class for tracker components."""
+    """Abstract base class for tracker components.
+
+    **Example:**
+
+        ```python
+        from laser.measles.scenarios.synthetic import single_patch_scenario
+        from laser.measles.biweekly import BiweeklyModel, BiweeklyParams
+        from laser.measles.biweekly import components
+        from laser.measles import create_component
+
+        scenario = single_patch_scenario(population=100_000, mcv1_coverage=0.85)
+        params = BiweeklyParams(num_ticks=52, seed=42, start_time="2000-01")
+        model = BiweeklyModel(scenario, params)
+        model.add_component(create_component(components.StateTracker, components.StateTrackerParams()))
+        ```
+    """
 
     def __init__(self, model, verbose: bool = False, params: BaseTrackerParams | None = None):
         super().__init__(model, verbose)

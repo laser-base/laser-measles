@@ -15,7 +15,16 @@ from ..base import BasePhase
 
 
 class BaseTransmissionParams(BaseModel):
-    """Common parameters for all transmission components."""
+    """Common parameters for all transmission components.
+
+    **Example:**
+
+        ```python
+        from laser.measles.abm.components.process_transmission import TransmissionParams
+
+        params = TransmissionParams(beta=0.3)
+        ```
+    """
 
     # Core transmission parameters
     beta: float = Field(default=0.1, description="Transmission rate parameter", gt=0.0)
@@ -34,25 +43,41 @@ class BaseTransmissionParams(BaseModel):
     random_seed: int | None = Field(default=None, description="Random seed for stochastic processes")
 
     class Config:
+        """Pydantic config allowing numpy array fields."""
+
         arbitrary_types_allowed = True  # Allow numpy arrays
 
 
 class BaseTransmission(BasePhase, ABC):
-    """Abstract base class for transmission components.
+    """Abstract base for transmission components.
 
-    This class defines the common interface that all transmission
-    components must implement, regardless of their underlying
-    mathematical approach (agent-based, compartmental, etc.).
+    Defines the shared interface for all transmission implementations
+    (agent-based, compartmental, biweekly).  Subclasses must implement
+    `__call__` to execute transmission dynamics each tick.  This component
+    belongs to the *per-timestep* stage and should appear in the component
+    list **after** any vital-dynamics component.
+
+    Provides helper methods for seasonality, spatial mixing, and effective
+    β calculation that subclasses can call from their `__call__`
+    implementations.
+
+    Args:
+        model: The simulation model this component is attached to.
+        verbose (bool): Enable verbose logging.
+        params (BaseTransmissionParams | None): Transmission parameters.
+            Uses [`BaseTransmissionParams`][laser.measles.components.base_transmission.BaseTransmissionParams]
+            defaults if ``None``.
+
+    **Example:**
+
+        ```python
+        # Transmission components are typically added via the model's component list:
+        from laser.measles.compartmental.components import InfectionProcess
+        model.add_component(InfectionProcess)
+        ```
     """
 
     def __init__(self, model, verbose: bool = False, params: BaseTransmissionParams | None = None):
-        """Initialize the transmission component.
-
-        Args:
-            model: The model instance this component belongs to
-            verbose: Whether to enable verbose logging
-            params: Component parameters (uses defaults if None)
-        """
         super().__init__(model, verbose)
         self.params = params if params is not None else BaseTransmissionParams()
 

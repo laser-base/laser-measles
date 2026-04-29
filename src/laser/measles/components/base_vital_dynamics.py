@@ -13,7 +13,16 @@ ModelType = TypeVar("ModelType")
 
 
 class BaseVitalDynamicsParams(BaseModel):
-    """Parameters specific to vital dynamics."""
+    """Parameters specific to vital dynamics.
+
+    **Example:**
+
+        ```python
+        from laser.measles.biweekly.components.process_vital_dynamics import VitalDynamicsParams
+
+        params = VitalDynamicsParams()
+        ```
+    """
 
     crude_birth_rate: float = Field(default=20.0, description="Annual crude birth rate per 1000 population", ge=0.0)
     crude_death_rate: float = Field(default=8.0, description="Annual crude death rate per 1000 population", ge=0.0)

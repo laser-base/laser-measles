@@ -11,7 +11,16 @@ from laser.measles.components import BaseVitalDynamicsProcess
 
 
 class BaseConstantPopParams(BaseVitalDynamicsParams):
-    """Parameters specific to the births process component."""
+    """Parameters specific to the births process component.
+
+    **Example:**
+
+        ```python
+        from laser.measles.biweekly.components.process_constant_pop import ConstantPopParams
+
+        params = ConstantPopParams(crude_birth_rate=20)
+        ```
+    """
 
     crude_birth_rate: float = Field(default=20, description="Crude birth rate per 1000 people per year", ge=0.0)
 
@@ -31,6 +40,21 @@ class BaseConstantPopProcess(BaseVitalDynamicsProcess):
         verbose (bool): Flag to enable verbose output. Default is False.
         initializers (list): List of initializers to be called on birth events.
         metrics (DataFrame): DataFrame to holding timing metrics for initializers.
+    
+
+    **Example:**
+
+        ```python
+        from laser.measles.scenarios.synthetic import single_patch_scenario
+        from laser.measles.biweekly import BiweeklyModel, BiweeklyParams
+        from laser.measles.biweekly import components
+        from laser.measles import create_component
+
+        scenario = single_patch_scenario(population=100_000, mcv1_coverage=0.85)
+        params = BiweeklyParams(num_ticks=52, seed=42, start_time="2000-01")
+        model = BiweeklyModel(scenario, params)
+        model.add_component(create_component(components.ConstantPopProcess, components.ConstantPopParams()))
+        ```
     """
 
     def __init__(self, model: BaseLaserModel, verbose: bool = False, params: BaseConstantPopParams | None = None):
