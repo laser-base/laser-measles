@@ -1,18 +1,12 @@
 """
-This module defines Importation classes, which provide methods to import cases into a population during simulation.
+Importation components: periodically introduce new infections into a population during simulation.
 
 Classes:
-    Infect_Random_Agents: A class to periodically infect a random subset of agents in the population
+    ImportationParams: Pydantic schema for configuring importation cadence, count, time window, and patch targets.
+    InfectRandomAgentsProcess: Periodically infects a random subset of agents drawn from anywhere in the population.
+    InfectAgentsInPatchProcess: Periodically infects a fixed number of agents in each patch listed in ``importation_patchlist`` (defaults to all patches).
 
-Functions:
-    Infect_Random_Agents.__init__(self, model, period, count, start) -> None:
-        Initializes the Infect_Random_Agents class with a given model, period, count, and start time.
-
-    Infect_Random_Agents.__call__(self, model, tick) -> None:
-        Checks whether it is time to infect a random subset of agents and infects them if necessary.
-
-    Infect_Random_Agents.plot(self, fig: Figure = None):
-        Nothing yet.
+Both process classes share the same ``__init__(model, params: ImportationParams | None = None)`` signature; if ``params`` is omitted, values are read from ``model.params`` for backward compatibility.
 """
 
 import numpy as np
@@ -42,10 +36,9 @@ class InfectRandomAgentsProcess:
 
     def __init__(self, model, params: ImportationParams | None = None) -> None:
         """
-        Initialize an Infect_Random_Agents instance.
+        Initialize an InfectRandomAgentsProcess instance.
 
         Args:
-
             model: The model object that contains the population.
             params: Optional importation configuration. If provided, this should be an
                 ``ImportationParams`` instance whose ``importation_period``,
@@ -118,10 +111,9 @@ class InfectAgentsInPatchProcess:
 
     def __init__(self, model, params: ImportationParams | None = None) -> None:
         """
-        Initialize an Infect_Random_Agents instance.
+        Initialize an InfectAgentsInPatchProcess instance.
 
         Args:
-
             model: The model object that contains the population.
             params: Optional importation configuration. When provided, this should
                 be an ``ImportationParams`` instance whose
