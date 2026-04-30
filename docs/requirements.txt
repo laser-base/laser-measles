@@ -14,10 +14,10 @@ mkdocs-exclude # exclude files from the rendered docs tree
 jupytext
 markdownify
 
-
-# packages for notebook tutorials
-matplotlib
-numpy
-polars
+# packages needed to run notebook tutorials
+sciris
 seaborn
-laser.core
+notebook
+ipykernel
+optuna
+plotly

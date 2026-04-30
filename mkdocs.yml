@@ -96,8 +96,8 @@ plugins:
   - include-markdown # include other files, such as READMEs
   - table-reader # enables rendering of CSV/TSV files as tables
   - mkdocs-jupyter: # enables Jupyter notebooks to be rendered
-      execute: false
-      allow_errors: true # set to true to continue executing cells even if one fails
+      execute: true
+      allow_errors: false # set to true to continue executing cells even if one fails
       include_source: true
   - gen-files:
       scripts:

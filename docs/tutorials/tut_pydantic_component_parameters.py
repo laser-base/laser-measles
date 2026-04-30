@@ -72,18 +72,20 @@ except ValidationError as e:
 # This will fail - beta must be > 0
 try:
     invalid_params = InfectionParams(beta=-5.0)
-    print(f"✓ Invalid beta=-5.0: {invalid_params.beta}")
 except ValidationError:
     print("✗ Validation error for beta=-5.0:")
     print(traceback.format_exc())
+else:
+    raise AssertionError("Expected ValidationError for beta=-5.0")
 
 # This will fail - seasonality must be 0 <= value <= 1
 try:
     invalid_params = InfectionParams(seasonality=1.5)
-    print(f"✓ Invalid seasonality=1.5: {invalid_params.seasonality}")
 except ValidationError:
     print("✗ Validation error for seasonality=1.5:")
     print(traceback.format_exc())
+else:
+    raise AssertionError("Expected ValidationError for seasonality=1.5")
 
 # %% [markdown]
 # ## Self-documenting parameters
@@ -193,17 +195,23 @@ except ValidationError:
 # Note: ImportationPressureParams validation happens in the component's _validate_params method
 # Let's demonstrate with a negative importation rate instead:
 try:
+    # Negative importation rate should fail
     params = ImportationPressureParams(crude_importation_rate=-1.0)
     print(f"✓ Negative importation rate accepted: {params.crude_importation_rate}")
 except ValidationError:
     print("✗ Negative importation rate caught:")
     print(traceback.format_exc())
 
-# Time range validation happens at component level, not parameter level
-params_with_bad_time_range = ImportationPressureParams(importation_start=10, importation_end=5)
-print(
-    f"✓ Parameters created (time range validation happens in component): start={params_with_bad_time_range.importation_start}, end={params_with_bad_time_range.importation_end}"
-)
+try:
+    # Time range validation now happens at parameter level
+    params_with_bad_time_range = ImportationPressureParams(importation_start=10, importation_end=5)
+    print(
+        f"✓ Parameters created: start={params_with_bad_time_range.importation_start}, "
+        f"end={params_with_bad_time_range.importation_end}"
+    )
+except ValidationError:
+    print("✗ Invalid importation time range caught:")
+    print(traceback.format_exc())
 
 # %% [markdown]
 # ## Parameter inheritance and customization
@@ -237,6 +245,8 @@ try:
     invalid_seasonal = SeasonalInfectionParams(humidity_effect=0.8)  # > 0.5
 except ValidationError as e:
     print(f"\n✗ Extended validation works: {e.errors()[0]['msg']}")
+else:
+    raise AssertionError("Expected ValidationError for humidity_effect=0.8")
 
 # %% [markdown]
 # ## Configuration management

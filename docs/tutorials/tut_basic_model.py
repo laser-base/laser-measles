@@ -83,6 +83,8 @@ except ValueError:
 
     print("Error creating BaseScenario object missing the 'lat' column:")
     traceback.print_exc()
+else:
+    raise AssertionError("Expected ValueError when creating BaseScenario without 'lat' column")
 
 # %% [markdown]
 # ## Initialize model parameters and components
