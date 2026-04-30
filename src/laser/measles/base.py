@@ -652,7 +652,7 @@ class BaseComponent:
 
     ModelType = TypeVar("ModelType")
 
-    def __init__(self, model: BaseLaserModel, params: None = None) -> None:  # TODO: add ParamsType
+    def __init__(self, model: BaseLaserModel, params: Any | None = None) -> None:  # TODO: add ParamsType
         """
         Initialize the component.
 
