@@ -120,9 +120,14 @@ class InfectAgentsInPatchProcess:
         Args:
 
             model: The model object that contains the population.
-            period: The number of ticks between each infection event.
-            count: The number of agents to infect at each event.
-            start (int, optional): The tick at which to start the infection events.
+            params: Optional importation configuration. When provided, this should
+                be an ``ImportationParams`` instance whose
+                ``importation_period``, ``importation_count``,
+                ``importation_start``, ``importation_end``, and
+                ``importation_patchlist`` fields control the timing, number of
+                imported infections, start/end ticks, and patches targeted by
+                this process. If ``None``, these values are populated from
+                ``model.params`` for backward compatibility.
 
         Attributes:
 
