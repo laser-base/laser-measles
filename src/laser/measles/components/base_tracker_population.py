@@ -14,8 +14,8 @@ class BasePopulationTracker(BasePhase):
     Tracks the population size of each patch at each time tick.
     """
 
-    def __init__(self, model: BaseLaserModel, verbose: bool = False, params: BasePopulationTrackerParams | None = None) -> None:
-        super().__init__(model, verbose)
+    def __init__(self, model: BaseLaserModel, params: BasePopulationTrackerParams | None = None) -> None:
+        super().__init__(model)
         self.params = params or BasePopulationTrackerParams()
         self.population_tracker = np.zeros((model.patches.count, model.params.num_ticks), dtype=model.patches.states.dtype)
 

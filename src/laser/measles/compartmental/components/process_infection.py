@@ -100,8 +100,6 @@ class InfectionProcess(BaseInfectionProcess):
     ----------
     model : object
         The simulation model containing population states and parameters
-    verbose : bool, default=False
-        Whether to print detailed information during execution
     params : InfectionParams | None, default=None
         Component-specific parameters. If None, will use default parameters
 
@@ -111,8 +109,8 @@ class InfectionProcess(BaseInfectionProcess):
     sinusoidally over time with a period of 365 days.
     """
 
-    def __init__(self, model: BaseLaserModel, params: InfectionParams | None = None, verbose: bool = False) -> None:
-        super().__init__(model, verbose)
+    def __init__(self, model: BaseLaserModel, params: InfectionParams | None = None) -> None:
+        super().__init__(model)
 
         self.params = params if params is not None else InfectionParams()
 

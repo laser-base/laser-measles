@@ -5,8 +5,8 @@ Classes:
     Infect_Random_Agents: A class to periodically infect a random subset of agents in the population
 
 Functions:
-    Infect_Random_Agents.__init__(self, model, period, count, start, verbose: bool = False) -> None:
-        Initializes the Infect_Random_Agents class with a given model, period, count, and verbosity option.
+    Infect_Random_Agents.__init__(self, model, period, count, start) -> None:
+        Initializes the Infect_Random_Agents class with a given model, period, count, and start time.
 
     Infect_Random_Agents.__call__(self, model, tick) -> None:
         Checks whether it is time to infect a random subset of agents and infects them if necessary.
@@ -40,7 +40,7 @@ class InfectRandomAgentsProcess:
     A component to update the infection timers of a population in a model.
     """
 
-    def __init__(self, model, verbose: bool = False, params: ImportationParams | None = None) -> None:
+    def __init__(self, model, params: ImportationParams | None = None) -> None:
         """
         Initialize an Infect_Random_Agents instance.
 
@@ -50,7 +50,6 @@ class InfectRandomAgentsProcess:
             period: The number of ticks between each infection event.
             count: The number of agents to infect at each event.
             start (int, optional): The tick at which to start the infection events.
-            verbose (bool, optional): If True, enables verbose output. Defaults to False.
 
         Attributes:
 
@@ -114,7 +113,7 @@ class InfectAgentsInPatchProcess:
     A component to update the infection timers of a population in a model.
     """
 
-    def __init__(self, model, verbose: bool = False, params: ImportationParams | None = None) -> None:
+    def __init__(self, model, params: ImportationParams | None = None) -> None:
         """
         Initialize an Infect_Random_Agents instance.
 
@@ -124,7 +123,6 @@ class InfectAgentsInPatchProcess:
             period: The number of ticks between each infection event.
             count: The number of agents to infect at each event.
             start (int, optional): The tick at which to start the infection events.
-            verbose (bool, optional): If True, enables verbose output. Defaults to False.
 
         Attributes:
 

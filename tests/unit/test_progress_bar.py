@@ -29,9 +29,8 @@ def test_progress_bar(measles_module):
 
     # Add a simple component that does nothing
     class DummyComponent(BaseComponent):
-        def __init__(self, model, verbose=False):
+        def __init__(self, model):
             self.model = model
-            self.verbose = verbose
             self.initialized = False
 
         def _initialize(self, model):

@@ -86,22 +86,21 @@ class InfectionProcess(BaseInfectionProcess):
     but for agent-based modeling.
     """
 
-    def __init__(self, model: ABMModel, verbose: bool = False, params: InfectionParams | None = None) -> None:
+    def __init__(self, model: ABMModel, params: InfectionParams | None = None) -> None:
         """
         Initialize the combined infection process.
 
         Args:
             model: The model object that contains the patches and parameters.
-            verbose (bool, optional): If True, enables verbose output. Defaults to False.
             params: Combined parameters for both transmission and disease processes.
         """
-        super().__init__(model, verbose)
+        super().__init__(model)
 
         self.params = params if params is not None else InfectionParams()
 
         # Initialize sub-components
-        self.transmission = TransmissionProcess(model, verbose, self.params.transmission_params)
-        self.disease = DiseaseProcess(model, verbose, self.params.disease_params)
+        self.transmission = TransmissionProcess(model, self.params.transmission_params)
+        self.disease = DiseaseProcess(model, self.params.disease_params)
 
     def __call__(self, model, tick: int) -> None:
         """

@@ -131,14 +131,13 @@ class TransmissionProcess(BasePhase):
     A component to model the transmission of disease in a population.
     """
 
-    def __init__(self, model, verbose: bool = False, params: TransmissionParams | None = None) -> None:
+    def __init__(self, model, params: TransmissionParams | None = None) -> None:
         """
         Initializes the transmission object.
 
         Args:
 
             model: The model object that contains the patches and parameters.
-            verbose (bool, optional): If True, enables verbose output. Defaults to False.
 
         Attributes:
 
@@ -151,7 +150,7 @@ class TransmissionProcess(BasePhase):
             - 'incidence': A vector property with length equal to the number of ticks, dtype is uint32.
         """
 
-        super().__init__(model, verbose)
+        super().__init__(model)
 
         self.params = params if params is not None else TransmissionParams()
 

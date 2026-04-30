@@ -31,10 +31,9 @@ class NoBirthsProcess(BaseVitalDynamicsProcess):
     def __init__(
         self,
         model: BaseLaserModel,
-        verbose: bool = False,
         params: NoBirthsParams | None = None,
     ) -> None:
-        super().__init__(model, verbose)
+        super().__init__(model)
 
         if params is None:
             params = NoBirthsParams()

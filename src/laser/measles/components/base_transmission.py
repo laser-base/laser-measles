@@ -45,15 +45,14 @@ class BaseTransmission(BasePhase, ABC):
     mathematical approach (agent-based, compartmental, etc.).
     """
 
-    def __init__(self, model, verbose: bool = False, params: BaseTransmissionParams | None = None):
+    def __init__(self, model, params: BaseTransmissionParams | None = None):
         """Initialize the transmission component.
 
         Args:
             model: The model instance this component belongs to
-            verbose: Whether to enable verbose logging
             params: Component parameters (uses defaults if None)
         """
-        super().__init__(model, verbose)
+        super().__init__(model)
         self.params = params if params is not None else BaseTransmissionParams()
 
         # Set random seed if specified

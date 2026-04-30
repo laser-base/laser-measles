@@ -65,7 +65,6 @@ class InfectionSeedingProcess(BaseComponent):
 
     Args:
         model: The compartmental model instance.
-        verbose: Whether to print verbose output during initialization.
         params: Component-specific parameters. If None, uses default parameters.
 
     Example:
@@ -90,8 +89,8 @@ class InfectionSeedingProcess(BaseComponent):
             )
     """
 
-    def __init__(self, model: BaseLaserModel, verbose: bool = False, params: InfectionSeedingParams | None = None) -> None:
-        super().__init__(model, verbose)
+    def __init__(self, model: BaseLaserModel, params: InfectionSeedingParams | None = None) -> None:
+        super().__init__(model)
         self.params = params or InfectionSeedingParams()
         self._validate_params()
 

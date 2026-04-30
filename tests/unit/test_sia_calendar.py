@@ -325,11 +325,12 @@ class TestSIACalendarProcess:
         """Test verbose output."""
         module = importlib.import_module(measles_module)
         model = create_model(mock_scenario, module)
+        model.params.verbose = True
 
         # Create verbose component
         sia_schedule = create_sia_schedule(measles_module)
         sia_params = module.components.SIACalendarParams(sia_schedule=sia_schedule, sia_efficacy=1.0, aggregation_level=2)
-        module.components.SIACalendarProcess(model, verbose=True, params=sia_params)
+        module.components.SIACalendarProcess(model, params=sia_params)
 
         # Check initialization message
         captured = capsys.readouterr()

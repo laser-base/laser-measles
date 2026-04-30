@@ -45,12 +45,11 @@ class BaseCaseSurveillanceTracker(BasePhase):
 
     Args:
         model: The simulation model containing nodes, states, and parameters.
-        verbose: Whether to print verbose output during simulation. Defaults to False.
         params: Component-specific parameters. If None, will use default parameters.
     """
 
-    def __init__(self, model, verbose: bool = False, params: BaseCaseSurveillanceParams | None = None) -> None:
-        super().__init__(model, verbose)
+    def __init__(self, model, params: BaseCaseSurveillanceParams | None = None) -> None:
+        super().__init__(model)
         self.params = params or BaseCaseSurveillanceParams()
         self._validate_params()
 

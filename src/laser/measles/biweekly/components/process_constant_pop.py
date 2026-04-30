@@ -18,7 +18,6 @@ class ConstantPopProcess(BaseConstantPopProcess):
     Attributes:
 
         model: The model instance containing population and parameters.
-        verbose (bool): Flag to enable verbose output. Default is False.
         initializers (list): List of initializers to be called on birth events.
         metrics (DataFrame): DataFrame to holding timing metrics for initializers.
     """

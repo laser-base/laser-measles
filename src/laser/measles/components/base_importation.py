@@ -26,8 +26,8 @@ class BaseImportationParams(BaseModel):
 class BaseImportation(BasePhase, ABC):
     """Abstract base class for importation components."""
 
-    def __init__(self, model, verbose: bool = False, params: BaseImportationParams | None = None):
-        super().__init__(model, verbose)
+    def __init__(self, model, params: BaseImportationParams | None = None):
+        super().__init__(model)
         self.params = params if params is not None else BaseImportationParams()
 
     @abstractmethod

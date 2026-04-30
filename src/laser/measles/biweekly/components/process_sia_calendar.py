@@ -37,8 +37,6 @@ class SIACalendarProcess(BasePhase):
     ----------
     model : object
         The simulation model containing nodes, states, and parameters
-    verbose : bool, default=False
-        Whether to print verbose output during simulation
     params : Optional[SIACalendarParams], default=None
         Component-specific parameters. If None, will use default parameters
 
@@ -51,8 +49,8 @@ class SIACalendarProcess(BasePhase):
     - Each SIA is implemented exactly once
     """
 
-    def __init__(self, model, verbose: bool = False, params: SIACalendarParams | None = None) -> None:
-        super().__init__(model, verbose)
+    def __init__(self, model, params: SIACalendarParams | None = None) -> None:
+        super().__init__(model)
         if params is None:
             raise ValueError("SIACalendarParams must be provided")
         self.params = params

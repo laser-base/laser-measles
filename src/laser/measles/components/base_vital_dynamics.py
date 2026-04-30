@@ -52,8 +52,6 @@ class BaseVitalDynamicsProcess(BasePhase, ABC):
     ----------
     model : object
         The simulation model containing nodes, states, and parameters
-    verbose : bool, default=False
-        Whether to print verbose output during simulation
     params : VitalDynamicsParams | None, default=None
         Component-specific parameters. If None, will use default parameters
 
@@ -64,8 +62,8 @@ class BaseVitalDynamicsProcess(BasePhase, ABC):
       time before routine immunization significantly shifts population-level immunity
     """
 
-    def __init__(self, model, verbose: bool = False, params: BaseVitalDynamicsParams | None = None) -> None:
-        super().__init__(model, verbose)
+    def __init__(self, model, params: BaseVitalDynamicsParams | None = None) -> None:
+        super().__init__(model)
         if params is None:
             params = BaseVitalDynamicsParams()
         self.params = params

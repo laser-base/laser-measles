@@ -143,8 +143,8 @@ class DiseaseProcess(BaseComponent):
     It is used to update the infectious timers and the exposed timers.
     """
 
-    def __init__(self, model, verbose: bool = False, params: DiseaseParams | None = None):
-        super().__init__(model, verbose)
+    def __init__(self, model, params: DiseaseParams | None = None):
+        super().__init__(model)
         self.params = params if params is not None else DiseaseParams()
 
     def __call__(self, model, tick: int) -> None:

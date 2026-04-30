@@ -48,8 +48,8 @@ class PIRIProcess(BasePhase):
     temporarily boosting MCV1 coverage to improve routine immunization of newborns.
     """
 
-    def __init__(self, model, verbose: bool = False, params: PIRIParams | None = None):
-        super().__init__(model, verbose)
+    def __init__(self, model, params: PIRIParams | None = None):
+        super().__init__(model)
         self.params = params if params is not None else PIRIParams()
         self.original_mcv1 = None  # Store original MCV1 values
 

@@ -304,8 +304,8 @@ The component system provides a uniform interface for disease dynamics with inte
 from laser.measles.components.base_infection import BaseInfectionProcess
 
 class MyInfectionProcess(BaseInfectionProcess):
-    def __init__(self, model, verbose=False, **params):
-        super().__init__(model, verbose)
+    def __init__(self, model, **params):
+        super().__init__(model)
         # Initialize with validated parameters
 
 # Add to model
@@ -1364,24 +1364,29 @@ params = SIACalendarParams(aggregation_level=1, sia_schedule=schedule_df, ...)
 
 For hierarchical IDs like `"country:state:lga"`, use `aggregation_level=3`.
 
-### Custom components added via `add_component` must accept `verbose`
+### Custom components read verbosity from `model.params.verbose`
 
 `ABMModel.add_component(ComponentClass)` instantiates the class as
-`ComponentClass(model, verbose=False)`. Any custom component class must
-accept `verbose` as a keyword argument or the framework raises:
-
-```
-TypeError: MyTracker.__init__() got an unexpected keyword argument 'verbose'
-```
-
-Always include `verbose=False` in custom component `__init__`:
+`ComponentClass(model)` — components no longer take a `verbose` constructor
+kwarg. To gate logging on the model-level verbose flag, read
+`self.verbose` (a property on `BaseComponent` that mirrors
+`model.params.verbose`):
 
 ```python
-class MyTracker:
-    def __init__(self, model, verbose: bool = False):
-        self.model = model
+from laser.measles.base import BasePhase
+
+class MyTracker(BasePhase):
+    def __init__(self, model):
+        super().__init__(model)
         # ...
+
+    def __call__(self, model, tick):
+        if self.verbose:
+            print(f"tick {tick}: ...")
 ```
+
+Toggling `model.params.verbose` at any point during the run is immediately
+visible to every component; no kwarg threading is required.
 
 ### 25. `model.people` has `date_of_birth`, not `age`
 

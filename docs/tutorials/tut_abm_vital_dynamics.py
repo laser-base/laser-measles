@@ -26,8 +26,8 @@ scenario = synthetic.two_patch_scenario()
 # %%
 from laser.measles.base import BasePhase
 class PeopleLengthTracker(BasePhase):
-    def __init__(self, model, verbose):
-        super().__init__(model, verbose=verbose)
+    def __init__(self, model):
+        super().__init__(model)
         self.laserframe_tracker = np.zeros((model.params.num_ticks,))
     def __call__(self, model, tick):
         self.laserframe_tracker[tick] = len(model.people)

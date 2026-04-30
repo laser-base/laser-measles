@@ -25,9 +25,9 @@ class VitalDynamicsProcess(BaseVitalDynamicsProcess):
     Process for simulating vital dynamics in the ABM model with MCV1 and constant birth and mortality rates (not age-structured).
     """
 
-    def __init__(self, model, verbose: bool = False, params: VitalDynamicsParams | None = None) -> None:
+    def __init__(self, model, params: VitalDynamicsParams | None = None) -> None:
         params_: VitalDynamicsParams = params or VitalDynamicsParams()
-        super().__init__(model, verbose=verbose, params=params_)
+        super().__init__(model, params=params_)
 
         date_of_birth_dtype = np.int32
         self.null_value = np.iinfo(date_of_birth_dtype).max

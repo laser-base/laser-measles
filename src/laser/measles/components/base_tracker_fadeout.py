@@ -31,11 +31,10 @@ class BaseFadeOutTracker(BasePhase):
 
     Args:
         model: The simulation model instance.
-        verbose (bool, optional): Whether to enable verbose logging. Defaults to False.
     """
 
-    def __init__(self, model, verbose: bool = False) -> None:
-        super().__init__(model, verbose)
+    def __init__(self, model) -> None:
+        super().__init__(model)
         self.fade_out_tracker = np.zeros(model.params.num_ticks)
 
     def __call__(self, model, tick: int) -> None:

@@ -59,12 +59,11 @@ class BaseStateTracker(BasePhase):
 
     Args:
         model: The simulation model containing nodes, states, and parameters.
-        verbose: Whether to print verbose output during simulation. Defaults to False.
         params: Component-specific parameters. If None, will use default parameters.
     """
 
-    def __init__(self, model, verbose: bool = False, params: BaseStateTrackerParams | None = None) -> None:
-        super().__init__(model, verbose)
+    def __init__(self, model, params: BaseStateTrackerParams | None = None) -> None:
+        super().__init__(model)
         self.name = "StateTracker"
         self.params = params or BaseStateTrackerParams()
         self._validate_params()

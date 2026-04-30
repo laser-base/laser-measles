@@ -23,8 +23,8 @@ class BaseInitializeEquilibriumStatesProcess(BasePhase):
     Initialize S, R states of the population in each of the model states by rough equilibrium of R0.
     """
 
-    def __init__(self, model: BaseLaserModel, verbose: bool = False, params: BaseInitializeEquilibriumStatesParams | None = None):
-        super().__init__(model, verbose)
+    def __init__(self, model: BaseLaserModel, params: BaseInitializeEquilibriumStatesParams | None = None):
+        super().__init__(model)
         self.params = params or BaseInitializeEquilibriumStatesParams()
 
     def _initialize(self, model: BaseLaserModel):

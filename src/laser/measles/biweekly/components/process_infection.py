@@ -53,8 +53,6 @@ class InfectionProcess(BaseInfectionProcess):
     ----------
     model : object
         The simulation model containing population states and parameters
-    verbose : bool, default=False
-        Whether to print detailed information during execution
     params : InfectionParams | None, default=None
         Component-specific parameters. If None, will use default parameters
 
@@ -64,8 +62,8 @@ class InfectionProcess(BaseInfectionProcess):
     transmission rate that varies sinusoidally over time.
     """
 
-    def __init__(self, model: BaseLaserModel, verbose: bool = False, params: InfectionParams | None = None) -> None:
-        super().__init__(model, verbose)
+    def __init__(self, model: BaseLaserModel, params: InfectionParams | None = None) -> None:
+        super().__init__(model)
         if params is None:
             params = InfectionParams()
         self.params = params

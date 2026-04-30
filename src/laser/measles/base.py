@@ -339,7 +339,7 @@ class BaseLaserModel(ABC):
         self.instances = []
         self.phases = []
         for component in components:
-            instance = component(self, verbose=getattr(self.params, "verbose", False))
+            instance = component(self)
             self.instances.append(instance)
             if "__call__" in dir(instance):
                 self.phases.append(instance)
@@ -357,7 +357,7 @@ class BaseLaserModel(ABC):
             component: A component class to be initialized and integrated into the model.
         """
         self._components.append(component)
-        instance = component(self, verbose=getattr(self.params, "verbose", False))
+        instance = component(self)
         self.instances.append(instance)
         if "__call__" in dir(instance):
             self.phases.append(instance)
@@ -371,7 +371,7 @@ class BaseLaserModel(ABC):
             component: A component class to be initialized and integrated into the model.
         """
         self._components.insert(0, component)
-        instance = component(self, verbose=getattr(self.params, "verbose", False))
+        instance = component(self)
         self.instances.insert(0, instance)
         if "__call__" in dir(instance):
             self.phases.insert(0, instance)
@@ -652,20 +652,27 @@ class BaseComponent:
 
     ModelType = TypeVar("ModelType")
 
-    def __init__(self, model: BaseLaserModel, verbose: bool = False, params: None = None) -> None:  # TODO: add ParamsType
+    def __init__(self, model: BaseLaserModel, params: None = None) -> None:  # TODO: add ParamsType
         """
         Initialize the component.
 
         Args:
             model: The model instance this component belongs to.
-            verbose: Whether to enable verbose output. Defaults to False.
         """
         self.model = model
-        self.verbose = verbose
         self.initialized = False
         self.params = params
         if not hasattr(self, "name"):
             self.name = self.__class__.__name__
+
+    @property
+    def verbose(self) -> bool:
+        # Single source of truth: model.params.verbose. Property (not stored attr)
+        # so toggling params.verbose at runtime is immediately visible to the component.
+        params = getattr(self.model, "params", None)
+        if params is None:
+            return False
+        return getattr(params, "verbose", False)
 
     def __str__(self) -> str:
         """

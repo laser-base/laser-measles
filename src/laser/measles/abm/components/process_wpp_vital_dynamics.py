@@ -23,8 +23,8 @@ class WPPVitalDynamicsParams(BaseModel):
 
 
 class WPPVitalDynamicsProcess(BasePhase):
-    def __init__(self, model, verbose: bool = False, params: WPPVitalDynamicsParams | None = None) -> None:
-        super().__init__(model, verbose)
+    def __init__(self, model, params: WPPVitalDynamicsParams | None = None) -> None:
+        super().__init__(model)
         if params is None:
             params = WPPVitalDynamicsParams()
         self.params = params

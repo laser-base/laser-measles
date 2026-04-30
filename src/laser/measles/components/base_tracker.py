@@ -23,8 +23,8 @@ class BaseTrackerParams(BaseModel):
 class BaseTracker(BaseComponent, ABC):
     """Abstract base class for tracker components."""
 
-    def __init__(self, model, verbose: bool = False, params: BaseTrackerParams | None = None):
-        super().__init__(model, verbose)
+    def __init__(self, model, params: BaseTrackerParams | None = None):
+        super().__init__(model)
         self.params = params if params is not None else BaseTrackerParams()
         self.data = {}  # Storage for tracked data
 

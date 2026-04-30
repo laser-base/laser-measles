@@ -19,8 +19,8 @@ class VitalDynamicsProcess(BaseVitalDynamicsProcess):
     Phase for simulating the vital dynamics in the model with MCV1.
     """
 
-    def __init__(self, model, verbose: bool = False, params: VitalDynamicsParams | None = None) -> None:
-        super().__init__(model, verbose, params)
+    def __init__(self, model, params: VitalDynamicsParams | None = None) -> None:
+        super().__init__(model, params)
         model.patches.add_scalar_property("births", dtype=np.uint32)
         model.patches.add_scalar_property("deaths", dtype=np.uint32)
 

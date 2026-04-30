@@ -22,24 +22,22 @@ class ConstantPopProcess(BaseConstantPopProcess):
     Attributes:
 
         model: The model instance containing population and parameters.
-        verbose (bool): Flag to enable verbose output. Default is False.
         initializers (list): List of initializers to be called on birth events.
         metrics (DataFrame): DataFrame to holding timing metrics for initializers.
     """
 
-    def __init__(self, model: ABMModel, verbose: bool = False, params: ConstantPopParams | None = None):
+    def __init__(self, model: ABMModel, params: ConstantPopParams | None = None):
         """
         Initialize the Births component.
 
         Parameters:
 
             model (object): The model object which must have a `population` attribute.
-            verbose (bool, optional): If True, enables verbose output. Defaults to False.
             params (BirthsParams, optional): Component parameters. If None, uses model.params.
 
         """
 
-        super().__init__(model, verbose)
+        super().__init__(model)
 
         self.params = params if params is not None else ConstantPopParams()
 

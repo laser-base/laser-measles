@@ -92,7 +92,7 @@ class InitializeEquilibriumStatesProcess(BaseInitializeEquilibriumStatesProcess)
 
             current_index += patch_pop
 
-        if model.params.verbose:
+        if self.verbose:
             total_s = np.sum(people.state == model.params.states.index("S"))
             total_r = np.sum(people.state == model.params.states.index("R"))
             print(f"Initialized {total_s} susceptible and {total_r} recovered agents")

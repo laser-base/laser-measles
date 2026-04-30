@@ -156,8 +156,6 @@ class ImportationPressureProcess(BasePhase):
     ----------
     model : object
         The simulation model containing nodes, states, and parameters
-    verbose : bool, default=False
-        Whether to print verbose output during simulation
     params : Optional[ImportationPressureParams], default=None
         Component-specific parameters. If None, will use default parameters
 
@@ -168,8 +166,8 @@ class ImportationPressureProcess(BasePhase):
     - All state counts are ensured to be non-negative
     """
 
-    def __init__(self, model, verbose: bool = False, params: ImportationPressureParams | None = None) -> None:
-        super().__init__(model, verbose)
+    def __init__(self, model, params: ImportationPressureParams | None = None) -> None:
+        super().__init__(model)
         self.params = params or ImportationPressureParams()
         self.patch_rates_per_year_per_1k: np.ndarray | None = None
 

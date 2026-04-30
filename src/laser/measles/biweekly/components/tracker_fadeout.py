@@ -5,8 +5,8 @@ from laser.measles.components import BaseFadeOutTrackerParams
 class FadeOutTracker(BaseFadeOutTracker):
     """A component that tracks the number of nodes experiencing fade-outs over time."""
 
-    def __init__(self, model, verbose: bool = False) -> None:
-        super().__init__(model, verbose)
+    def __init__(self, model) -> None:
+        super().__init__(model)
 
 
 class FadeOutTrackerParams(BaseFadeOutTrackerParams):
