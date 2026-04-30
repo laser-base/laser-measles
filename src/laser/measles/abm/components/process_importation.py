@@ -47,9 +47,12 @@ class InfectRandomAgentsProcess:
         Args:
 
             model: The model object that contains the population.
-            period: The number of ticks between each infection event.
-            count: The number of agents to infect at each event.
-            start (int, optional): The tick at which to start the infection events.
+            params: Optional importation configuration. If provided, this should be an
+                ``ImportationParams`` instance whose ``importation_period``,
+                ``importation_count``, and ``importation_start`` fields are used to
+                initialize this process's ``period``, ``count``, and ``start``
+                attributes (and ``importation_end`` maps to ``end``). If ``None``,
+                the values are loaded from ``model.params`` for backward compatibility.
 
         Attributes:
 
