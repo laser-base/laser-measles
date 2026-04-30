@@ -762,6 +762,10 @@ class BaseScenario(ABC):
         Args:
             df: The polars DataFrame containing scenario data.
         """
+        # Silently coerce integer pop to Int64 so users can write plain
+        # pl.DataFrame({"pop": [100_000]}) without explicit dtype casting.
+        if "pop" in df.columns and df["pop"].dtype != pl.Int64 and df["pop"].dtype.is_integer():
+            df = df.with_columns(pl.col("pop").cast(pl.Int64))
         self._df = df
 
     def __getattr__(self, attr):

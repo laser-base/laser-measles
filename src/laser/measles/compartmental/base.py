@@ -30,8 +30,8 @@ class BaseScenarioSchema(pt.Model):
 class BaseCompartmentalScenario(BaseScenario):
     def __init__(self, df: pl.DataFrame):
         super().__init__(df)
-        BaseScenarioSchema.validate(df, allow_superfluous_columns=True)
-        self._validate(df)
+        BaseScenarioSchema.validate(self._df, allow_superfluous_columns=True)
+        self._validate(self._df)
 
     def _validate(self, df: pl.DataFrame):
         # # Validate required columns exist - derive from schema

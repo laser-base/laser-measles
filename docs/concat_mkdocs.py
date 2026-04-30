@@ -103,11 +103,8 @@ def notebook_to_markdown(nb_path: Path) -> str:
                         # Skip lines that look like progress bars or pure decorative output
                         cleaned = re.sub(r"<[^>]+>", "", text).strip()
                         if cleaned:
-                            # Annotate Polars schema output that shows i64 for integer columns:
-                            # tutorial notebooks use untyped construction so schemas print i64,
-                            # but laser-measles requires Int32. Warn the LLM inline.
                             if re.search(r"┆\s*i64\s*┆|┆\s*i64\s*│|│\s*i64\s*┆|│\s*i64\s*│", cleaned):
-                                cleaned += "\n# NOTE: 'i64' shown above reflects untyped tutorial code. laser-measles requires Int32 for integer columns (pop, etc.) and str for id."
+                                cleaned += "\n# NOTE: 'i64' shown above is fine — laser-measles accepts any integer width for 'pop' and coerces it automatically."
                             parts.append(f"```\n{cleaned}\n```")
 
     md = "\n\n".join(parts)

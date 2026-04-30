@@ -1084,41 +1084,26 @@ BiweeklyParams(num_ticks=5 * 26)      # 130 biweekly ticks
 CompartmentalParams(num_ticks=5 * 365) # 1825 daily ticks
 ```
 
-### Scenario `id` must be a string; `pop` must be `Int32`
+### Scenario `id` must be a string; `pop` accepts any integer width
 
-Two dtype requirements that produce cryptic errors if violated:
+Two dtype requirements to be aware of:
 
 **`id` must be a string (`str` / `Utf8`), not an integer.**
 Python list comprehensions like `[0, 1, 2]` produce `Int64`, which fails
-schema validation. Use string patch IDs:
-
-Do not use integer lists for `id` — `[0, 1, 2]` produces `Int64` which
-fails schema validation. Always use string patch IDs:
+schema validation. Always use string patch IDs:
 
 ```python
 # CORRECT — string id
 scenario = pl.DataFrame({"id": ["patch_0", "patch_1", "patch_2"], ...})
 ```
 
-**`pop` (and all integer columns) must be `Int32`, not the default `Int64`.**
-Python integer lists and `np.array(...)` without a dtype both produce `Int64`:
-
-Do not use plain Python integer lists for `pop` — `[100_000, ...]`
-produces `Int64` which fails schema validation. Use `np.array(..., dtype=np.int32)`:
+**`pop` accepts any integer width** (`Int8`, `Int16`, `Int32`, `Int64`, unsigned variants).
+The library silently coerces `pop` to `Int64` at construction time, so plain Python
+integer lists work without any explicit cast:
 
 ```python
-import numpy as np, polars as pl
-
-# CORRECT — explicit Int32 via numpy
-scenario = pl.DataFrame({
-    "pop": np.array([100_000, 80_000, 60_000], dtype=np.int32),
-    ...
-})
-
-# ALSO CORRECT — build with defaults then cast
-scenario = pl.DataFrame({"pop": [100_000, 80_000, 60_000], ...}).with_columns(
-    pl.col("pop").cast(pl.Int32)
-)
+# CORRECT — plain Python list (produces Int64, accepted and coerced automatically)
+scenario = pl.DataFrame({"pop": [100_000, 80_000, 60_000], ...})
 ```
 
 The scenario helper functions (`single_patch_scenario`, `two_patch_scenario`, etc.)
@@ -1252,7 +1237,7 @@ pop       = initial_S            # approx total population per patch at t=0
 attack_rate = final_R / pop      # shape (n_patches,) — fraction ever infected
 
 # Pop must come from the scenario, NOT from tracker, for the denominator:
-pop_from_scenario = scenario["pop"].to_numpy()   # Int32 array, shape (n_patches,)
+pop_from_scenario = scenario["pop"].to_numpy()   # Int64 array, shape (n_patches,)
 attack_rate = final_R / pop_from_scenario.astype(float)
 ```
 
@@ -1403,7 +1388,7 @@ age_years  = age_ticks / 365.0
 Available people properties: `state`, `susceptibility`, `patch_id`,
 `active`, `date_of_birth`, `date_of_vaccination`.
 
-### Scenario `pop` column must be integer (`Int32`), not float
+### Scenario `pop` column must be integer, not float
 
 The scenario DataFrame validator requires `pop` to be an integer type.
 Passing a float column raises:
@@ -1412,7 +1397,8 @@ Passing a float column raises:
 ValueError: DataFrame validation error: Column 'pop' must be integer type
 ```
 
-Cast `pop` to `Int32` when building a scenario:
+Any integer width is accepted — plain Python integer lists (which Polars creates as `Int64`)
+work without any explicit cast:
 
 ```python
 import polars as pl
@@ -1421,11 +1407,9 @@ scenario = pl.DataFrame({
     "id":   ["patch_0", "patch_1"],
     "lat":  [0.0, 1.0],
     "lon":  [0.0, 1.0],
-    "pop":  pl.Series([100_000, 50_000], dtype=pl.Int32),
+    "pop":  [100_000, 50_000],   # Int64 by default — accepted automatically
     "mcv1": [0.8, 0.7],
 })
-# or cast after the fact:
-scenario = scenario.with_columns(pl.col("pop").cast(pl.Int32))
 ```
 
 ### Polars `with_column` (singular) was removed — use `with_columns`
