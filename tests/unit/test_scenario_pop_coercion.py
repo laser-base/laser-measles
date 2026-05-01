@@ -15,8 +15,8 @@ from laser.measles.compartmental.base import BaseScenario as CompartmentalScenar
 _BASE_ROW = {"lat": [1.0], "lon": [2.0], "id": ["n1"], "mcv1": [0.5]}
 
 _INTEGER_DTYPES = [
-    pl.Int16,   # max 32767 — fits _POP_VALUE
-    pl.Int32,   # max ~2.1B
+    pl.Int16,  # max 32767 — fits _POP_VALUE
+    pl.Int32,  # max ~2.1B
     pl.UInt16,  # max 65535 — fits _POP_VALUE
     pl.UInt32,  # max ~4.3B
 ]
@@ -57,5 +57,5 @@ def test_plain_python_list_pop_is_accepted():
 def test_float_pop_is_still_rejected():
     """Float pop must continue to raise — coercion is integer-only."""
     df = pl.DataFrame({"pop": [100_000.0], **_BASE_ROW})
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="must be integer type"):
         CompartmentalScenario(df)
