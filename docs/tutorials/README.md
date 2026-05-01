@@ -54,6 +54,6 @@ Welcome! This folder contains the source files for the **laser-measles** tutoria
 
 ## Getting help
 
-- **Rendered tutorials with outputs**: https://laser-base.github.io/laser-measles/
+- **Rendered tutorials with outputs**: https://laser-base.github.io/laser-measles/tutorials
 - **Issues and questions**: https://github.com/laser-base/laser-measles/issues
 - **AI assistant**: IDM users can get modeling help from [Laser-GPT Jenner](https://chatgpt.com/g/g-674f5fd33aec8191bcdc1a2736fb7c8d-laser-gpt-jenner)
