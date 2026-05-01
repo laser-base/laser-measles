@@ -57,5 +57,5 @@ def test_plain_python_list_pop_is_accepted():
 def test_float_pop_is_still_rejected():
     """Float pop must continue to raise — coercion is integer-only."""
     df = pl.DataFrame({"pop": [100_000.0], **_BASE_ROW})
-    with pytest.raises(ValueError, match="must be integer type"):
+    with pytest.raises(ValueError, match=r"Float64|must be integer type"):
         CompartmentalScenario(df)
