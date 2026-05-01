@@ -103,7 +103,7 @@ def notebook_to_markdown(nb_path: Path) -> str:
                         # Skip lines that look like progress bars or pure decorative output
                         cleaned = re.sub(r"<[^>]+>", "", text).strip()
                         if cleaned:
-                            if re.search(r"┆\s*i64\s*┆|┆\s*i64\s*│|│\s*i64\s*┆|│\s*i64\s*│", cleaned):
+                            if re.search(r"(?mi)^[^\n]*\bpop\b[^\n]*\bi64\b[^\n]*$", cleaned):
                                 cleaned += "\n# NOTE: 'i64' shown above is fine — laser-measles accepts any integer width for 'pop' and coerces it automatically."
                             parts.append(f"```\n{cleaned}\n```")
 
