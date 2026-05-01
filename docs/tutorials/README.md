@@ -1,47 +1,46 @@
 # Tutorials
 
-Welcome! This folder contains the hands-on tutorial notebooks for **laser-measles** — a high-performance, spatially-explicit measles modeling framework built on [LASER](https://github.com/laser-base/laser-core).
+Welcome! This folder contains the source files for the **laser-measles** tutorial series — a hands-on guide to building spatially-explicit measles models with [laser-measles](https://github.com/laser-base/laser-measles).
 
-If you stumbled in here while browsing GitHub, you're in the right place. Each notebook is a self-contained, executable tutorial. The recommended path is roughly top-to-bottom in the table below, but individual notebooks are also good standalone reads.
-
-> **Rendered docs** — all tutorials are also available as executed notebooks with full outputs in the [online documentation](https://laser-base.github.io/laser-measles/).
+> **Note for contributors**: The `.py` files here are the canonical source. Jupyter notebooks (`.ipynb`) are generated from them by the doc build pipeline and are not tracked in the repository. If you're looking for executable notebooks, see the [rendered documentation](https://laser-base.github.io/laser-measles/).
 
 ---
 
-## Learning path
+## What you can learn
 
 ### Quick start
 
-| Notebook | What you'll learn |
-|---|---|
-| [tut_quickstart_hello_world.ipynb](tut_quickstart_hello_world.ipynb) | Build a complete spatial ABM from scratch: 8-patch scenario, heterogeneous populations, infection seeding, gravity mixing, and a first epidemic curve. Start here. |
+**Hello world** — The fastest path to a running spatial ABM. Covers building an 8-patch scenario with heterogeneous populations, seeding an outbreak, configuring gravity-based spatial mixing, and plotting the resulting epidemic curves across patches. If you're new to laser-measles, start here.
 
 ### Getting started
 
-| Notebook | What you'll learn |
-|---|---|
-| [tut_basic_model.ipynb](tut_basic_model.ipynb) | The full model lifecycle: scenario setup, parameter configuration, component assembly, and result visualization — with both ABM and compartmental variants. |
-| [tut_model_structure.ipynb](tut_model_structure.ipynb) | How models actually run under the hood: the tick loop, `LaserFrame` data structures, and how compartmental and ABM approaches differ architecturally. |
-| [tut_abm_intro.ipynb](tut_abm_intro.ipynb) | ABM specifics: initializing an agent population, managing `LaserFrame` capacity, and understanding the per-agent data layout. |
-| [tut_scenarios.ipynb](tut_scenarios.ipynb) | Building real-world scenarios: download shapefiles, estimate patch populations from WorldPop raster data, and subdivide regions into equal-area patches. Includes Ethiopia example data in `ETH/`. |
+**Basic model** — The full model lifecycle from first principles: scenario setup, parameter configuration, assembling components, running the simulation, and visualizing results. Covers both ABM and compartmental model variants side by side.
+
+**Model structure** — How models run under the hood. Explains the tick loop, the `LaserFrame` data structures that hold population state, and how the ABM and compartmental architectures differ in their internal representations.
+
+**ABM introduction** — ABM-specific setup in depth: initializing an agent population, understanding `LaserFrame` capacity (how many agents to pre-allocate and why it matters), and the per-agent data layout.
+
+**Scenarios** — Building real-world geographic scenarios from scratch. Covers downloading shapefiles, estimating patch populations from WorldPop raster data, and subdividing regions into roughly equal-area patches. Uses Ethiopia as a worked example (supporting data in `ETH/`).
 
 ### Features in depth
 
-| Notebook | What you'll learn |
-|---|---|
-| [tut_creating_component.ipynb](tut_creating_component.ipynb) | Write a custom component from scratch — illustrated by building a PIRI (Periodic Intensification of Routine Immunization) process and wiring it into the compartmental model. |
-| [tut_abm_vital_dynamics.ipynb](tut_abm_vital_dynamics.ipynb) | Vital dynamics options for the ABM: constant-population births/deaths, age-structured demographics, and the WPP-based process that uses real demographic data. |
-| [tut_spatial_mixing.ipynb](tut_spatial_mixing.ipynb) | Spatial mixing models compared: gravity, radiation, competing destinations, and Stouffer — how to configure each and what difference the choice makes to transmission patterns. |
-| [tut_pydantic_component_parameters.ipynb](tut_pydantic_component_parameters.ipynb) | Defining component parameters with Pydantic: type validation, range constraints, default values, and auto-generated documentation. |
-| [tut_state_arrays.ipynb](tut_state_arrays.ipynb) | `StateArray`: the data structure that backs compartmental state tracking — how to read, write, and slice compartmental counts efficiently. |
-| [tut_random_numbers.ipynb](tut_random_numbers.ipynb) | Reproducibility in stochastic models: how laser-measles seeds RNGs, what affects run-to-run variation, and patterns for writing deterministic components. |
+**Creating a component** — How to write a custom simulation component and wire it into a model. Illustrated by building a PIRI (Periodic Intensification of Routine Immunization) process for the compartmental model.
+
+**ABM vital dynamics** — Options for births, deaths, and age structure in the ABM: the simple constant-population process, age-structured demographics, and the WPP-based process that ingests real United Nations demographic data.
+
+**Spatial mixing models** — Configuring and comparing the four built-in spatial mixing models: gravity, radiation, competing destinations, and Stouffer. Shows how mixing model choice shapes spatial transmission dynamics.
+
+**Parameter validation with Pydantic** — Defining component parameters using Pydantic `BaseModel`: type checking, range constraints, default values, and auto-generated documentation — and why this is preferable to plain dictionaries.
+
+**State arrays** — `StateArray`, the data structure that backs compartmental state tracking. Covers reading and writing compartmental counts, slicing by patch or state, and integration with NumPy.
+
+**Random numbers and reproducibility** — How laser-measles seeds and manages random number generators, what affects run-to-run variation, and patterns for writing components that produce reproducible results.
 
 ### End-to-end examples
 
-| Notebook | What you'll learn |
-|---|---|
-| [tut_vaccination.ipynb](tut_vaccination.ipynb) | Three vaccination strategies in one model: pre-existing immunity, routine MCV1 coverage at birth, and supplemental immunization activity (SIA) campaigns. |
-| [tut_traveling_waves.ipynb](tut_traveling_waves.ipynb) | Investigating traveling waves: build a spatial network seeded in the largest city and trace how infection propagates outward across the landscape — a classic measles epidemiology phenomenon. |
+**Vaccination modeling** — Three vaccination strategies implemented in one model: pre-existing immunity at initialization, routine MCV1 coverage applied at birth, and supplemental immunization activity (SIA) campaigns at a specific time.
+
+**Traveling waves** — Investigating a classic measles epidemiology phenomenon: building a spatial network, seeding infection in the largest city, and analyzing how the epidemic front propagates outward across the landscape.
 
 ---
 
@@ -49,23 +48,12 @@ If you stumbled in here while browsing GitHub, you're in the right place. Each n
 
 | Path | Contents |
 |---|---|
-| `ETH/` | Ethiopia shapefiles (GADM levels 0–3) and WorldPop 1 km raster — used by `tut_scenarios.ipynb` |
-
----
-
-## Running the notebooks
-
-```bash
-pip install "laser-measles[examples]"
-jupyter notebook
-```
-
-Each notebook is also available as a plain Python script (`.py`) generated by [Jupytext](https://jupytext.readthedocs.io/) — useful for diffing, code review, or running from the command line.
+| `ETH/` | Ethiopia shapefiles (GADM levels 0–3) and a WorldPop 1 km population raster — used by the Scenarios tutorial |
 
 ---
 
 ## Getting help
 
-- **Docs**: https://laser-base.github.io/laser-measles/
-- **Issues**: https://github.com/laser-base/laser-measles/issues
+- **Rendered tutorials with outputs**: https://laser-base.github.io/laser-measles/
+- **Issues and questions**: https://github.com/laser-base/laser-measles/issues
 - **AI assistant**: IDM users can get modeling help from [Laser-GPT Jenner](https://chatgpt.com/g/g-674f5fd33aec8191bcdc1a2736fb7c8d-laser-gpt-jenner)
