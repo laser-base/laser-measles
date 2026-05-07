@@ -1,4 +1,4 @@
-mkdocs-material~=9.7.0 # doc theme that includes extensive functionality
+mkdocs-material~=9.7.6 # doc theme that includes extensive functionality
 mkdocs-include-markdown-plugin # include files outside /docs
 mkdocs-autorefs # create automatic linkable references to sections, etc.
 mkdocs-api-autonav # automatically add API ref to navigation
