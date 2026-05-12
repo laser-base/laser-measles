@@ -145,12 +145,10 @@ class TransmissionProcess(BasePhase):
 
         The model's patches are extended with the following scalar property:
 
-            - 'incidence' (uint32, per patch): number of *new* infections that
-              occurred during the most recent tick. Reset (overwritten, not
-              accumulated) at every tick. To get cumulative incidence over a
-              run, sum this value across ticks yourself, or derive it from
-              tracked SEIR state counts (for example, from changes in S/E over
-              time) rather than reading a direct incidence series from a
+            - 'incidence' (uint32, per patch): number of *new* infections
+              during the most recent tick; overwritten each tick. For
+              cumulative incidence over a run, sum this each tick yourself,
+              or compute from per-tick decreases in ``S`` recorded by a
               StateTracker.
         """
 
