@@ -36,6 +36,7 @@ nav:
   - Installation: install.md
   - Usage: usage.md
   - Snapshotting: snapshotting.md
+  - Results output: results.md
   - Tutorials:
     - tutorials/index.md
     - Quick start: tutorials/tut_quickstart_hello_world.ipynb
