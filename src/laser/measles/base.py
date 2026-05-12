@@ -13,19 +13,16 @@ The BaseLaserModel class is the base class for all laser-measles models.
 from __future__ import annotations
 
 import gc
-import json
 from abc import ABC
 from abc import abstractmethod
 from datetime import datetime
 from datetime import timedelta
-from pathlib import Path
 from typing import Any
 from typing import Protocol
 from typing import TypeVar
 
 import alive_progress
 import matplotlib.pyplot as plt
-import numpy as np
 import polars as pl
 from laser.core.laserframe import LaserFrame
 from laser.core.random import seed as seed_prng
