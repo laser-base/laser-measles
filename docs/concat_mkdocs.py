@@ -146,20 +146,17 @@ def concat(mkdocs_dir: str, notebooks_dir: str, output_file: str):
     # automatically. Adds a fail-loud floor so a half-built site can't slip
     # through unnoticed.
     EXCLUDE_DIRS = {
-        "assets",         # static (CSS/JS)
-        "images",         # static
+        "assets",  # static (CSS/JS)
+        "images",  # static
         "customization",  # build helpers
-        "search",         # search index
-        "reference",      # handled separately by get_reference_pages()
-        "tutorials",      # handled separately via executed notebooks
+        "search",  # search index
+        "reference",  # handled separately by get_reference_pages()
+        "tutorials",  # handled separately via executed notebooks
         "concat_mkdocs",  # meta-doc about this script — not laser-measles content
     }
     EXPECTED_MIN_MAIN_PAGES = 5  # site is suspiciously empty below this
 
-    main_pages = sorted(
-        p for p in base.rglob("index.html")
-        if not any(part in EXCLUDE_DIRS for part in p.relative_to(base).parts)
-    )
+    main_pages = sorted(p for p in base.rglob("index.html") if not any(part in EXCLUDE_DIRS for part in p.relative_to(base).parts))
 
     # Fail loud if the rendered site looks broken.
     if len(main_pages) < EXPECTED_MIN_MAIN_PAGES:
@@ -273,16 +270,17 @@ def concat(mkdocs_dir: str, notebooks_dir: str, output_file: str):
 
     if ref_pages and ref_included == 0:
         raise RuntimeError(
-            f"Expected to include API reference pages but all {len(ref_pages)} "
-            f"under {base / 'reference'} produced no usable content."
+            f"Expected to include API reference pages but all {len(ref_pages)} under {base / 'reference'} produced no usable content."
         )
 
     output = Path(output_file)
     output.write_text("\n".join(parts), encoding="utf-8")
     print(f"\nWrote {included} sections ({skipped} skipped) -> {output_file}")
-    print(f"  main: {main_included}/{len(main_pages)}, "
-          f"tutorials: {tut_included}/{len(tutorial_names)}, "
-          f"reference: {ref_included}/{len(ref_pages)}")
+    print(
+        f"  main: {main_included}/{len(main_pages)}, "
+        f"tutorials: {tut_included}/{len(tutorial_names)}, "
+        f"reference: {ref_included}/{len(ref_pages)}"
+    )
     print(f"Output size: {output.stat().st_size / 1e6:.1f} MB")
 
 
