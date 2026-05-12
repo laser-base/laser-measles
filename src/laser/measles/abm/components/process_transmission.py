@@ -148,7 +148,10 @@ class TransmissionProcess(BasePhase):
             - 'incidence' (uint32, per patch): number of *new* infections that
               occurred during the most recent tick. Reset (overwritten, not
               accumulated) at every tick. To get cumulative incidence over a
-              run, sum this each tick yourself or read from a StateTracker.
+              run, sum this value across ticks yourself, or derive it from
+              tracked SEIR state counts (for example, from changes in S/E over
+              time) rather than reading a direct incidence series from a
+              StateTracker.
         """
 
         super().__init__(model)
