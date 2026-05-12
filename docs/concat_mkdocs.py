@@ -243,6 +243,9 @@ def concat(mkdocs_dir: str, notebooks_dir: str, output_file: str):
         elif md:
             print(f"  skip (too short, {len(md)} chars): {name}.ipynb")
             skipped += 1
+        else:
+            print(f"  skip (no content extracted): {name}.ipynb")
+            skipped += 1
 
     if tutorial_names and tut_included == 0:
         raise RuntimeError(
