@@ -446,6 +446,7 @@ class BaseLaserModel(ABC):
                 peak_infectious_global:     int
                 peak_day:                   int
                 attack_rate_global:         float
+                final_state_global:         dict[str, int]
                 attack_rate_per_patch:      list[float] | None
                 peak_infectious_per_patch:  list[int]   | None
                 final_state_per_patch:      dict[str, list[int]] | None
@@ -500,6 +501,11 @@ class BaseLaserModel(ABC):
         if per_patch:
             final_per_patch = {name: x[-1].astype(int).tolist() for name, x in (("S", S), ("E", E), ("I", I), ("R", R)) if x is not None}
 
+        # Global final compartment counts — always produced, by summing the
+        # final tick across patches/groups. Available even when only a global
+        # StateTracker is attached (no per-patch breakdown required).
+        final_global = {name: int(x[-1].sum()) for name, x in (("S", S), ("E", E), ("I", I), ("R", R)) if x is not None}
+
         out = {
             "model_type": self.__class__.__name__,
             "num_ticks": int(num_ticks),
@@ -510,6 +516,7 @@ class BaseLaserModel(ABC):
                 "peak_infectious_global": peak_global,
                 "peak_day": peak_day,
                 "attack_rate_global": attack_global,
+                "final_state_global": final_global,
                 "attack_rate_per_patch": attack_per_patch if per_patch else None,
                 "peak_infectious_per_patch": peak_per_patch,
                 "final_state_per_patch": final_per_patch,

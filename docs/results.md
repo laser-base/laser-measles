@@ -56,6 +56,7 @@ The method returns the dict that was written, so you can also inspect it in-proc
     "peak_infectious_global": 51925,
     "peak_day": 48,
     "attack_rate_global": 0.882,
+    "final_state_global": {"S": 67, "E": 0, "I": 0, "R": 249933},
     "attack_rate_per_patch": [0.879, 0.890, 0.890, "..."],
     "peak_infectious_per_patch": [25933, 41727, 61569, "..."],
     "final_state_per_patch": {
@@ -80,6 +81,7 @@ The method returns the dict that was written, so you can also inspect it in-proc
 | `summary.peak_infectious_global` | int | Maximum total infectious count summed across all patches over the run. |
 | `summary.peak_day` | int | Tick index at which `peak_infectious_global` occurred. |
 | `summary.attack_rate_global` | float | `final R / initial population` summed across all patches. `null` if `R` isn't in `states`. |
+| `summary.final_state_global` | object | Final count of each state summed across all patches. Keys are the state names present in `states`. Always emitted (works with both per-patch and global-only trackers). |
 | `summary.attack_rate_per_patch` | array of floats or null | Per-patch attack rate; `null` when only global tracking is available. |
 | `summary.peak_infectious_per_patch` | array of ints or null | Per-patch peak; `null` when only global tracking is available. |
 | `summary.final_state_per_patch` | object or null | Final count of each state per patch. Keys are the state names present in `states`. `null` when only global tracking is available. |

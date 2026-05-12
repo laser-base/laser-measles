@@ -96,6 +96,15 @@ def test_per_patch_output_has_full_schema(tmp_path):
         assert state in final, f"missing final state {state!r}"
         assert len(final[state]) == N_PATCHES
 
+    # final_state_global is a dict of state -> scalar int (sum across patches)
+    final_global = summary["final_state_global"]
+    assert final_global is not None
+    for state in ("S", "I", "R"):
+        assert state in final_global, f"missing global final state {state!r}"
+        assert isinstance(final_global[state], int)
+        # Global value equals sum of per-patch values
+        assert final_global[state] == sum(final[state]), f"global {state}={final_global[state]} != sum(per-patch)={sum(final[state])}"
+
 
 def test_global_only_tracker_emits_null_per_patch_arrays(tmp_path):
     # Default aggregation_level=-1 → tracker sums over all patches → per-patch
@@ -110,6 +119,14 @@ def test_global_only_tracker_emits_null_per_patch_arrays(tmp_path):
     assert isinstance(summary["peak_infectious_global"], int)
     assert summary["peak_infectious_global"] > 0
     assert summary["attack_rate_global"] is not None
+
+    # final_state_global is present even when only global tracking is on
+    final_global = summary["final_state_global"]
+    assert final_global is not None
+    for state in ("S", "I", "R"):
+        assert state in final_global
+        assert isinstance(final_global[state], int)
+        assert final_global[state] >= 0
 
     # Per-patch arrays explicitly null
     assert summary["attack_rate_per_patch"] is None
