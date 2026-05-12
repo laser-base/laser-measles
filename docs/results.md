@@ -93,10 +93,19 @@ import json
 results = json.loads(open("results.json").read())
 
 print(f"Peak infectious: {results['summary']['peak_infectious_global']} on day {results['summary']['peak_day']}")
-print(f"Overall attack rate: {results['summary']['attack_rate_global']:.1%}")
 
-for patch_id, rate in zip(results["patch_ids"], results["summary"]["attack_rate_per_patch"]):
-    print(f"  {patch_id}: {rate:.1%}")
+attack_rate_global = results["summary"]["attack_rate_global"]
+if attack_rate_global is not None:
+    print(f"Overall attack rate: {attack_rate_global:.1%}")
+else:
+    print("Overall attack rate: unavailable")
+
+attack_rate_per_patch = results["summary"]["attack_rate_per_patch"]
+if attack_rate_per_patch is not None:
+    for patch_id, rate in zip(results["patch_ids"], attack_rate_per_patch):
+        print(f"  {patch_id}: {rate:.1%}")
+else:
+    print("Per-patch attack rates: unavailable")
 ```
 
 ---
