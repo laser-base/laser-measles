@@ -23,7 +23,7 @@ def test_download_gadm_cuba():
     cache_dir = user_cache_dir("laser.measles", "gadm_test")
     try:
         gadm_shapefile = gadm.GADMShapefile.download("CUB", 0, directory=cache_dir)
-    except (requests.ConnectionError, requests.Timeout) as e:
+    except requests.exceptions.RequestException as e:
         pytest.skip(f"GADM source unreachable: {e}")
 
     # Verify the path exists and is a file
