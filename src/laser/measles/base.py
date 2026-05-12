@@ -13,16 +13,19 @@ The BaseLaserModel class is the base class for all laser-measles models.
 from __future__ import annotations
 
 import gc
+import json
 from abc import ABC
 from abc import abstractmethod
 from datetime import datetime
 from datetime import timedelta
+from pathlib import Path
 from typing import Any
 from typing import Protocol
 from typing import TypeVar
 
 import alive_progress
 import matplotlib.pyplot as plt
+import numpy as np
 import polars as pl
 from laser.core.laserframe import LaserFrame
 from laser.core.random import seed as seed_prng
@@ -447,10 +450,6 @@ class BaseLaserModel(ABC):
                 peak_infectious_per_patch:  list[int]   | None
                 final_state_per_patch:      dict[str, list[int]] | None
         """
-        import json as _json
-
-        import numpy as _np
-
         tracker = None
         for instance in self.instances:
             if getattr(instance, "name", None) == "StateTracker":
@@ -458,11 +457,10 @@ class BaseLaserModel(ABC):
                 break
         if tracker is None:
             raise RuntimeError(
-                "write_results() requires a StateTracker component. Add "
-                "StateTracker() to your components list before model.run()."
+                "write_results() requires a StateTracker component. Add StateTracker() to your components list before model.run()."
             )
 
-        arr = _np.asarray(tracker.state_tracker)  # (num_states, num_ticks, num_groups)
+        arr = np.asarray(tracker.state_tracker)  # (num_states, num_ticks, num_groups)
         _, num_ticks, num_groups = arr.shape
         state_names = list(self.params.states)
         state_idx = {s: i for i, s in enumerate(state_names)}
@@ -472,13 +470,10 @@ class BaseLaserModel(ABC):
         def _series(name):
             return arr[state_idx[name]] if name in state_idx else None  # (num_ticks, num_groups)
 
-        S, E, I, R = (_series(s) for s in ("S", "E", "I", "R"))
+        S, E, I, R = (_series(s) for s in ("S", "E", "I", "R"))  # noqa: E741 — SEIR convention
 
         if I is None:
-            raise RuntimeError(
-                "write_results() requires an 'I' state in model.params.states; "
-                f"got {state_names!r}"
-            )
+            raise RuntimeError(f"write_results() requires an 'I' state in model.params.states; got {state_names!r}")
 
         # Global infectious time series (sum over patches/groups)
         I_global = I.sum(axis=1)
@@ -490,12 +485,12 @@ class BaseLaserModel(ABC):
         # malformed inputs.
         pop_per_patch = sum(
             (x[0] for x in (S, E, I, R) if x is not None),
-            start=_np.zeros(num_groups, dtype=arr.dtype),
+            start=np.zeros(num_groups, dtype=arr.dtype),
         )
 
         if R is not None:
             attack_global = float(R[-1].sum() / max(int(pop_per_patch.sum()), 1))
-            attack_per_patch = (R[-1] / _np.maximum(pop_per_patch, 1)).astype(float).tolist()
+            attack_per_patch = (R[-1] / np.maximum(pop_per_patch, 1)).astype(float).tolist()
         else:
             attack_global = None
             attack_per_patch = None
@@ -503,16 +498,12 @@ class BaseLaserModel(ABC):
         peak_per_patch = I.max(axis=0).astype(int).tolist() if per_patch else None
         final_per_patch = None
         if per_patch:
-            final_per_patch = {
-                name: x[-1].astype(int).tolist()
-                for name, x in (("S", S), ("E", E), ("I", I), ("R", R))
-                if x is not None
-            }
+            final_per_patch = {name: x[-1].astype(int).tolist() for name, x in (("S", S), ("E", E), ("I", I), ("R", R)) if x is not None}
 
         out = {
             "model_type": self.__class__.__name__,
             "num_ticks": int(num_ticks),
-            "num_patches": int(len(patch_ids)),
+            "num_patches": len(patch_ids),
             "patch_ids": patch_ids,
             "states": state_names,
             "summary": {
@@ -525,8 +516,8 @@ class BaseLaserModel(ABC):
             },
         }
 
-        with open(path, "w", encoding="utf-8") as f:
-            _json.dump(out, f, indent=2, default=lambda o: o.tolist() if hasattr(o, "tolist") else str(o))
+        with Path(path).open("w", encoding="utf-8") as f:
+            json.dump(out, f, indent=2, default=lambda o: o.tolist() if hasattr(o, "tolist") else str(o))
         return out
 
     def time_elapsed(self, units: str = "days") -> int | float:

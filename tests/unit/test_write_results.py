@@ -14,39 +14,37 @@ import json
 import polars as pl
 import pytest
 
-import laser.measles as lm
-from laser.measles.abm import ABMModel, ABMParams
-from laser.measles.abm.components import (
-    InfectionProcess,
-    InfectionSeedingParams,
-    InfectionSeedingProcess,
-    NoBirthsProcess,
-    StateTracker,
-)
-from laser.measles.components import BaseStateTrackerParams, create_component
-
+from laser.measles.abm import ABMModel
+from laser.measles.abm import ABMParams
+from laser.measles.abm.components import InfectionProcess
+from laser.measles.abm.components import InfectionSeedingParams
+from laser.measles.abm.components import InfectionSeedingProcess
+from laser.measles.abm.components import NoBirthsProcess
+from laser.measles.abm.components import StateTracker
+from laser.measles.components import BaseStateTrackerParams
+from laser.measles.components import create_component
 
 N_PATCHES = 5
 TICKS = 90
 
 
 def _scenario():
-    return pl.DataFrame({
-        "id": [f"patch_{i}" for i in range(N_PATCHES)],
-        "pop": [50_000, 80_000, 120_000, 60_000, 40_000],
-        "lat": [0.0, 0.1, 0.2, 0.3, 0.4],
-        "lon": [0.0, 0.0, 0.0, 0.0, 0.0],
-        "mcv1": [0.0, 0.2, 0.4, 0.6, 0.8],
-    })
+    return pl.DataFrame(
+        {
+            "id": [f"patch_{i}" for i in range(N_PATCHES)],
+            "pop": [50_000, 80_000, 120_000, 60_000, 40_000],
+            "lat": [0.0, 0.1, 0.2, 0.3, 0.4],
+            "lon": [0.0, 0.0, 0.0, 0.0, 0.0],
+            "mcv1": [0.0, 0.2, 0.4, 0.6, 0.8],
+        }
+    )
 
 
 def _make_model(state_tracker_params=None):
-    params = ABMParams(num_ticks=TICKS, seed=42, start_time="2000-01",
-                       verbose=False, show_progress=False)
+    params = ABMParams(num_ticks=TICKS, seed=42, start_time="2000-01", verbose=False, show_progress=False)
     model = ABMModel(_scenario(), params)
     model.add_component(NoBirthsProcess)
-    model.add_component(create_component(InfectionSeedingProcess,
-                                         params=InfectionSeedingParams(num_infections=20)))
+    model.add_component(create_component(InfectionSeedingProcess, params=InfectionSeedingParams(num_infections=20)))
     model.add_component(InfectionProcess)
     if state_tracker_params is not None:
         model.add_component(create_component(StateTracker, params=state_tracker_params))
@@ -72,7 +70,7 @@ def test_per_patch_output_has_full_schema(tmp_path):
     assert on_disk["num_ticks"] == TICKS
     assert on_disk["num_patches"] == N_PATCHES
     assert on_disk["patch_ids"] == [f"patch_{i}" for i in range(N_PATCHES)]
-    assert set(("S", "I", "R")).issubset(set(on_disk["states"]))
+    assert {"S", "I", "R"}.issubset(set(on_disk["states"]))
 
     summary = on_disk["summary"]
 
