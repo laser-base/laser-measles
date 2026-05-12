@@ -340,6 +340,11 @@ class BaseLaserModel(ABC):
         self.phases = []
         for component in components:
             instance = component(self)
+            # BaseComponent.__init__ defaults `name`, but components that don't
+            # inherit from BaseComponent won't have it set. get_instance(str)
+            # compares against `name`, so default it defensively here.
+            if not hasattr(instance, "name"):
+                instance.name = instance.__class__.__name__
             self.instances.append(instance)
             if "__call__" in dir(instance):
                 self.phases.append(instance)
@@ -358,6 +363,8 @@ class BaseLaserModel(ABC):
         """
         self._components.append(component)
         instance = component(self)
+        if not hasattr(instance, "name"):
+            instance.name = instance.__class__.__name__
         self.instances.append(instance)
         if "__call__" in dir(instance):
             self.phases.append(instance)
@@ -372,6 +379,8 @@ class BaseLaserModel(ABC):
         """
         self._components.insert(0, component)
         instance = component(self)
+        if not hasattr(instance, "name"):
+            instance.name = instance.__class__.__name__
         self.instances.insert(0, instance)
         if "__call__" in dir(instance):
             self.phases.insert(0, instance)
