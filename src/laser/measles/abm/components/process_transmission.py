@@ -143,11 +143,12 @@ class TransmissionProcess(BasePhase):
 
             model: The model object passed during initialization.
 
-        The model's patches are extended with the following properties:
+        The model's patches are extended with the following scalar property:
 
-            - 'cases': A vector property with length equal to the number of ticks, dtype is uint32.
-            - 'forces': A scalar property with dtype float32.
-            - 'incidence': A vector property with length equal to the number of ticks, dtype is uint32.
+            - 'incidence' (uint32, per patch): number of *new* infections that
+              occurred during the most recent tick. Reset (overwritten, not
+              accumulated) at every tick. To get cumulative incidence over a
+              run, sum this each tick yourself or read from a StateTracker.
         """
 
         super().__init__(model)
