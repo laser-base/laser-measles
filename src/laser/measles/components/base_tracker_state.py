@@ -15,7 +15,6 @@ from laser.measles.base import StateArray
 
 
 class BaseStateTrackerParams(BaseModel):
-    model_config = ConfigDict(extra="forbid")
     """Parameters specific to the state tracker component.
 
     Attributes:
@@ -34,6 +33,8 @@ class BaseStateTrackerParams(BaseModel):
             The ``patch_id`` column in ``get_dataframe()`` matches the ``id`` column of the
             scenario DataFrame at the requested hierarchy level.
     """
+
+    model_config = ConfigDict(extra="forbid")
 
     filter_fn: Callable[[str], bool] = Field(default=lambda x: True, description="Function to filter which nodes to include in aggregation")
     aggregation_level: int = Field(

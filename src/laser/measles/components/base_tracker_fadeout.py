@@ -16,8 +16,9 @@ from laser.measles.base import BasePhase
 
 
 class BaseFadeOutTrackerParams(BaseModel):
-    model_config = ConfigDict(extra="forbid")
     """Parameters for the FadeOutTracker component."""
+
+    model_config = ConfigDict(extra="forbid")
 
 
 class BaseFadeOutTracker(BasePhase):

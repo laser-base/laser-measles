@@ -12,8 +12,9 @@ from ..base import BaseComponent
 
 
 class BaseTrackerParams(BaseModel):
-    model_config = ConfigDict(extra="forbid")
     """Common parameters for tracker components."""
+
+    model_config = ConfigDict(extra="forbid")
 
     track_states: bool = Field(default=True, description="Whether to track disease states")
 

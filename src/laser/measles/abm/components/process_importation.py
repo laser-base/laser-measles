@@ -20,8 +20,9 @@ from ..utils import seed_infections_randomly
 
 
 class ImportationParams(BaseModel):
-    model_config = ConfigDict(extra="forbid")
     """Parameters specific to the importation process components."""
+
+    model_config = ConfigDict(extra="forbid")
 
     nticks: int = Field(description="Total number of simulation ticks", gt=0)
     importation_period: int = Field(description="Period between importation events", gt=0)

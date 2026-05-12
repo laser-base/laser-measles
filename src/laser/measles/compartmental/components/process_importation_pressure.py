@@ -16,7 +16,6 @@ from laser.measles.utils import cast_type
 
 
 class ImportationPressureParams(BaseModel):
-    model_config = ConfigDict(extra="forbid")
     """Parameters for the importation pressure component.
 
     Importation pressure simulates external case introductions from outside the
@@ -96,6 +95,8 @@ class ImportationPressureParams(BaseModel):
                 importation_end=364,
             )
     """
+
+    model_config = ConfigDict(extra="forbid")
 
     crude_importation_rate: float | list[float] | dict[str, float] = Field(
         default=1.0,

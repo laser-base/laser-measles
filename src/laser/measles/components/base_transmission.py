@@ -16,8 +16,9 @@ from ..base import BasePhase
 
 
 class BaseTransmissionParams(BaseModel):
-    model_config = ConfigDict(extra="forbid")
     """Common parameters for all transmission components."""
+
+    model_config = ConfigDict(extra="forbid", arbitrary_types_allowed=True)  # arbitrary_types_allowed for numpy arrays
 
     # Core transmission parameters
     beta: float = Field(default=0.1, description="Transmission rate parameter", gt=0.0)
@@ -34,9 +35,6 @@ class BaseTransmissionParams(BaseModel):
 
     # Model-specific parameters that may be overridden
     random_seed: int | None = Field(default=None, description="Random seed for stochastic processes")
-
-    class Config:
-        arbitrary_types_allowed = True  # Allow numpy arrays
 
 
 class BaseTransmission(BasePhase, ABC):

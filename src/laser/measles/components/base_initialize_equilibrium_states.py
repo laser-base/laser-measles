@@ -12,10 +12,11 @@ from laser.measles.base import BasePhase
 
 
 class BaseInitializeEquilibriumStatesParams(BaseModel):
-    model_config = ConfigDict(extra="forbid")
     """
     Parameters for the InitializeEquilibriumStatesProcess.
     """
+
+    model_config = ConfigDict(extra="forbid")
 
     R0: float = Field(default=8.0, description="Basic reproduction number setting the initialization", ge=0.0)
 

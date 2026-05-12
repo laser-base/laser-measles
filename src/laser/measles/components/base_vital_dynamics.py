@@ -14,8 +14,9 @@ ModelType = TypeVar("ModelType")
 
 
 class BaseVitalDynamicsParams(BaseModel):
-    model_config = ConfigDict(extra="forbid")
     """Parameters specific to vital dynamics."""
+
+    model_config = ConfigDict(extra="forbid")
 
     crude_birth_rate: float = Field(default=20.0, description="Annual crude birth rate per 1000 population", ge=0.0)
     crude_death_rate: float = Field(default=8.0, description="Annual crude death rate per 1000 population", ge=0.0)
