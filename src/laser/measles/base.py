@@ -512,7 +512,7 @@ class BaseLaserModel(ABC):
         out = {
             "model_type": self.__class__.__name__,
             "num_ticks": int(num_ticks),
-            "num_patches": int(num_groups) if per_patch else int(len(getattr(self, "scenario", []) or [])) or 1,
+            "num_patches": int(len(patch_ids)),
             "patch_ids": patch_ids,
             "states": state_names,
             "summary": {
