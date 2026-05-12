@@ -339,18 +339,28 @@ class BaseLaserModel(ABC):
         self.instances = []
         self.phases = []
         for component in components:
-            instance = component(self)
-            # BaseComponent.__init__ defaults `name`, but components that don't
-            # inherit from BaseComponent won't have it set. get_instance(str)
-            # compares against `name`, so default it defensively here.
-            if not hasattr(instance, "name"):
-                instance.name = instance.__class__.__name__
+            instance = self._instantiate_component(component)
             self.instances.append(instance)
             if "__call__" in dir(instance):
                 self.phases.append(instance)
 
         # Allow subclasses to perform additional component setup
         self._setup_components()
+
+    def _instantiate_component(self, component: type[BaseComponent]) -> BaseComponent:
+        """Instantiate a component and ensure it has a `name` attribute.
+
+        BaseComponent.__init__ defaults `name` to the class name, but
+        components that don't inherit from BaseComponent (or override __init__
+        without calling super) won't have it set. get_instance(str) compares
+        against `name`, so a missing attribute raises AttributeError
+        mid-comprehension the first time a string-form lookup runs. Set it
+        defensively here so any class works as a component.
+        """
+        instance = component(self)
+        if not hasattr(instance, "name"):
+            instance.name = instance.__class__.__name__
+        return instance
 
     def add_component(self, component: type[BaseComponent]) -> None:
         """
@@ -362,9 +372,7 @@ class BaseLaserModel(ABC):
             component: A component class to be initialized and integrated into the model.
         """
         self._components.append(component)
-        instance = component(self)
-        if not hasattr(instance, "name"):
-            instance.name = instance.__class__.__name__
+        instance = self._instantiate_component(component)
         self.instances.append(instance)
         if "__call__" in dir(instance):
             self.phases.append(instance)
@@ -378,9 +386,7 @@ class BaseLaserModel(ABC):
             component: A component class to be initialized and integrated into the model.
         """
         self._components.insert(0, component)
-        instance = component(self)
-        if not hasattr(instance, "name"):
-            instance.name = instance.__class__.__name__
+        instance = self._instantiate_component(component)
         self.instances.insert(0, instance)
         if "__call__" in dir(instance):
             self.phases.insert(0, instance)
