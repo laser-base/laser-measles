@@ -22,42 +22,50 @@ from pydantic import ValidationError
 
 # Pull a representative sample of params classes (ABM variant). Each is
 # tested for the same property: unknown kwargs must raise ValidationError.
-from laser.measles.abm.components import (
-    InfectionParams,
-    InfectionSeedingParams,
-    VitalDynamicsParams,
-)
+from laser.measles.abm.components import InfectionParams
+from laser.measles.abm.components import InfectionSeedingParams
+from laser.measles.abm.components import VitalDynamicsParams
 from laser.measles.abm.components.process_transmission import TransmissionParams
 
 
 @pytest.mark.parametrize(
-    "params_cls, valid_kwargs, bad_kwarg",
+    ("params_cls", "valid_kwargs", "bad_kwarg"),
     [
         # Documented bug: cbr/cdr typo silently uses defaults (20/8) instead of
         # user's intent. Correct field names are crude_birth_rate / crude_death_rate.
         pytest.param(
-            VitalDynamicsParams, {}, ("cbr", 50),
+            VitalDynamicsParams,
+            {},
+            ("cbr", 50),
             id="vital_dynamics-cbr-typo",
         ),
         pytest.param(
-            VitalDynamicsParams, {}, ("cdr", 30),
+            VitalDynamicsParams,
+            {},
+            ("cdr", 30),
             id="vital_dynamics-cdr-typo",
         ),
         # Any made-up kwarg on InfectionParams must not be silently swallowed.
         pytest.param(
-            InfectionParams, {"beta": 1.0}, ("totally_made_up_field", 42),
+            InfectionParams,
+            {"beta": 1.0},
+            ("totally_made_up_field", 42),
             id="infection-made-up-kwarg",
         ),
         # Issue #140: distance_exponent is real on InfectionParams but dropped
         # when forwarded to TransmissionParams. Directly: TransmissionParams
         # should not silently accept fields it doesn't declare.
         pytest.param(
-            TransmissionParams, {}, ("distance_exponent", 20.0),
+            TransmissionParams,
+            {},
+            ("distance_exponent", 20.0),
             id="transmission-distance-exponent",
         ),
         # Seeding params: arbitrary unknown kwarg must raise.
         pytest.param(
-            InfectionSeedingParams, {}, ("misnamed_count", 7),
+            InfectionSeedingParams,
+            {},
+            ("misnamed_count", 7),
             id="seeding-made-up-kwarg",
         ),
     ],
