@@ -463,7 +463,7 @@ class BaseLaserModel(ABC):
             )
 
         arr = _np.asarray(tracker.state_tracker)  # (num_states, num_ticks, num_groups)
-        num_states, num_ticks, num_groups = arr.shape
+        _, num_ticks, num_groups = arr.shape
         state_names = list(self.params.states)
         state_idx = {s: i for i, s in enumerate(state_names)}
         patch_ids = list(tracker.group_ids)
