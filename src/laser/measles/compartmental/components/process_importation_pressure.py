@@ -6,6 +6,7 @@ from collections.abc import Sequence
 
 import numpy as np
 from pydantic import BaseModel
+from pydantic import ConfigDict
 from pydantic import Field
 from pydantic import field_validator
 
@@ -15,6 +16,7 @@ from laser.measles.utils import cast_type
 
 
 class ImportationPressureParams(BaseModel):
+    model_config = ConfigDict(extra="forbid")
     """Parameters for the importation pressure component.
 
     Importation pressure simulates external case introductions from outside the

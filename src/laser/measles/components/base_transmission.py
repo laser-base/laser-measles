@@ -9,12 +9,14 @@ from abc import abstractmethod
 
 import numpy as np
 from pydantic import BaseModel
+from pydantic import ConfigDict
 from pydantic import Field
 
 from ..base import BasePhase
 
 
 class BaseTransmissionParams(BaseModel):
+    model_config = ConfigDict(extra="forbid")
     """Common parameters for all transmission components."""
 
     # Core transmission parameters

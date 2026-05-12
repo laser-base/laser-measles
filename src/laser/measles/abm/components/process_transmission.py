@@ -6,6 +6,7 @@ from typing import Any
 
 import numpy as np
 from pydantic import BaseModel
+from pydantic import ConfigDict
 from pydantic import Field
 
 from laser.measles.abm.model import ABMModel
@@ -106,7 +107,7 @@ else:
 class TransmissionParams(BaseModel):
     """Parameters specific to the transmission process component."""
 
-    model_config = {"arbitrary_types_allowed": True}
+    model_config = ConfigDict(extra="forbid", arbitrary_types_allowed=True)
 
     beta: float = Field(default=1.0, description="Base transmission rate", ge=0.0)
     seasonality: float = Field(default=1.0, description="Seasonality factor", ge=0.0, le=1.0)

@@ -5,12 +5,14 @@ from abc import abstractmethod
 
 import numpy as np
 from pydantic import BaseModel
+from pydantic import ConfigDict
 from pydantic import Field
 
 from ..base import BasePhase
 
 
 class BaseImportationParams(BaseModel):
+    model_config = ConfigDict(extra="forbid")
     """Common parameters for importation components."""
 
     importation_rate: float = Field(default=0.0, description="Rate of imported infections per time step", ge=0.0)

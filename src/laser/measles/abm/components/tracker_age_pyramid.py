@@ -7,6 +7,7 @@ This component tracks the age distribution of the population.
 import numpy as np
 import pyvd
 from pydantic import BaseModel
+from pydantic import ConfigDict
 from pydantic import Field
 from pydantic import field_validator
 
@@ -15,6 +16,7 @@ from laser.measles.base import BasePhase
 
 
 class AgePyramidTrackerParams(BaseModel):
+    model_config = ConfigDict(extra="forbid")
     frequency: str = Field(default="yearly", description="Frequency of the age pyramid tracker (yearly, monthly, daily)")
     age_bins: list[int] = Field(default=pyvd.constants.MORT_XVAL[::2], description="Age bins for the age pyramid (in days)")
 

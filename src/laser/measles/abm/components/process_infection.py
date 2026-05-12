@@ -9,6 +9,8 @@ from pydantic import Field
 from laser.measles.abm.model import ABMModel
 from laser.measles.components import BaseInfectionParams
 from laser.measles.components import BaseInfectionProcess
+from laser.measles.mixing.gravity import GravityMixing
+from laser.measles.mixing.gravity import GravityParams
 
 from .process_disease import DiseaseParams
 from .process_disease import DiseaseProcess
@@ -59,15 +61,20 @@ class InfectionParams(BaseInfectionParams):
 
     @property
     def transmission_params(self) -> TransmissionParams:
-        """Extract transmission-specific parameters."""
+        """Extract transmission-specific parameters.
+
+        Wires user-facing ``distance_exponent`` and ``mixing_scale`` into the
+        default ``GravityMixing`` instance. Issue #140: passing these as
+        fields on ``TransmissionParams`` silently dropped them — those fields
+        don't exist there.
+        """
         return TransmissionParams(
             beta=self.beta,
             seasonality=self.seasonality,
             season_start=self.season_start,
             exp_mu=self.exp_mu,
             exp_sigma=self.exp_sigma,
-            distance_exponent=self.distance_exponent,
-            mixing_scale=self.mixing_scale,
+            mixer=GravityMixing(params=GravityParams(c=self.distance_exponent, k=self.mixing_scale)),
         )
 
     @property

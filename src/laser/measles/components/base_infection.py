@@ -1,12 +1,14 @@
 from abc import ABC
 
 from pydantic import BaseModel
+from pydantic import ConfigDict
 from pydantic import Field
 
 from laser.measles.base import BasePhase
 
 
 class BaseInfectionParams(BaseModel):
+    model_config = ConfigDict(extra="forbid")
     """Parameters specific to the infection process component."""
 
     beta: float = Field(

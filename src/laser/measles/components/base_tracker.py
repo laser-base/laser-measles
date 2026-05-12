@@ -5,12 +5,14 @@ from abc import abstractmethod
 from typing import Any
 
 from pydantic import BaseModel
+from pydantic import ConfigDict
 from pydantic import Field
 
 from ..base import BaseComponent
 
 
 class BaseTrackerParams(BaseModel):
+    model_config = ConfigDict(extra="forbid")
     """Common parameters for tracker components."""
 
     track_states: bool = Field(default=True, description="Whether to track disease states")

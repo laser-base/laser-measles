@@ -9,6 +9,7 @@ import numpy as np
 import polars as pl
 from matplotlib.figure import Figure
 from pydantic import BaseModel
+from pydantic import ConfigDict
 from pydantic import Field
 
 from laser.measles.base import BaseLaserModel
@@ -17,6 +18,7 @@ from laser.measles.utils import cast_type
 
 
 class BaseCaseSurveillanceParams(BaseModel):
+    model_config = ConfigDict(extra="forbid")
     """Parameters specific to the case surveillance component.
 
     Attributes:

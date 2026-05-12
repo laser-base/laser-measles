@@ -6,6 +6,7 @@ from abc import abstractmethod
 
 import numpy as np
 from pydantic import BaseModel
+from pydantic import ConfigDict
 from pydantic import Field
 from pydantic import field_validator
 
@@ -15,6 +16,7 @@ from laser.measles.utils import cast_type
 
 
 class BaseInfectionSeedingParams(BaseModel):
+    model_config = ConfigDict(extra="forbid")
     """Parameters for the infection seeding component."""
 
     num_infections: int = Field(default=1, description="Default number of infections to seed", ge=1)
