@@ -251,7 +251,8 @@ def concat(mkdocs_dir: str, notebooks_dir: str, output_file: str):
         raise RuntimeError(
             f"Expected to include tutorial notebooks but found 0 in {nb_dir}. "
             f"Did `make docs-executed-nbs` run? "
-            f"Use an empty notebooks dir explicitly to bypass this check."
+            f"This script requires executed tutorial notebooks to be present "
+            f"for the expected tutorial names."
         )
 
     print(f"\n=== Reference pages ({len(ref_pages)} found, excluding /base/) ===")
