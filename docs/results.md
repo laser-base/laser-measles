@@ -39,7 +39,7 @@ The method returns the dict that was written, so you can also inspect it in-proc
 
 - A `StateTracker` component must be attached before `model.run()`. Otherwise `write_results()` raises a clear `RuntimeError` telling you to add one.
 - For per-patch breakdowns (attack rate per community, peak per patch, final S/E/I/R per patch), the tracker's `aggregation_level` must be `>= 0`. The default (`-1`) sums over all patches and produces global aggregates only.
-- `"I"` must be in `model.params.states` — required for peak-infectious and time-series fields.
+- `"I"` must be in `model.params.states` — required for peak-infectious metrics and `final_state_per_patch["I"]` in the written summary.
 
 ---
 
