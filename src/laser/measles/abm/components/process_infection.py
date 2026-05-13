@@ -64,9 +64,7 @@ class InfectionParams(BaseInfectionParams):
         """Extract transmission-specific parameters.
 
         Wires user-facing ``distance_exponent`` and ``mixing_scale`` into the
-        default ``GravityMixing`` instance. Issue #140: passing these as
-        fields on ``TransmissionParams`` silently dropped them — those fields
-        don't exist there.
+        default ``GravityMixing`` instance. 
         """
         return TransmissionParams(
             beta=self.beta,
