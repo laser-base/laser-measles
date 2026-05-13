@@ -40,8 +40,6 @@ Welcome! This folder contains the source files for the **laser-measles** tutoria
 
 **Vaccination modeling** — Three vaccination strategies implemented in one model: pre-existing immunity at initialization, routine MCV1 coverage applied at birth, and supplemental immunization activity (SIA) campaigns at a specific time.
 
-**Traveling waves** — Investigating a classic measles epidemiology phenomenon: building a spatial network, seeding infection in the largest city, and analyzing how the epidemic front propagates outward across the landscape.
-
 ---
 
 ## Supporting data
