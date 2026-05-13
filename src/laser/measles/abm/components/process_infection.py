@@ -2,6 +2,8 @@
 Component defining the InfectionProcess, which orchestrates the transmission and disease progression of measles in a population.
 """
 
+from typing import Any
+
 import numpy as np
 from matplotlib.figure import Figure
 from pydantic import Field
@@ -21,31 +23,34 @@ from .process_transmission import TransmissionProcess
 class InfectionParams(BaseInfectionParams):
     """Combined parameters for ABM transmission and disease processes.
 
-    Spatial mixing strength is controlled via ``distance_exponent`` and
-    ``mixing_scale``, which configure the default
-    :class:`~laser.measles.mixing.gravity.GravityMixing` model used
-    internally. The model sets the patch scenario on the mixer automatically
-    at initialisation.
+    Spatial mixing is controlled in one of two ways:
 
-    .. note::
+    1. **Default gravity** — leave ``mixer`` as ``None`` and configure
+       ``distance_exponent`` and ``mixing_scale``. Internally a
+       :class:`~laser.measles.mixing.gravity.GravityMixing` is constructed
+       using those values.
+    2. **Custom mixer** — pass any mixing object (e.g. ``GravityMixing(...)``,
+       ``RadiationMixing(...)``) as ``mixer=``. When set, this takes
+       precedence; ``distance_exponent`` and ``mixing_scale`` are ignored.
 
-        Unlike the compartmental :class:`InfectionParams
-        <laser.measles.compartmental.components.process_infection.InfectionParams>`,
-        this class does not currently accept a ``mixer=`` argument. To use
-        a custom mixing model or non-default gravity parameters, configure
-        ``distance_exponent`` and ``mixing_scale`` here, or construct a
-        :class:`~laser.measles.abm.components.process_transmission.TransmissionProcess`
-        directly with a custom
-        :class:`~laser.measles.abm.components.process_transmission.TransmissionParams`.
+    The model sets the patch scenario on the mixer automatically at
+    initialisation, so callers don't need to assign ``mixer.scenario``
+    themselves.
 
-    Example::
+    Examples::
 
-        # Control gravity mixing decay and scale via InfectionParams
+        # 1. Default gravity, tuned via the convenience knobs
         infection_params = InfectionParams(
             beta=20.0,
-            seasonality=0.0,
-            distance_exponent=2.0,  # stronger distance decay
-            mixing_scale=0.005,     # lower overall mixing rate
+            distance_exponent=2.0,
+            mixing_scale=0.005,
+        )
+
+        # 2. Custom mixer — e.g. radiation model
+        from laser.measles.mixing.radiation import RadiationMixing
+        infection_params = InfectionParams(
+            beta=20.0,
+            mixer=RadiationMixing(),
         )
     """
 
@@ -56,23 +61,38 @@ class InfectionParams(BaseInfectionParams):
     exp_sigma: float = Field(default=2.0, description="Exposure sigma (lognormal)", gt=0.0)
     inf_mean: float = Field(default=8.0, description="Mean infection duration", gt=0.0)
     inf_sigma: float = Field(default=2.0, description="Shape parameter for infection duration", gt=0.0)
-    distance_exponent: float = Field(default=1.5, description="Distance exponent", ge=0.0)
-    mixing_scale: float = Field(default=0.001, description="Mixing scale", ge=0.0)
+    distance_exponent: float = Field(default=1.5, description="Distance exponent (used only when mixer is None)", ge=0.0)
+    mixing_scale: float = Field(default=0.001, description="Mixing scale (used only when mixer is None)", ge=0.0)
+    mixer: Any | None = Field(
+        default=None,
+        description="Optional custom mixing object (GravityMixing, RadiationMixing, ...). When set, distance_exponent and mixing_scale are ignored.",
+    )
 
     @property
     def transmission_params(self) -> TransmissionParams:
-        """Extract transmission-specific parameters.
+        """Build the TransmissionParams to hand to TransmissionProcess.
 
-        Wires user-facing ``distance_exponent`` and ``mixing_scale`` into the
-        default ``GravityMixing`` instance.
+        If the caller supplied a ``mixer``, pass it through. Otherwise wire
+        ``distance_exponent`` and ``mixing_scale`` into a default
+        ``GravityMixing(GravityParams(c=..., k=...))``. The latter is the
+        fix called out in #140 — passing those values to TransmissionParams
+        directly silently dropped them because TransmissionParams doesn't
+        declare them.
         """
+        mixer = (
+            self.mixer
+            if self.mixer is not None
+            else GravityMixing(
+                params=GravityParams(c=self.distance_exponent, k=self.mixing_scale),
+            )
+        )
         return TransmissionParams(
             beta=self.beta,
             seasonality=self.seasonality,
             season_start=self.season_start,
             exp_mu=self.exp_mu,
             exp_sigma=self.exp_sigma,
-            mixer=GravityMixing(params=GravityParams(c=self.distance_exponent, k=self.mixing_scale)),
+            mixer=mixer,
         )
 
     @property
