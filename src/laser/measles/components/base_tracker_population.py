@@ -1,12 +1,13 @@
 import numpy as np
 from pydantic import BaseModel
+from pydantic import ConfigDict
 
 from laser.measles.base import BaseLaserModel
 from laser.measles.base import BasePhase
 
 
 class BasePopulationTrackerParams(BaseModel):
-    pass
+    model_config = ConfigDict(extra="forbid")
 
 
 class BasePopulationTracker(BasePhase):

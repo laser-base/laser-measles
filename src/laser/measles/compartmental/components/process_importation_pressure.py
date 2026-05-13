@@ -6,6 +6,7 @@ from collections.abc import Sequence
 
 import numpy as np
 from pydantic import BaseModel
+from pydantic import ConfigDict
 from pydantic import Field
 from pydantic import field_validator
 
@@ -94,6 +95,8 @@ class ImportationPressureParams(BaseModel):
                 importation_end=364,
             )
     """
+
+    model_config = ConfigDict(extra="forbid")
 
     crude_importation_rate: float | list[float] | dict[str, float] = Field(
         default=1.0,

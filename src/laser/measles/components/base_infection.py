@@ -1,6 +1,7 @@
 from abc import ABC
 
 from pydantic import BaseModel
+from pydantic import ConfigDict
 from pydantic import Field
 
 from laser.measles.base import BasePhase
@@ -8,6 +9,8 @@ from laser.measles.base import BasePhase
 
 class BaseInfectionParams(BaseModel):
     """Parameters specific to the infection process component."""
+
+    model_config = ConfigDict(extra="forbid")
 
     beta: float = Field(
         default=1, description="Base transmission rate (infections per day)", ge=0.0

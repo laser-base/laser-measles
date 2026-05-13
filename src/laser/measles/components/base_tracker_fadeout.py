@@ -9,6 +9,7 @@ and visualization of the model's behavior over time.
 
 import numpy as np
 from pydantic import BaseModel
+from pydantic import ConfigDict
 
 from laser.measles.base import BaseLaserModel
 from laser.measles.base import BasePhase
@@ -16,6 +17,8 @@ from laser.measles.base import BasePhase
 
 class BaseFadeOutTrackerParams(BaseModel):
     """Parameters for the FadeOutTracker component."""
+
+    model_config = ConfigDict(extra="forbid")
 
 
 class BaseFadeOutTracker(BasePhase):

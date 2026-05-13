@@ -5,6 +5,7 @@ from abc import abstractmethod
 
 import numpy as np
 from pydantic import BaseModel
+from pydantic import ConfigDict
 from pydantic import Field
 
 from ..base import BasePhase
@@ -13,14 +14,13 @@ from ..base import BasePhase
 class BaseImportationParams(BaseModel):
     """Common parameters for importation components."""
 
+    model_config = ConfigDict(extra="forbid", arbitrary_types_allowed=True)
+
     importation_rate: float = Field(default=0.0, description="Rate of imported infections per time step", ge=0.0)
 
     importation_schedule: np.ndarray | None = Field(default=None, description="Time-varying importation schedule")
 
     target_patches: list | None = Field(default=None, description="Patches that receive importations (None = all patches)")
-
-    class Config:
-        arbitrary_types_allowed = True
 
 
 class BaseImportation(BasePhase, ABC):

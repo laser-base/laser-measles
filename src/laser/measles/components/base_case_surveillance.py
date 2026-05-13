@@ -9,6 +9,7 @@ import numpy as np
 import polars as pl
 from matplotlib.figure import Figure
 from pydantic import BaseModel
+from pydantic import ConfigDict
 from pydantic import Field
 
 from laser.measles.base import BaseLaserModel
@@ -25,6 +26,8 @@ class BaseCaseSurveillanceParams(BaseModel):
         aggregate_cases: Whether to aggregate cases by geographic level.
         aggregation_level: Number of levels to use for aggregation (e.g., 2 for country:state:lga).
     """
+
+    model_config = ConfigDict(extra="forbid")
 
     detection_rate: float = Field(default=0.1, description="Probability of detecting an infected case", ge=0.0, le=1.0)
     filter_fn: Callable[[str], bool] = Field(default=lambda x: True, description="Function to filter which nodes to include in aggregation")

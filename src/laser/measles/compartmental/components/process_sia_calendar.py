@@ -9,6 +9,7 @@ from datetime import timedelta
 import numpy as np
 import polars as pl
 from pydantic import BaseModel
+from pydantic import ConfigDict
 from pydantic import Field
 
 from laser.measles.base import BasePhase
@@ -19,7 +20,7 @@ from laser.measles.utils import cast_type
 class SIACalendarParams(BaseModel):
     """Parameters specific to the SIA calendar component."""
 
-    model_config = {"arbitrary_types_allowed": True}
+    model_config = ConfigDict(extra="forbid", arbitrary_types_allowed=True)
 
     sia_efficacy: float = Field(0.9, description="Fraction of susceptibles to vaccinate in SIA", ge=0.0, le=1.0)
     filter_fn: Callable[[str], bool] = Field(lambda x: True, description="Function to filter which nodes to include in aggregation")

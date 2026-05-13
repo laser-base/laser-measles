@@ -9,6 +9,7 @@ import numpy as np
 from laser.core import SortedQueue
 from laser.core.demographics import AliasedDistribution
 from pydantic import BaseModel
+from pydantic import ConfigDict
 from pydantic import Field
 
 from laser.measles.abm.model import ABMModel
@@ -18,6 +19,7 @@ from laser.measles.utils import cast_type
 
 
 class WPPVitalDynamicsParams(BaseModel):
+    model_config = ConfigDict(extra="forbid")
     country_code: str = Field(default="nga", description="Country code (ISO3)")
     year: int = Field(default=2000, description="Year to initialize the age distribution")
 

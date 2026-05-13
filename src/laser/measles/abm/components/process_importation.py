@@ -12,6 +12,7 @@ Both process classes share the same ``__init__(model, params: ImportationParams 
 import numpy as np
 from matplotlib.figure import Figure
 from pydantic import BaseModel
+from pydantic import ConfigDict
 from pydantic import Field
 
 from ..utils import seed_infections_in_patch
@@ -20,6 +21,8 @@ from ..utils import seed_infections_randomly
 
 class ImportationParams(BaseModel):
     """Parameters specific to the importation process components."""
+
+    model_config = ConfigDict(extra="forbid")
 
     nticks: int = Field(description="Total number of simulation ticks", gt=0)
     importation_period: int = Field(description="Period between importation events", gt=0)

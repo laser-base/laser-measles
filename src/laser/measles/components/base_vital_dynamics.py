@@ -4,6 +4,7 @@ from typing import TypeVar
 
 import numpy as np
 from pydantic import BaseModel
+from pydantic import ConfigDict
 from pydantic import Field
 
 from laser.measles.base import BasePhase
@@ -14,6 +15,8 @@ ModelType = TypeVar("ModelType")
 
 class BaseVitalDynamicsParams(BaseModel):
     """Parameters specific to vital dynamics."""
+
+    model_config = ConfigDict(extra="forbid")
 
     crude_birth_rate: float = Field(default=20.0, description="Annual crude birth rate per 1000 population", ge=0.0)
     crude_death_rate: float = Field(default=8.0, description="Annual crude death rate per 1000 population", ge=0.0)

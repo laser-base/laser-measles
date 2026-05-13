@@ -4,6 +4,7 @@ Component defining the DiseaseProcess, which simulates the disease progression i
 
 import numpy as np
 from pydantic import BaseModel
+from pydantic import ConfigDict
 from pydantic import Field
 
 from laser.measles.abm.model import ABMModel
@@ -125,6 +126,7 @@ else:
 
 
 class DiseaseParams(BaseModel):
+    model_config = ConfigDict(extra="forbid")
     inf_mean: float = Field(default=8.0, description="Mean infectious period (days)")
     inf_sigma: float = Field(default=2.0, description="Shape of the infectious period (days)")
 

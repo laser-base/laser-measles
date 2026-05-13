@@ -4,6 +4,7 @@ Component for initializing the population in each of the model states by rough e
 
 import numpy as np
 from pydantic import BaseModel
+from pydantic import ConfigDict
 from pydantic import Field
 
 from laser.measles.base import BaseLaserModel
@@ -14,6 +15,8 @@ class BaseInitializeEquilibriumStatesParams(BaseModel):
     """
     Parameters for the InitializeEquilibriumStatesProcess.
     """
+
+    model_config = ConfigDict(extra="forbid")
 
     R0: float = Field(default=8.0, description="Basic reproduction number setting the initialization", ge=0.0)
 
