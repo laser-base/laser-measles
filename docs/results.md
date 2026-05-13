@@ -10,12 +10,20 @@
 
 ---
 
-## Basic usage
+## Basic usage — add `ResultsWriter` as a component
+
+This is the recommended way. Adding `ResultsWriter` to `model.components`
+causes the JSON dump to happen automatically at end of run, alongside any
+other end-of-run work declared by other components (snapshots, plots, etc.).
 
 ```python
 import laser.measles as lm
 from laser.measles.abm.components import StateTracker
-from laser.measles.components import BaseStateTrackerParams, create_component
+from laser.measles.components import (
+    BaseStateTrackerParams,
+    ResultsWriter,
+    create_component,
+)
 
 params = lm.ABMParams(num_ticks=365, seed=42, start_time="2000-01")
 model = lm.ABMModel(scenario, params)
@@ -26,12 +34,38 @@ model.add_component(lm.InfectionProcess)
 # write_results() can only emit global aggregates (attack_rate_per_patch=None).
 model.add_component(create_component(StateTracker,
                                      params=BaseStateTrackerParams(aggregation_level=0)))
+model.add_component(ResultsWriter)            # writes results.json at end of run
 
 model.run()
-model.write_results("results.json")  # defaults to "results.json" in cwd
+# results.json is now sitting in cwd. No manual write_results() call needed.
 ```
 
-The method returns the dict that was written, so you can also inspect it in-process without re-reading the file.
+For a custom path:
+
+```python
+from laser.measles.components import ResultsWriterParams, create_component
+model.add_component(
+    create_component(ResultsWriter, params=ResultsWriterParams(path="run_42.json"))
+)
+```
+
+### Manual / one-off form
+
+For calibration loops or other contexts where you want results.json written
+only at specific points (not at every `model.run()`), call the underlying
+method directly and omit `ResultsWriter` from the components list:
+
+```python
+# Calibration sweep: run() N times, write once
+for trial in range(100):
+    model = build_model(trial_params[trial])
+    model.run()                                # no ResultsWriter component
+    if is_best(model):
+        model.write_results(f"best_so_far.json")
+```
+
+The method returns the dict that was written, so you can inspect it
+in-process without re-reading the file.
 
 ---
 

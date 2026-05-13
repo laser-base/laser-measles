@@ -430,6 +430,17 @@ class BaseLaserModel(ABC):
             print(f"Completed the {self.name} model at {self._tfinish}…")
             self._print_timing_summary()
 
+        # Post-run finalize hook for components that want end-of-run behaviour
+        # (write reports, snapshot, plot, etc.). Components opt in by defining
+        # a `finalize(self, model)` method; components that don't define one
+        # are skipped. Order matches model.instances (i.e. components in the
+        # order they were added). Exceptions from finalize() propagate so
+        # bugs surface loudly instead of being swallowed at end-of-run.
+        for instance in self.instances:
+            finalize = getattr(instance, "finalize", None)
+            if callable(finalize):
+                finalize(self)
+
     def write_results(self, path: str = "results.json") -> dict:
         """Write a standard summary of the simulation to JSON.
 
