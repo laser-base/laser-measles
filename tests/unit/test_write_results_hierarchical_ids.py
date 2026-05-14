@@ -34,9 +34,13 @@ from laser.measles.abm.components import InfectionSeedingParams
 from laser.measles.abm.components import InfectionSeedingProcess
 from laser.measles.abm.components import NoBirthsProcess
 from laser.measles.abm.components import StateTracker
+from laser.measles.biweekly import BiweeklyModel
+from laser.measles.biweekly import BiweeklyParams
+from laser.measles.biweekly.components import InfectionProcess as BWInfection
+from laser.measles.biweekly.components import InitializeEquilibriumStatesProcess
 from laser.measles.components import BaseStateTrackerParams
+from laser.measles.components import ResultsWriter
 from laser.measles.components import create_component
-
 
 N_PER_CLUSTER = 4
 TICKS = 60
@@ -121,9 +125,7 @@ def test_aggregation_level_1_with_hierarchical_ids_is_true_per_patch(tmp_path):
 
     assert out["num_groups"] == n_patches
     assert out["group_aggregation_level"] == 1
-    assert sorted(out["group_ids"]) == sorted(
-        f"cluster_{c}:node_{i + 1}" for c in (1, 2) for i in range(N_PER_CLUSTER)
-    )
+    assert sorted(out["group_ids"]) == sorted(f"cluster_{c}:node_{i + 1}" for c in (1, 2) for i in range(N_PER_CLUSTER))
     assert summary["attack_rate_per_group"] is not None
     assert len(summary["attack_rate_per_group"]) == n_patches
     assert summary["peak_infectious_per_group"] is not None
@@ -152,11 +154,6 @@ def test_peak_tick_is_tick_index_in_biweekly_model(tmp_path):
     of the global infectious peak — so consumers don't accidentally
     treat a biweekly tick (14 days) as a calendar day.
     """
-    from laser.measles.biweekly import BiweeklyModel
-    from laser.measles.biweekly import BiweeklyParams
-    from laser.measles.biweekly.components import InfectionProcess as BWInfection
-    from laser.measles.biweekly.components import InitializeEquilibriumStatesProcess
-
     scenario = pl.DataFrame(
         {
             "id": [f"patch_{i}" for i in range(3)],
@@ -178,9 +175,7 @@ def test_peak_tick_is_tick_index_in_biweekly_model(tmp_path):
     summary = out["summary"]
 
     assert "peak_tick" in summary
-    assert "peak_day" not in summary, (
-        "peak_day was renamed to peak_tick to avoid implying calendar days."
-    )
+    assert "peak_day" not in summary, "peak_day was renamed to peak_tick to avoid implying calendar days."
     assert 0 <= summary["peak_tick"] < params.num_ticks
 
 
@@ -195,8 +190,6 @@ def test_results_writer_path_is_relative_to_cwd(tmp_path, monkeypatch):
     a package-relative location, concurrent prompts will overwrite each
     other's results.json.
     """
-    from laser.measles.components import ResultsWriter
-
     monkeypatch.chdir(tmp_path)
 
     model = _build_model(BaseStateTrackerParams(aggregation_level=1))
@@ -204,10 +197,7 @@ def test_results_writer_path_is_relative_to_cwd(tmp_path, monkeypatch):
     model.run()
 
     target = tmp_path / "results.json"
-    assert target.exists(), (
-        f"ResultsWriter should write its default path 'results.json' "
-        f"relative to cwd ({tmp_path}); found nothing there."
-    )
+    assert target.exists(), f"ResultsWriter should write its default path 'results.json' relative to cwd ({tmp_path}); found nothing there."
 
 
 if __name__ == "__main__":

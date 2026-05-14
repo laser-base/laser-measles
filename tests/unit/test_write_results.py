@@ -65,8 +65,13 @@ def test_per_patch_output_has_full_schema(tmp_path):
 
     # Top-level keys
     for key in (
-        "model_type", "num_ticks", "num_groups", "group_ids",
-        "group_aggregation_level", "states", "summary",
+        "model_type",
+        "num_ticks",
+        "num_groups",
+        "group_ids",
+        "group_aggregation_level",
+        "states",
+        "summary",
     ):
         assert key in on_disk, f"missing top-level key {key!r}"
 
