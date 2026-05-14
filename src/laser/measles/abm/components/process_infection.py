@@ -124,6 +124,22 @@ class InfectionProcess(BaseInfectionProcess):
     def infect(self, model: ABMModel, idx: np.ndarray) -> None:
         self.transmission.infect(model, idx)
 
+    @property
+    def mixing_matrix(self) -> np.ndarray:
+        """The spatial mixing matrix the wrapped TransmissionProcess is using.
+
+        Convenience accessor that walks down to the live mixer instance:
+        ``self.transmission.params.mixer.mixing_matrix``. Once the model has
+        run, ``mixer.scenario`` is set and the matrix is lazily computed on
+        first access. Shape is ``(n_patches, n_patches)``.
+
+        Provided here so code that has a handle on the InfectionProcess
+        (e.g. ``model.get_instance("InfectionProcess")[0]``) can get the
+        matrix in one hop, without knowing that TransmissionProcess is
+        nested inside as a sub-component rather than registered separately.
+        """
+        return self.transmission.params.mixer.mixing_matrix
+
     def plot(self, fig: Figure | None = None):
         """
         Plot cases and incidence using the transmission component's plotting functionality.
