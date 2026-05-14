@@ -120,6 +120,15 @@ class InfectionProcess(BaseInfectionProcess):
         # per-patch new-exposure count, written every tick
         model.patches.add_scalar_property("incidence", dtype=np.int32, default=0)
 
+    @property
+    def mixing_matrix(self):
+        """The spatial mixing matrix in use. Shape ``(n_patches, n_patches)``.
+
+        Mirrors the same-named property on the ABM / biweekly InfectionProcess
+        so prompts can use one accessor regardless of model variant.
+        """
+        return self.params.mixer.mixing_matrix
+
     def __call__(self, model: BaseLaserModel, tick: int) -> None:
         # Get state counts: states is (4, num_patches) for [S, E, I, R]
         states = model.patches.states
