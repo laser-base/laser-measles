@@ -86,6 +86,35 @@ def test_no_results_writer_means_no_results_json(tmp_path, monkeypatch):
     assert not (tmp_path / "results.json").exists(), "without ResultsWriter, no results.json should be written"
 
 
+def test_results_writer_picks_most_granular_state_tracker(tmp_path, monkeypatch):
+    """Hello-world pattern: a default global StateTracker plus a per-patch
+    one. ResultsWriter must prefer the per-patch (highest aggregation_level)
+    so the per_group arrays are populated instead of being silently null.
+    """
+    monkeypatch.chdir(tmp_path)
+    # Build the model manually — _make_model_with already adds the per-patch
+    # tracker, but here we want to add a global one FIRST and the per-patch
+    # one SECOND, so first-match-by-name would pick the wrong one.
+    params = ABMParams(num_ticks=60, seed=42, start_time="2000-01", verbose=False, show_progress=False)
+    model = ABMModel(_scenario(), params)
+    model.add_component(NoBirthsProcess)
+    model.add_component(create_component(InfectionSeedingProcess, params=InfectionSeedingParams(num_infections=15)))
+    model.add_component(InfectionProcess)
+    model.add_component(StateTracker)  # default: aggregation_level=-1 (global)
+    model.add_component(create_component(StateTracker, params=BaseStateTrackerParams(aggregation_level=0)))
+    model.add_component(ResultsWriter)
+    model.run()
+
+    data = json.loads((tmp_path / "results.json").read_text())
+    assert data["group_aggregation_level"] == 0, (
+        "ResultsWriter should have picked the per-patch tracker (aggregation_level=0), "
+        f"not the global one. Got group_aggregation_level={data['group_aggregation_level']}."
+    )
+    assert data["num_groups"] == 3, f"expected per-patch (3 groups), got {data['num_groups']}"
+    assert data["summary"]["attack_rate_per_group"] is not None
+    assert len(data["summary"]["attack_rate_per_group"]) == 3
+
+
 # ── finalize() hook coverage ─────────────────────────────────────────────────
 
 

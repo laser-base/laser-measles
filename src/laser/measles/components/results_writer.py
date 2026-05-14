@@ -17,6 +17,7 @@ from pydantic import Field
 
 from laser.measles.base import BaseComponent
 from laser.measles.base import BaseLaserModel
+from laser.measles.components.base_tracker_state import BaseStateTracker
 
 
 class ResultsWriterParams(BaseModel):
@@ -85,6 +86,16 @@ class ResultsWriter(BaseComponent):
     def __init__(self, model: BaseLaserModel, params: ResultsWriterParams | None = None) -> None:
         super().__init__(model)
         self.params = params or ResultsWriterParams()
+        # Fail fast: the model must already have a StateTracker. We do this
+        # at construction time rather than at finalize() so the error surfaces
+        # immediately on `add_component(ResultsWriter)` instead of after a
+        # full tick loop has run. Constraint: add a StateTracker (any model
+        # variant's subclass of BaseStateTracker) BEFORE adding ResultsWriter.
+        if not any(isinstance(i, BaseStateTracker) for i in model.instances):
+            raise RuntimeError(
+                "ResultsWriter requires a StateTracker component to already be in "
+                "model.components. Add a StateTracker before adding ResultsWriter."
+            )
 
     def __call__(self, model: BaseLaserModel, tick: int) -> None:
         # No per-tick work; the dump happens in finalize().
@@ -102,16 +113,20 @@ class ResultsWriter(BaseComponent):
         Internal helper for :meth:`finalize`. Private by convention —
         external callers should add ``ResultsWriter`` to
         ``model.components`` rather than calling this directly.
+
+        Walks ``model.instances`` for any ``BaseStateTracker`` (each
+        model variant — ABM, biweekly, compartmental — registers its
+        own ``StateTracker`` subclass of that base). When multiple are
+        present (the "hello-world" pattern adds both a default global
+        tracker and a per-patch one with ``aggregation_level=0``), pick
+        the most granular — the largest ``aggregation_level``.
         """
-        tracker = None
-        for instance in model.instances:
-            if getattr(instance, "name", None) == "StateTracker":
-                tracker = instance
-                break
-        if tracker is None:
+        trackers = [instance for instance in model.instances if isinstance(instance, BaseStateTracker)]
+        if not trackers:
             raise RuntimeError(
                 "ResultsWriter requires a StateTracker component. Add StateTracker to your components list before model.run()."
             )
+        tracker = max(trackers, key=lambda t: int(getattr(t.params, "aggregation_level", -1)))
 
         arr = np.asarray(tracker.state_tracker)  # (num_states, num_ticks, num_groups)
         _, num_ticks, num_groups = arr.shape

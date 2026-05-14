@@ -171,14 +171,15 @@ def test_global_only_tracker_emits_null_per_group_arrays(tmp_path):
     assert on_disk["group_aggregation_level"] == -1
 
 
-def test_missing_state_tracker_raises(tmp_path):
-    # ResultsWriter present but no StateTracker → finalize() must raise.
-    model = _make_model(
-        state_tracker_params=None,
-        results_writer_params=ResultsWriterParams(path=str(tmp_path / "results.json")),
-    )
+def test_missing_state_tracker_raises_at_add_component_time(tmp_path):
+    # ResultsWriter added with no StateTracker → fail fast at construction,
+    # NOT after a full run() completes. Pin the location of the error so
+    # users get immediate feedback when wiring components.
     with pytest.raises(RuntimeError, match="StateTracker"):
-        model.run()
+        _make_model(
+            state_tracker_params=None,
+            results_writer_params=ResultsWriterParams(path=str(tmp_path / "results.json")),
+        )
 
 
 def test_default_path_is_results_json_in_cwd(tmp_path, monkeypatch):
