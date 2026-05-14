@@ -2,8 +2,8 @@
 
 Coverage:
 - Adding ResultsWriter to a model's components causes results.json to be
-  written at end of run, with the same schema BaseLaserModel.write_results()
-  produces.
+  written at end of run, with the canonical schema (model_type,
+  num_groups, group_ids, group_aggregation_level, summary.*).
 - Custom path via ResultsWriterParams is honored.
 - A model run *without* ResultsWriter does NOT create results.json
   (calibration loops opt out by simply not including the component).
@@ -64,7 +64,6 @@ def test_results_writer_writes_results_json_at_end_of_run(tmp_path, monkeypatch)
     out = tmp_path / "results.json"
     assert out.exists(), "ResultsWriter should have written results.json in cwd"
     data = json.loads(out.read_text())
-    # Same schema as model.write_results() directly
     assert data["model_type"] == "ABMModel"
     assert data["num_ticks"] == 60
     assert "summary" in data

@@ -1,8 +1,8 @@
-"""Tests for BaseLaserModel.write_results() — hierarchical-ID edge cases.
+"""Tests for the ResultsWriter component — hierarchical-ID edge cases.
 
 These tests were written because p16 in the laser-mcp prompt suite kept
 failing with broadcast errors like ``(2,) vs (100,)``. The root cause
-was a contract gap between ``write_results()`` and ``StateTracker``:
+was a contract gap between the results JSON and ``StateTracker``:
 
   - ``two_cluster_scenario`` produces hierarchical IDs of the form
     ``"cluster_1:node_42"``.
@@ -19,10 +19,14 @@ consumers can branch on it without re-deriving from the scenario.
 Also ``peak_day → peak_tick`` so the tick index isn't confused with
 calendar days.
 
-These tests pin the new schema.
+These tests pin the new schema. They drive the writer via
+``model.components += [ResultsWriter]`` and read the resulting JSON
+from disk — there is no model.write_results() public API.
 """
 
 from __future__ import annotations
+
+import json
 
 import polars as pl
 import pytest
@@ -40,6 +44,7 @@ from laser.measles.biweekly.components import InfectionProcess as BWInfection
 from laser.measles.biweekly.components import InitializeEquilibriumStatesProcess
 from laser.measles.components import BaseStateTrackerParams
 from laser.measles.components import ResultsWriter
+from laser.measles.components import ResultsWriterParams
 from laser.measles.components import create_component
 
 N_PER_CLUSTER = 4
@@ -73,29 +78,30 @@ def _hierarchical_scenario(n_per_cluster: int = N_PER_CLUSTER) -> pl.DataFrame:
     )
 
 
-def _build_model(state_tracker_params) -> ABMModel:
+def _build_and_run(state_tracker_params, out_path) -> dict:
+    """Run a small ABM with the given tracker config + ResultsWriter,
+    then return the JSON the writer produced."""
     params = ABMParams(num_ticks=TICKS, seed=42, start_time="2000-01", verbose=False, show_progress=False)
     model = ABMModel(_hierarchical_scenario(), params)
     model.add_component(NoBirthsProcess)
     model.add_component(create_component(InfectionSeedingProcess, params=InfectionSeedingParams(num_infections=20)))
     model.add_component(InfectionProcess)
     model.add_component(create_component(StateTracker, params=state_tracker_params))
-    return model
+    model.add_component(create_component(ResultsWriter, params=ResultsWriterParams(path=str(out_path))))
+    model.run()
+    return json.loads(out_path.read_text())
 
 
 def test_aggregation_level_0_with_hierarchical_ids_rolls_up_to_clusters(tmp_path):
     """With ``aggregation_level=0`` and hierarchical IDs (``cluster_1:node_1``),
     the tracker rolls nodes up to one row per top-level segment.
-    ``write_results()`` then emits length-2 arrays — but under the
+    ResultsWriter then emits length-2 arrays — but under the
     correctly-named ``_per_group`` keys, with ``num_groups=2`` and
     ``group_aggregation_level=0`` so the consumer knows what they're
     holding.
     """
     n_clusters = 2
-    model = _build_model(BaseStateTrackerParams(aggregation_level=0))
-    model.run()
-
-    out = model.write_results(str(tmp_path / "results.json"))
+    out = _build_and_run(BaseStateTrackerParams(aggregation_level=0), tmp_path / "results.json")
     summary = out["summary"]
 
     assert out["num_groups"] == n_clusters
@@ -112,15 +118,12 @@ def test_aggregation_level_0_with_hierarchical_ids_rolls_up_to_clusters(tmp_path
 
 def test_aggregation_level_1_with_hierarchical_ids_is_true_per_patch(tmp_path):
     """When ``aggregation_level`` is set to the ID depth minus one, the
-    tracker yields one row per scenario patch and ``write_results()``
+    tracker yields one row per scenario patch and ResultsWriter
     must produce per-group arrays of that exact length — which IS
     per-patch in this case.
     """
     n_patches = 2 * N_PER_CLUSTER
-    model = _build_model(BaseStateTrackerParams(aggregation_level=1))
-    model.run()
-
-    out = model.write_results(str(tmp_path / "results.json"))
+    out = _build_and_run(BaseStateTrackerParams(aggregation_level=1), tmp_path / "results.json")
     summary = out["summary"]
 
     assert out["num_groups"] == n_patches
@@ -141,9 +144,7 @@ def test_top_level_exposes_aggregation_level_for_disambiguation(tmp_path):
     contract so readers can branch without re-deriving from the
     scenario.
     """
-    model = _build_model(BaseStateTrackerParams(aggregation_level=0))
-    model.run()
-    out = model.write_results(str(tmp_path / "results.json"))
+    out = _build_and_run(BaseStateTrackerParams(aggregation_level=0), tmp_path / "results.json")
     assert "group_aggregation_level" in out
     assert isinstance(out["group_aggregation_level"], int)
     assert out["group_aggregation_level"] == 0
@@ -154,6 +155,7 @@ def test_peak_tick_is_tick_index_in_biweekly_model(tmp_path):
     of the global infectious peak — so consumers don't accidentally
     treat a biweekly tick (14 days) as a calendar day.
     """
+    out_path = tmp_path / "results.json"
     scenario = pl.DataFrame(
         {
             "id": [f"patch_{i}" for i in range(3)],
@@ -169,9 +171,10 @@ def test_peak_tick_is_tick_index_in_biweekly_model(tmp_path):
         InitializeEquilibriumStatesProcess,
         BWInfection,
         create_component(StateTracker, params=BaseStateTrackerParams(aggregation_level=0)),
+        create_component(ResultsWriter, params=ResultsWriterParams(path=str(out_path))),
     ]
     model.run()
-    out = model.write_results(str(tmp_path / "results.json"))
+    out = json.loads(out_path.read_text())
     summary = out["summary"]
 
     assert "peak_tick" in summary
@@ -180,20 +183,21 @@ def test_peak_tick_is_tick_index_in_biweekly_model(tmp_path):
 
 
 def test_results_writer_path_is_relative_to_cwd(tmp_path, monkeypatch):
-    """Audit: ``ResultsWriter`` passes its ``path`` straight to
-    ``model.write_results(path)``. Verify a relative path is resolved
-    against the current working directory (so per-attempt cwds in the
-    laser-mcp parallel test runner isolate writes properly).
-
-    This is the contract the runner relies on — if someone changes
-    ResultsWriter to resolve relative paths against the model's home or
-    a package-relative location, concurrent prompts will overwrite each
-    other's results.json.
+    """Verify the writer resolves a relative ``path`` against the
+    current working directory. The laser-mcp parallel test runner
+    relies on this for per-attempt cwd isolation — if the writer ever
+    starts resolving relative to the package or model directory,
+    concurrent prompts will overwrite each other's results.json.
     """
     monkeypatch.chdir(tmp_path)
 
-    model = _build_model(BaseStateTrackerParams(aggregation_level=1))
-    model.add_component(ResultsWriter)
+    params = ABMParams(num_ticks=TICKS, seed=42, start_time="2000-01", verbose=False, show_progress=False)
+    model = ABMModel(_hierarchical_scenario(), params)
+    model.add_component(NoBirthsProcess)
+    model.add_component(create_component(InfectionSeedingProcess, params=InfectionSeedingParams(num_infections=20)))
+    model.add_component(InfectionProcess)
+    model.add_component(create_component(StateTracker, params=BaseStateTrackerParams(aggregation_level=1)))
+    model.add_component(ResultsWriter)  # default path = "results.json"
     model.run()
 
     target = tmp_path / "results.json"
