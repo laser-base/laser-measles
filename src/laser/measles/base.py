@@ -463,19 +463,29 @@ class BaseLaserModel(ABC):
             The dict that was written (also handy for in-process inspection).
 
         Schema (top-level keys):
-            model_type:   class name of the model (e.g. "ABMModel")
-            num_ticks:    int
-            num_patches:  int (patch count from the tracker; 1 if global only)
-            patch_ids:    list[str] (matches tracker.group_ids)
-            states:       list[str] (e.g. ["S","E","I","R"])
+            model_type:               class name of the model (e.g. "ABMModel")
+            num_ticks:                int
+            num_groups:               int (group count from the tracker; 1 if global)
+            group_ids:                list[str] (matches tracker.group_ids; may be
+                                      scenario row IDs at leaf aggregation, or
+                                      higher-level keys like "cluster_1" when
+                                      ``aggregation_level`` rolls up)
+            group_aggregation_level:  int (the tracker's aggregation_level: -1 means
+                                      global, 0+ means grouped at that hierarchy
+                                      depth — consumers branch on this to know
+                                      whether the _per_group arrays are at patch
+                                      granularity or rolled up)
+            states:                   list[str] (e.g. ["S","E","I","R"])
             summary:
                 peak_infectious_global:     int
-                peak_day:                   int
+                peak_tick:                  int (tick index of global peak;
+                                            consumers convert to calendar time
+                                            using the model's tick→day mapping)
                 attack_rate_global:         float
                 final_state_global:         dict[str, int]
-                attack_rate_per_patch:      list[float] | None
-                peak_infectious_per_patch:  list[int]   | None
-                final_state_per_patch:      dict[str, list[int]] | None
+                attack_rate_per_group:      list[float] | None
+                peak_infectious_per_group:  list[int]   | None
+                final_state_per_group:      dict[str, list[int]] | None
         """
         tracker = None
         for instance in self.instances:
@@ -491,8 +501,12 @@ class BaseLaserModel(ABC):
         _, num_ticks, num_groups = arr.shape
         state_names = list(self.params.states)
         state_idx = {s: i for i, s in enumerate(state_names)}
-        patch_ids = list(tracker.group_ids)
-        per_patch = patch_ids != ["all_patches"]
+        group_ids = list(tracker.group_ids)
+        per_group = group_ids != ["all_patches"]
+        # The tracker's aggregation_level is the contract for what each row of
+        # the _per_group arrays represents (-1 = global, 0 = top hierarchy
+        # segment, depth-1 = leaf / true per-patch).
+        agg_level = int(getattr(tracker.params, "aggregation_level", -1))
 
         def _series(name):
             return arr[state_idx[name]] if name in state_idx else None  # (num_ticks, num_groups)
@@ -505,47 +519,48 @@ class BaseLaserModel(ABC):
         # Global infectious time series (sum over patches/groups)
         I_global = I.sum(axis=1)
         peak_global = int(I_global.max())
-        peak_day = int(I_global.argmax())
+        peak_tick = int(I_global.argmax())
 
-        # Initial population per patch (sum over states at tick 0). Used as the
+        # Initial population per group (sum over states at tick 0). Used as the
         # attack-rate denominator. Falls back to 1 to avoid div-by-zero on
         # malformed inputs.
-        pop_per_patch = sum(
+        pop_per_group = sum(
             (x[0] for x in (S, E, I, R) if x is not None),
             start=np.zeros(num_groups, dtype=arr.dtype),
         )
 
         if R is not None:
-            attack_global = float(R[-1].sum() / max(int(pop_per_patch.sum()), 1))
-            attack_per_patch = (R[-1] / np.maximum(pop_per_patch, 1)).astype(float).tolist()
+            attack_global = float(R[-1].sum() / max(int(pop_per_group.sum()), 1))
+            attack_per_group = (R[-1] / np.maximum(pop_per_group, 1)).astype(float).tolist()
         else:
             attack_global = None
-            attack_per_patch = None
+            attack_per_group = None
 
-        peak_per_patch = I.max(axis=0).astype(int).tolist() if per_patch else None
-        final_per_patch = None
-        if per_patch:
-            final_per_patch = {name: x[-1].astype(int).tolist() for name, x in (("S", S), ("E", E), ("I", I), ("R", R)) if x is not None}
+        peak_per_group = I.max(axis=0).astype(int).tolist() if per_group else None
+        final_per_group = None
+        if per_group:
+            final_per_group = {name: x[-1].astype(int).tolist() for name, x in (("S", S), ("E", E), ("I", I), ("R", R)) if x is not None}
 
         # Global final compartment counts — always produced, by summing the
         # final tick across patches/groups. Available even when only a global
-        # StateTracker is attached (no per-patch breakdown required).
+        # StateTracker is attached (no per-group breakdown required).
         final_global = {name: int(x[-1].sum()) for name, x in (("S", S), ("E", E), ("I", I), ("R", R)) if x is not None}
 
         out = {
             "model_type": self.__class__.__name__,
             "num_ticks": int(num_ticks),
-            "num_patches": len(patch_ids),
-            "patch_ids": patch_ids,
+            "num_groups": len(group_ids),
+            "group_ids": group_ids,
+            "group_aggregation_level": agg_level,
             "states": state_names,
             "summary": {
                 "peak_infectious_global": peak_global,
-                "peak_day": peak_day,
+                "peak_tick": peak_tick,
                 "attack_rate_global": attack_global,
                 "final_state_global": final_global,
-                "attack_rate_per_patch": attack_per_patch if per_patch else None,
-                "peak_infectious_per_patch": peak_per_patch,
-                "final_state_per_patch": final_per_patch,
+                "attack_rate_per_group": attack_per_group if per_group else None,
+                "peak_infectious_per_group": peak_per_group,
+                "final_state_per_group": final_per_group,
             },
         }
 

@@ -2,36 +2,24 @@
 
 These tests were written because p16 in the laser-mcp prompt suite kept
 failing with broadcast errors like ``(2,) vs (100,)``. The root cause
-turned out to be in ``write_results()`` (or more precisely the contract
-between it and ``StateTracker``):
+was a contract gap between ``write_results()`` and ``StateTracker``:
 
   - ``two_cluster_scenario`` produces hierarchical IDs of the form
     ``"cluster_1:node_42"``.
   - With ``StateTracker(aggregation_level=0)`` the tracker groups by the
     first segment and yields ``len(group_ids) == 2`` (the two cluster
     names), not ``n_patches == 100``.
-  - ``write_results()`` then emits ``summary.attack_rate_per_patch`` as a
-    length-2 list, even though the JSON top-level says
-    ``num_patches: 100``.
+  - The old schema emitted these length-2 arrays under the misleading
+    name ``summary.attack_rate_per_patch``, while ``num_patches: 100``
+    at the top-level lied about the grouping.
 
-This is a real semantic bug for downstream consumers: a field named
-``_per_patch`` should either contain one value per scenario row or be
-``None`` / accompanied by enough metadata to know what aggregation level
-it represents.
+Fix: rename ``_per_patch → _per_group`` (also ``num_patches → num_groups``
+and ``patch_ids → group_ids``) and add ``group_aggregation_level`` so
+consumers can branch on it without re-deriving from the scenario.
+Also ``peak_day → peak_tick`` so the tick index isn't confused with
+calendar days.
 
-Each test below is shaped as the **desired** post-fix behaviour, so they
-fail under the current implementation. We can either:
-
-  (a) Make ``aggregation_level=0`` with hierarchical IDs actually yield
-      one group per scenario row (treat the full ID as the leaf), or
-  (b) Keep current grouping semantics but rename the fields
-      ``_per_patch → _per_group`` and add ``group_aggregation_level`` to
-      the top-level JSON so consumers can disambiguate.
-
-The tests assert option (b) ish — they pin the **observable shape**
-``len(...) == n_patches`` whenever the tracker is configured to give
-one row per scenario patch (i.e. ``aggregation_level`` = depth−1), and
-they assert misleading-but-misnamed cases are caught.
+These tests pin the new schema.
 """
 
 from __future__ import annotations
@@ -91,54 +79,39 @@ def _build_model(state_tracker_params) -> ABMModel:
     return model
 
 
-def test_aggregation_level_0_with_hierarchical_ids_must_not_be_called_per_patch(tmp_path):
-    """Reproduces the p16 bug.
-
-    With ``aggregation_level=0`` on a scenario whose IDs are hierarchical
-    (``cluster_1:node_1``), the tracker rolls all nodes up to two cluster
-    groups. Today, ``summary.attack_rate_per_patch`` is a length-2 list,
-    while ``num_patches`` says 8 — a contract violation that crashes
-    downstream code that joins back to the scenario.
-
-    Acceptable fixes (any of):
-
-      (1) The arrays are renamed ``_per_group`` and the JSON gains a
-          ``group_aggregation_level`` field so consumers can disambiguate.
-      (2) The arrays stay named ``_per_patch`` but are populated only when
-          ``len(group_ids) == num_patches`` — otherwise ``None`` (with
-          metadata pointing at the actual grouping).
-      (3) ``aggregation_level=0`` is redefined to mean "leaf / per-patch"
-          regardless of ID depth, and a separate parameter controls roll-up.
-
-    The assertion below pins the contract: a non-null ``_per_patch`` array
-    must have the same length as ``num_patches``.
+def test_aggregation_level_0_with_hierarchical_ids_rolls_up_to_clusters(tmp_path):
+    """With ``aggregation_level=0`` and hierarchical IDs (``cluster_1:node_1``),
+    the tracker rolls nodes up to one row per top-level segment.
+    ``write_results()`` then emits length-2 arrays — but under the
+    correctly-named ``_per_group`` keys, with ``num_groups=2`` and
+    ``group_aggregation_level=0`` so the consumer knows what they're
+    holding.
     """
-    n_patches = 2 * N_PER_CLUSTER
+    n_clusters = 2
     model = _build_model(BaseStateTrackerParams(aggregation_level=0))
     model.run()
 
     out = model.write_results(str(tmp_path / "results.json"))
     summary = out["summary"]
 
-    assert out["num_patches"] == n_patches, "scenario has 8 rows"
-    if summary["attack_rate_per_patch"] is not None:
-        assert len(summary["attack_rate_per_patch"]) == n_patches, (
-            "summary.attack_rate_per_patch is mis-named — got "
-            f"len={len(summary['attack_rate_per_patch'])} but num_patches={n_patches}. "
-            "Either rename to _per_group + add aggregation metadata, or set to None when "
-            "not actually per-patch."
-        )
-    if summary["peak_infectious_per_patch"] is not None:
-        assert len(summary["peak_infectious_per_patch"]) == n_patches
-    if summary["final_state_per_patch"] is not None:
-        for state, vec in summary["final_state_per_patch"].items():
-            assert len(vec) == n_patches, f"final_state_per_patch[{state!r}] wrong length"
+    assert out["num_groups"] == n_clusters
+    assert out["group_aggregation_level"] == 0
+    assert sorted(out["group_ids"]) == ["cluster_1", "cluster_2"]
+
+    assert summary["attack_rate_per_group"] is not None
+    assert len(summary["attack_rate_per_group"]) == n_clusters
+    assert summary["peak_infectious_per_group"] is not None
+    assert len(summary["peak_infectious_per_group"]) == n_clusters
+    for state, vec in summary["final_state_per_group"].items():
+        assert len(vec) == n_clusters, f"final_state_per_group[{state!r}] wrong length"
 
 
 def test_aggregation_level_1_with_hierarchical_ids_is_true_per_patch(tmp_path):
     """When ``aggregation_level`` is set to the ID depth minus one, the
     tracker yields one row per scenario patch and ``write_results()``
-    must produce per-patch arrays of that exact length."""
+    must produce per-group arrays of that exact length — which IS
+    per-patch in this case.
+    """
     n_patches = 2 * N_PER_CLUSTER
     model = _build_model(BaseStateTrackerParams(aggregation_level=1))
     model.run()
@@ -146,50 +119,38 @@ def test_aggregation_level_1_with_hierarchical_ids_is_true_per_patch(tmp_path):
     out = model.write_results(str(tmp_path / "results.json"))
     summary = out["summary"]
 
-    assert out["num_patches"] == n_patches
-    # patch_ids should now equal the scenario id column in some stable order
-    assert sorted(out["patch_ids"]) == sorted(
+    assert out["num_groups"] == n_patches
+    assert out["group_aggregation_level"] == 1
+    assert sorted(out["group_ids"]) == sorted(
         f"cluster_{c}:node_{i + 1}" for c in (1, 2) for i in range(N_PER_CLUSTER)
     )
-    assert summary["attack_rate_per_patch"] is not None
-    assert len(summary["attack_rate_per_patch"]) == n_patches
-    assert summary["peak_infectious_per_patch"] is not None
-    assert len(summary["peak_infectious_per_patch"]) == n_patches
-    for state, vec in summary["final_state_per_patch"].items():
-        assert len(vec) == n_patches, f"final_state_per_patch[{state!r}] wrong length"
+    assert summary["attack_rate_per_group"] is not None
+    assert len(summary["attack_rate_per_group"]) == n_patches
+    assert summary["peak_infectious_per_group"] is not None
+    assert len(summary["peak_infectious_per_group"]) == n_patches
+    for state, vec in summary["final_state_per_group"].items():
+        assert len(vec) == n_patches, f"final_state_per_group[{state!r}] wrong length"
 
 
 def test_top_level_exposes_aggregation_level_for_disambiguation(tmp_path):
     """Consumers reading the JSON must be able to tell whether the
-    ``_per_*`` arrays are at patch granularity or aggregated above. Today
-    the JSON has no such field — readers have to compare
-    ``len(summary.attack_rate_per_patch)`` to ``num_patches``, which is
-    exactly the silent-corruption mode p16 hit.
-
-    Asserts a top-level ``group_aggregation_level`` (int) is present so
-    downstream tooling can branch cleanly.
+    ``_per_group`` arrays are at patch granularity or aggregated above.
+    The top-level ``group_aggregation_level`` field carries that
+    contract so readers can branch without re-deriving from the
+    scenario.
     """
     model = _build_model(BaseStateTrackerParams(aggregation_level=0))
     model.run()
     out = model.write_results(str(tmp_path / "results.json"))
-    assert "group_aggregation_level" in out, (
-        "write_results() output should expose the aggregation level the "
-        "summary arrays correspond to (e.g. 0, 1, -1) so consumers can "
-        "branch on it without re-deriving from the scenario."
-    )
+    assert "group_aggregation_level" in out
     assert isinstance(out["group_aggregation_level"], int)
+    assert out["group_aggregation_level"] == 0
 
 
-def test_peak_day_naming_is_tick_in_biweekly_model(tmp_path):
-    """Audit: ``summary.peak_day`` is the **tick index** of the peak, not
-    a real calendar day. For the biweekly model where one tick is 14
-    days, calling the field ``peak_day`` is at best confusing and at
-    worst silently wrong if a downstream chart treats it as days.
-
-    Pins the contract that there is either:
-      (a) a ``peak_tick`` field alongside (or instead of) ``peak_day``, or
-      (b) a unit annotation in the top-level JSON (e.g. ``ticks_per_day``)
-          so consumers can convert.
+def test_peak_tick_is_tick_index_in_biweekly_model(tmp_path):
+    """``summary.peak_tick`` is named for what it is — the tick index
+    of the global infectious peak — so consumers don't accidentally
+    treat a biweekly tick (14 days) as a calendar day.
     """
     from laser.measles.biweekly import BiweeklyModel
     from laser.measles.biweekly import BiweeklyParams
@@ -216,15 +177,11 @@ def test_peak_day_naming_is_tick_in_biweekly_model(tmp_path):
     out = model.write_results(str(tmp_path / "results.json"))
     summary = out["summary"]
 
-    # Either a peak_tick field is added, or ticks_per_day annotation is present.
-    has_tick_field = "peak_tick" in summary
-    has_unit_annotation = "ticks_per_day" in out or "tick_units" in out
-    assert has_tick_field or has_unit_annotation, (
-        "summary.peak_day is the tick index, not calendar days. For "
-        "biweekly models (1 tick = 14 days) this is misleading. Either "
-        "add peak_tick alongside peak_day or annotate the time unit at "
-        "the top level."
+    assert "peak_tick" in summary
+    assert "peak_day" not in summary, (
+        "peak_day was renamed to peak_tick to avoid implying calendar days."
     )
+    assert 0 <= summary["peak_tick"] < params.num_ticks
 
 
 def test_results_writer_path_is_relative_to_cwd(tmp_path, monkeypatch):

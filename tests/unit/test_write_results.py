@@ -1,9 +1,10 @@
 """Tests for BaseLaserModel.write_results() — the standard JSON output.
 
 Coverage:
-- Per-patch tracker (aggregation_level=0): full schema with non-null per-patch
-  arrays in the right shape, correct patch_ids order, summary scalars sane.
-- Global-only tracker (default aggregation_level=-1): per-patch arrays are
+- Per-group tracker (aggregation_level=0 with flat IDs → per-patch): full
+  schema with non-null _per_group arrays in the right shape, correct
+  group_ids order, group_aggregation_level present, summary scalars sane.
+- Global-only tracker (default aggregation_level=-1): _per_group arrays are
   None; global aggregates still populated.
 - No StateTracker attached: write_results() raises a clear RuntimeError.
 - Return value matches what's written to disk.
@@ -63,13 +64,17 @@ def test_per_patch_output_has_full_schema(tmp_path):
     assert on_disk == returned, "return value must match what's written"
 
     # Top-level keys
-    for key in ("model_type", "num_ticks", "num_patches", "patch_ids", "states", "summary"):
+    for key in (
+        "model_type", "num_ticks", "num_groups", "group_ids",
+        "group_aggregation_level", "states", "summary",
+    ):
         assert key in on_disk, f"missing top-level key {key!r}"
 
     assert on_disk["model_type"] == "ABMModel"
     assert on_disk["num_ticks"] == TICKS
-    assert on_disk["num_patches"] == N_PATCHES
-    assert on_disk["patch_ids"] == [f"patch_{i}" for i in range(N_PATCHES)]
+    assert on_disk["num_groups"] == N_PATCHES
+    assert on_disk["group_ids"] == [f"patch_{i}" for i in range(N_PATCHES)]
+    assert on_disk["group_aggregation_level"] == 0
     assert {"S", "I", "R"}.issubset(set(on_disk["states"]))
 
     summary = on_disk["summary"]
@@ -77,20 +82,20 @@ def test_per_patch_output_has_full_schema(tmp_path):
     # Global scalars
     assert isinstance(summary["peak_infectious_global"], int)
     assert summary["peak_infectious_global"] > 0
-    assert 0 <= summary["peak_day"] < TICKS
+    assert 0 <= summary["peak_tick"] < TICKS
     assert 0.0 <= summary["attack_rate_global"] <= 1.0
 
-    # Per-patch arrays present and correctly sized
-    assert summary["attack_rate_per_patch"] is not None
-    assert len(summary["attack_rate_per_patch"]) == N_PATCHES
-    assert all(0.0 <= r <= 1.0 for r in summary["attack_rate_per_patch"])
+    # Per-group arrays present and correctly sized
+    assert summary["attack_rate_per_group"] is not None
+    assert len(summary["attack_rate_per_group"]) == N_PATCHES
+    assert all(0.0 <= r <= 1.0 for r in summary["attack_rate_per_group"])
 
-    assert summary["peak_infectious_per_patch"] is not None
-    assert len(summary["peak_infectious_per_patch"]) == N_PATCHES
-    assert all(p >= 0 for p in summary["peak_infectious_per_patch"])
+    assert summary["peak_infectious_per_group"] is not None
+    assert len(summary["peak_infectious_per_group"]) == N_PATCHES
+    assert all(p >= 0 for p in summary["peak_infectious_per_group"])
 
-    # final_state_per_patch is a dict of state -> N_PATCHES counts
-    final = summary["final_state_per_patch"]
+    # final_state_per_group is a dict of state -> N_PATCHES counts
+    final = summary["final_state_per_group"]
     assert final is not None
     for state in ("S", "I", "R"):
         assert state in final, f"missing final state {state!r}"
@@ -128,13 +133,14 @@ def test_global_only_tracker_emits_null_per_patch_arrays(tmp_path):
         assert isinstance(final_global[state], int)
         assert final_global[state] >= 0
 
-    # Per-patch arrays explicitly null
-    assert summary["attack_rate_per_patch"] is None
-    assert summary["peak_infectious_per_patch"] is None
-    assert summary["final_state_per_patch"] is None
+    # Per-group arrays explicitly null
+    assert summary["attack_rate_per_group"] is None
+    assert summary["peak_infectious_per_group"] is None
+    assert summary["final_state_per_group"] is None
 
-    # patch_ids reflects the single aggregated group
-    assert out["patch_ids"] == ["all_patches"]
+    # group_ids reflects the single aggregated group
+    assert out["group_ids"] == ["all_patches"]
+    assert out["group_aggregation_level"] == -1
 
 
 def test_missing_state_tracker_raises(tmp_path):
