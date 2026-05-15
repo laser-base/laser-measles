@@ -66,7 +66,7 @@ for trial in range(100):
 
 ## Requirements
 
-- A `StateTracker` component must be attached before `model.run()`. Otherwise the writer's `finalize()` raises a clear `RuntimeError` telling you to add one.
+- A `StateTracker` component must already be attached before you add or instantiate `ResultsWriter` (for example via `add_component(ResultsWriter)` or when building the components list). If no tracker is present, `ResultsWriter.__init__` raises a clear `RuntimeError` during component wiring, before `model.run()`.
 - For per-group breakdowns (attack rate per community, peak per patch, final S/E/I/R per patch), the tracker's `aggregation_level` must be `>= 0`. The default (`-1`) sums over all patches and produces global aggregates only.
 - `"I"` must be in `model.params.states` — required for peak-infectious metrics and `final_state_per_group["I"]` in the written summary.
 
