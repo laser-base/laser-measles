@@ -102,9 +102,12 @@ class ResultsWriter(BaseComponent):
                 "model.components. Add a StateTracker before adding ResultsWriter."
             )
 
-    def __call__(self, model: BaseLaserModel, tick: int) -> None:
-        # No per-tick work; the dump happens in finalize().
-        pass
+    # No __call__ on purpose. BaseLaserModel only adds components with a
+    # __call__ method to ``self.phases`` (the per-tick dispatch loop); a
+    # no-op __call__ would still get dispatched every tick. ResultsWriter
+    # only needs to act at end-of-run, so we stay out of ``phases`` by
+    # not defining __call__ at all. ``self.instances`` (which the
+    # finalize() hook iterates) gets the component either way.
 
     def finalize(self, model: BaseLaserModel) -> None:
         """Called by BaseLaserModel.run() after the tick loop completes."""

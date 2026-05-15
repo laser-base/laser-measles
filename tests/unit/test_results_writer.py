@@ -86,6 +86,23 @@ def test_no_results_writer_means_no_results_json(tmp_path, monkeypatch):
     assert not (tmp_path / "results.json").exists(), "without ResultsWriter, no results.json should be written"
 
 
+def test_results_writer_is_not_in_per_tick_phases(tmp_path, monkeypatch):
+    """ResultsWriter must NOT define __call__ — BaseLaserModel adds any
+    component that has __call__ to ``self.phases``, which is the per-tick
+    dispatch loop. A no-op __call__ would still get invoked every tick.
+    Pin: ResultsWriter lands in ``self.instances`` (so finalize() finds
+    it) but stays out of ``self.phases``.
+    """
+    monkeypatch.chdir(tmp_path)
+    model = _make_model_with([ResultsWriter])
+
+    in_instances = any(isinstance(i, ResultsWriter) for i in model.instances)
+    in_phases = any(isinstance(p, ResultsWriter) for p in model.phases)
+
+    assert in_instances, "ResultsWriter should be in model.instances for finalize() to reach it"
+    assert not in_phases, "ResultsWriter must NOT be in model.phases — that's the per-tick loop"
+
+
 def test_results_writer_picks_most_granular_state_tracker(tmp_path, monkeypatch):
     """Hello-world pattern: a default global StateTracker plus a per-patch
     one. ResultsWriter must prefer the per-patch (highest aggregation_level)

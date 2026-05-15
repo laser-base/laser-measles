@@ -25,6 +25,8 @@ import pytest
 
 from laser.measles.abm import ABMModel
 from laser.measles.abm import ABMParams
+from laser.measles.abm.components import CaseSurveillanceParams
+from laser.measles.abm.components import CaseSurveillanceTracker
 from laser.measles.abm.components import InfectionProcess
 from laser.measles.abm.components import InfectionSeedingParams
 from laser.measles.abm.components import InfectionSeedingProcess
@@ -71,8 +73,7 @@ def test_state_tracker_group_ids_match_node_mapping_insertion_order():
 
     insertion = list(tracker.node_mapping.keys())
     assert tracker.group_ids == insertion, (
-        f"group_ids should equal node_mapping insertion order; "
-        f"got {tracker.group_ids!r} vs insertion {insertion!r}"
+        f"group_ids should equal node_mapping insertion order; got {tracker.group_ids!r} vs insertion {insertion!r}"
     )
 
 
@@ -138,9 +139,6 @@ def test_case_surveillance_group_ids_match_node_mapping_insertion_order():
     verify that after init, group_ids order matches node_mapping
     insertion order.
     """
-    from laser.measles.abm.components import CaseSurveillanceParams
-    from laser.measles.abm.components import CaseSurveillanceTracker
-
     params = ABMParams(num_ticks=10, seed=42, start_time="2000-01", verbose=False, show_progress=False)
     model = ABMModel(_unsorted_scenario(), params)
     model.add_component(NoBirthsProcess)
@@ -150,8 +148,7 @@ def test_case_surveillance_group_ids_match_node_mapping_insertion_order():
     surv = model.get_instance("CaseSurveillanceTracker")[0]
     insertion = list(surv.node_mapping.keys())
     assert surv.group_ids == insertion, (
-        f"CaseSurveillance.group_ids should equal node_mapping insertion order; "
-        f"got {surv.group_ids!r} vs insertion {insertion!r}"
+        f"CaseSurveillance.group_ids should equal node_mapping insertion order; got {surv.group_ids!r} vs insertion {insertion!r}"
     )
 
 
