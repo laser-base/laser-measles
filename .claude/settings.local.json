@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(vale --version)",
+      "Bash(where vale *)",
+      "Read(//usr/local/bin/**)",
+      "Read(//c/Users/jensc/AppData/Local/Programs/**)"
+    ]
+  }
+}
