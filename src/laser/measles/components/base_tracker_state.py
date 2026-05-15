@@ -90,7 +90,13 @@ class BaseStateTracker(BasePhase):
         if self.params.aggregation_level >= 0:
             # Shape: (num_states, num_ticks, num_groups)
             num_groups = len(self.node_mapping)
-            self.group_ids = sorted(self.node_mapping.keys())
+            # Use insertion order so group_ids[i] always corresponds to
+            # state_tracker[..., i]. __call__ below iterates
+            # ``self.node_mapping.items()`` (dict insertion order) when
+            # writing tick data; sorting here would silently misalign
+            # the label list with the storage axis whenever scenario
+            # IDs aren't already in sorted order.
+            self.group_ids = list(self.node_mapping.keys())
         else:
             # Shape: (num_states, num_ticks, 1) - sum over all patches
             num_groups = 1
