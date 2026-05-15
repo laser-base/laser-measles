@@ -126,8 +126,17 @@ class ResultsWriter(BaseComponent):
         model variant — ABM, biweekly, compartmental — registers its
         own ``StateTracker`` subclass of that base). When multiple are
         present (the "hello-world" pattern adds both a default global
-        tracker and a per-patch one with ``aggregation_level=0``), pick
-        the most granular — the largest ``aggregation_level``.
+        tracker and a more granular one with ``aggregation_level >= 0``),
+        pick the most granular — the largest ``aggregation_level``.
+
+        Note on per-patch vs per-group: ``aggregation_level=0`` produces
+        per-patch arrays only for **flat** scenario IDs (no ``":"``). For
+        hierarchical IDs like ``"cluster_1:node_42"``, ``aggregation_level=0``
+        rolls up to the first segment (cluster_1). To get true per-patch
+        rows from hierarchical IDs, use ``aggregation_level = depth - 1``
+        (i.e. the number of ``":"`` separators in the ID). The emitted
+        JSON's ``group_aggregation_level`` field tells the consumer which
+        granularity they're looking at, regardless of choice.
         """
         trackers = [instance for instance in model.instances if isinstance(instance, BaseStateTracker)]
         if not trackers:
