@@ -1,0 +1,71 @@
+name: AI Version Bump
+
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Preview changelog without creating a PR"
+        required: false
+        default: "false"
+        type: boolean
+
+# Needed to push a branch and open a PR
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  bump-version:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout (full history + tags)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install --quiet anthropic
+
+      - name: Run AI version bump
+        id: bump
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          NEW_VERSION=$(python3 scripts/bump_version.py .)
+          echo "new_version=${NEW_VERSION}" >> "$GITHUB_OUTPUT"
+          echo "Detected new version: ${NEW_VERSION}"
+
+      - name: Show diff (dry run)
+        if: inputs.dry_run == 'true'
+        run: git diff
+
+      - name: Open pull request
+        if: |
+          steps.bump.outputs.new_version != 'no_changes' &&
+          inputs.dry_run != 'true'
+        uses: peter-evans/create-pull-request@v6
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          branch: "release/v${{ steps.bump.outputs.new_version }}"
+          commit-message: "chore: bump version to ${{ steps.bump.outputs.new_version }}"
+          title: "chore: release v${{ steps.bump.outputs.new_version }}"
+          body: |
+            ## AI-generated release — v${{ steps.bump.outputs.new_version }}
+
+            This PR was created automatically by the [AI Version Bump](.github/workflows/version-bump.yml) workflow.
+
+            **Before merging:**
+            - [ ] Review the `CHANGELOG.md` additions for accuracy.
+            - [ ] Verify the version bump type (major / minor / patch) is appropriate.
+            - [ ] Check that no sensitive commit messages are exposed in the changelog.
+
+            > To regenerate, close this PR, delete the `release/v${{ steps.bump.outputs.new_version }}` branch, and re-run the workflow.
+          labels: "release"
+          delete-branch: false
