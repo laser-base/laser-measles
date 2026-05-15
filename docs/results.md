@@ -111,9 +111,9 @@ for trial in range(100):
 | `states` | array of strings | The disease states tracked, in order — `["S", "E", "I", "R"]` for SEIR; `["S", "I", "R"]` for SIR. |
 | `summary.peak_infectious_global` | int | Maximum total infectious count summed across all groups over the run. |
 | `summary.peak_tick` | int | Tick index at which `peak_infectious_global` occurred. Convert to calendar time using the model's tick→day mapping (1 day for ABM/compartmental, 14 days for biweekly). |
-| `summary.attack_rate_global` | float | `final R / initial population` summed across all groups. `null` if `R` isn't in `states`. |
+| `summary.attack_rate_global` | float or null | Fraction of initial susceptibles globally that ever left the `S` compartment, i.e. `(S[0] - S[-1]).sum() / S[0].sum()`, clamped to `[0, 1]`. `null` if `S` isn't in `states`. Defined this way so the value stays well-defined under spatial migration (where an `R[-1] / initial_pop` formulation would exceed 1.0) and is robust to per-patch state-counter underflow ([laser-measles #117](https://github.com/laser-base/laser-measles/issues/117)). |
 | `summary.final_state_global` | object | Final count of each state summed across all groups. Keys are the state names present in `states`. Always emitted (works with both per-group and global-only trackers). |
-| `summary.attack_rate_per_group` | array of floats or null | Per-group attack rate; `null` when only global tracking is available. |
+| `summary.attack_rate_per_group` | array of floats or null | Per-group version of `attack_rate_global` (same formula, applied per tracker group). Each entry is in `[0, 1]`. `null` when only global tracking is available. |
 | `summary.peak_infectious_per_group` | array of ints or null | Per-group peak; `null` when only global tracking is available. |
 | `summary.final_state_per_group` | object or null | Final count of each state per group. Keys are the state names present in `states`. `null` when only global tracking is available. |
 
