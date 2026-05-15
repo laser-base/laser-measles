@@ -73,7 +73,7 @@ class BaseCaseSurveillanceTracker(BasePhase):
                     self.node_mapping[group_key] = [node_idx]
 
         # Initialize reported cases tracker
-        # For aggregated cases: nticks x num_groups
+        # For aggregated cases: num_groups x nticks
         self.reported_cases = np.zeros((len(self.node_mapping), model.params.num_ticks), dtype=model.patches.states.dtype)
         # Use insertion order so group_ids[i] always corresponds to
         # reported_cases[i, ...]. __call__ below iterates
