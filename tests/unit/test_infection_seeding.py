@@ -68,9 +68,7 @@ def test_abm_no_births_initial_patch_id_distribution():
 
     pops = scenario["pop"].to_numpy()
     counts = np.bincount(model.people.patch_id[: model.people.count], minlength=len(pops))
-    assert np.array_equal(counts[: len(pops)], pops), (
-        f"Per-patch agent counts {counts[: len(pops)]} do not match scenario pop {pops}"
-    )
+    assert np.array_equal(counts[: len(pops)], pops), f"Per-patch agent counts {counts[: len(pops)]} do not match scenario pop {pops}"
 
 
 if __name__ == "__main__":
