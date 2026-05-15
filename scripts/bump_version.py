@@ -17,10 +17,9 @@ import logging
 import re
 import subprocess
 import sys
-from datetime import date
-from pathlib import Path
-
 import tomllib
+from datetime import datetime
+from pathlib import Path
 
 try:
     import anthropic
@@ -144,10 +143,7 @@ def analyze_commits_with_claude(
     """
     logger.info("Sending %d commit(s) to Claude for analysis", len(commits))
 
-    commit_lines = "\n".join(
-        f"- {c['subject']}" + (f"\n  {c['body']}" if c["body"] else "")
-        for c in commits
-    )
+    commit_lines = "\n".join(f"- {c['subject']}" + (f"\n  {c['body']}" if c["body"] else "") for c in commits)
 
     prompt = f"""You are a release engineer. Analyze the git commits below and produce structured release notes.
 
@@ -268,7 +264,7 @@ def write_new_version(pyproject_path: Path, new_version: str) -> None:
     )
 
     if n_subs == 0:
-        raise RuntimeError(f"Could not find version = \"...\" in {pyproject_path}")
+        raise RuntimeError(f'Could not find version = "..." in {pyproject_path}')
 
     pyproject_path.write_text(updated, encoding="utf-8")
     logger.info("pyproject.toml updated")
@@ -284,7 +280,7 @@ def build_changelog_section(version: str, analysis: dict) -> str:
     Returns:
         Formatted markdown string, ending with a trailing newline.
     """
-    today = date.today().isoformat()
+    today = datetime.now(tz=...).date()
     lines: list[str] = [f"## [{version}] - {today}", ""]
 
     if analysis.get("summary"):
