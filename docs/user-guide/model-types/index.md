@@ -111,6 +111,6 @@ The scenario DataFrame must include these columns regardless of model type:
 - [Demographics](demographics.md) — preparing geographic scenario data
 - [Snapshotting](../snapshotting/index.md) — save and resume long ABM or compartmental runs
 - [Components](../components/index.md) — component architecture shared across all model types
-- [Tutorials](../tutorials/index.md) — hands-on learning with each model type
+- [Tutorials](../../tutorials/index.md) — hands-on learning with each model type
 - [Worked examples](../components/worked-examples.md) — runnable scripts for all three models
-- [API reference](../reference/laser/measles/index.md) — full parameter and class details
+- [API reference](../../reference/laser/measles/index.md) — full parameter and class details

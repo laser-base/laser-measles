@@ -7,7 +7,7 @@ Contributions to laser-measles are welcome! This guide explains how to set up a 
 1. Clone the repository:
 
     ```bash
-    git clone https://github.com/InstituteforDiseaseModeling/laser-measles.git
+    git clone https://github.com/laser-base/laser-measles.git
     cd laser-measles
     ```
 
@@ -67,7 +67,7 @@ The documentation is built with [Material for MkDocs](https://squidfunk.github.i
 
 ## Reporting issues
 
-Bug reports and feature requests can be filed on the [GitHub issue tracker](https://github.com/InstituteforDiseaseModeling/laser-measles/issues).
+Bug reports and feature requests can be filed on the [GitHub issue tracker](https://github.com/laser-base/laser-measles/issues).
 
 ## Version bumping
 

@@ -115,7 +115,7 @@ scenario = pl.DataFrame({
 ## See also
 
 - [Model types](index.md) — overview of the three model types that consume scenario data
-- [Tutorial: Scenarios](../tutorials/tut_scenarios.py) — hands-on tutorial for constructing scenario data
+- [Tutorial: Scenarios](../../tutorials/tut_scenarios.py) — hands-on tutorial for constructing scenario data
 - [Configuring spatial mixing](configuring-spatial-mixing.md) — how scenario coordinates feed into the mixing matrix
 - [Choosing a model type](choosing-a-model.md) — decision guide for selecting the right model for your data
-- [API reference](../reference/laser/measles/demographics/index.md) — full details on demographics classes
+- [API reference](../../reference/laser/measles/demographics/index.md) — full details on demographics classes

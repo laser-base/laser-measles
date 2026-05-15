@@ -986,10 +986,10 @@ Alternatively, use `concurrent.futures.ProcessPoolExecutor` with
 
 ## See also
 
-- [Worked examples](worked-examples.md) — complete runnable scripts for all three model types
-- [Components](index.md) — component architecture and design
-- [How to create a custom component](custom-component.md) — guide to writing your own components
-- [Model types](../model-types/index.md) — overview of ABM, biweekly, and compartmental models
-- [Choosing a model type](../model-types/choosing-a-model.md) — decision guide for selecting the right model
-- [Snapshotting](../snapshotting/index.md) — save and resume simulations (common source of component-list errors)
+- [Worked examples](components/worked-examples.md) — complete runnable scripts for all three model types
+- [Components](components/index.md) — component architecture and design
+- [How to create a custom component](components/custom-component.md) — guide to writing your own components
+- [Model types](model-types/index.md) — overview of ABM, biweekly, and compartmental models
+- [Choosing a model type](model-types/choosing-a-model.md) — decision guide for selecting the right model
+- [Snapshotting](snapshotting/index.md) — save and resume simulations (common source of component-list errors)
 - [API reference](../reference/laser/measles/index.md) — full class and parameter details

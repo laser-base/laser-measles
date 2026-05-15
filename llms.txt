@@ -83,8 +83,8 @@ patches = generator.generate_patches()
 ## Documentation
 
 - **Documentation**: https://laser.idmod.org/laser-measles/
-- **Repository**: https://github.com/InstituteforDiseaseModeling/laser-measles
-- **Issues**: https://github.com/InstituteforDiseaseModeling/laser-measles/issues
+- **Repository**: https://github.com/laser-base/laser-measles
+- **Issues**: https://github.com/laser-base/laser-measles/issues
 
 ## Development
 

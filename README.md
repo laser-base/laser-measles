@@ -1,13 +1,13 @@
 # laser-measles
 
 [![PyPI Package latest release](https://img.shields.io/pypi/v/laser-measles.svg)](https://pypi.org/project/laser-measles/)
-[![MIT License](https://img.shields.io/github/license/InstituteforDiseaseModeling/laser-measles.svg)](https://github.com/InstituteforDiseaseModeling/laser-measles/blob/main/LICENSE)
+[![MIT License](https://img.shields.io/github/license/laser-base/laser-measles.svg)](https://github.com/laser-base/laser-measles/blob/main/LICENSE)
 [![Documentation Status](https://github.com/laser-base/laser-measles/actions/workflows/github-actions.yml/badge.svg)](https://laser.idmod.org/laser-measles/)
-[![Coverage Status](https://codecov.io/gh/InstituteforDiseaseModeling/laser-measles/graph/badge.svg?branch=main)](https://app.codecov.io/github/InstituteforDiseaseModeling/laser-measles)
+[![Coverage Status](https://codecov.io/gh/laser-base/laser-measles/graph/badge.svg?branch=main)](https://app.codecov.io/github/laser-base/laser-measles)
 
 laser-measles is a spatial epidemiological modeling toolkit that helps researchers and public health teams simulate measles transmission, evaluate vaccination strategies, and plan outbreak responses. It translates surveillance data and demographic information into projections that inform immunization planning and resource allocation — with a focus on settings where measles remains a leading cause of vaccine-preventable death.
 
-Developed by the [Institute for Disease Modeling](https://idmod.org) (IDM) at the Bill & Melinda Gates Foundation, laser-measles is built on the open-source [LASER framework](https://github.com/InstituteforDiseaseModeling/laser).
+Developed by the [Institute for Disease Modeling](https://idmod.org) (IDM) at the Bill & Melinda Gates Foundation, laser-measles is built on the open-source [LASER framework](https://github.com/laser-base).
 
 ## Installation
 
@@ -29,7 +29,7 @@ pip install -e ".[dev]"
 
 ## Getting started
 
-The recommended first example is the [Quick Start Tutorial](https://institutefordiseasemodeling.github.io/laser-measles/tutorials/tut_quickstart_hello_world/).
+The recommended first example is the [Quick Start Tutorial](https://laser.idmod.org/laser-measles/tutorials/tut_quickstart_hello_world/).
 
 ## Model types
 
@@ -55,8 +55,8 @@ Full documentation is available at [laser.idmod.org/laser-measles](https://laser
 
 Contributions are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) for development setup, testing, and submission guidelines.
 
-Bug reports and feature requests can be filed on the [GitHub issue tracker](https://github.com/InstituteforDiseaseModeling/laser-measles/issues).
+Bug reports and feature requests can be filed on the [GitHub issue tracker](https://github.com/laser-base/laser-measles/issues).
 
 ## License
 
-MIT License — Copyright (c) 2024, Bill & Melinda Gates Foundation
+MIT License — Copyright (c) 2026, Gates Foundation

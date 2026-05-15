@@ -4,7 +4,7 @@ laser-measles is a spatial epidemiological modeling toolkit that helps answer cr
 
 Measles remains one of the leading causes of vaccine-preventable death worldwide, disproportionately affecting children in low- and middle-income countries. Modeling tools like laser-measles support evidence-based decision-making by translating surveillance data and demographic information into actionable projections that inform vaccination planning, resource allocation, and outbreak preparedness.
 
-laser-measles is developed and maintained by the [Institute for Disease Modeling](https://idmod.org) (IDM) at the Bill & Melinda Gates Foundation. It is built on the [LASER framework](https://github.com/InstituteforDiseaseModeling/laser), an open-source platform for large-scale agent-based and compartmental simulation.
+laser-measles is developed and maintained by the [Institute for Disease Modeling](https://idmod.org) (IDM) at the Gates Foundation. It is built on the [LASER framework](https://github.com/laser-base), an open-source platform for large-scale agent-based and compartmental simulation.
 
 ---
 
@@ -73,19 +73,19 @@ For day-to-day exploration, scenario building, and learning the framework, your 
 
 ## Model types
 
-laser-measles provides three modeling approaches, all sharing the same [component system](components/index.md) and [scenario format](model-types/demographics.md):
+laser-measles provides three modeling approaches, all sharing the same [component system](user-guide/components/index.md) and [scenario format](user-guide/model-types/demographics.md):
 
-- **ABM (Agent-Based Model)**: Individual-level simulation with stochastic agents. Best for detailed heterogeneity and contact structure. Supports [snapshotting](snapshotting/index.md) for long runs.
-- **Biweekly Compartmental Model**: Population-level SIR dynamics with 2-week timesteps. Recommended for scenario building and policy analysis.
-- **Compartmental Model**: Population-level SEIR dynamics with daily timesteps. Recommended for parameter estimation and outbreak modeling. Supports [snapshotting](snapshotting/index.md).
+- **ABM (Agent-based model)**: Individual-level simulation with stochastic agents. Best for detailed heterogeneity and contact structure. Supports [snapshotting](user-guide/snapshotting/index.md) for long runs.
+- **Biweekly compartmental model**: Population-level SIR dynamics with 2-week timesteps. Recommended for scenario building and policy analysis.
+- **Compartmental model**: Population-level SEIR dynamics with daily timesteps. Recommended for parameter estimation and outbreak modeling. Supports [snapshotting](user-guide/snapshotting/index.md).
 
-Not sure which model to use? See [Choosing a model type](model-types/choosing-a-model.md) or start with the [model types overview](model-types/index.md).
+Not sure which model to use? See [Choosing a model type](user-guide/model-types/choosing-a-model.md) or start with the [model types overview](user-guide/model-types/index.md).
 
 ## Contributing
 
 Contributions are welcome. Please see the [contributing guide](contributing.md) for development guidelines, including how to write tests, follow code style conventions, and submit pull requests.
 
-Bug reports and feature requests can be filed on the [GitHub issue tracker](https://github.com/InstituteforDiseaseModeling/laser-measles/issues).
+Bug reports and feature requests can be filed on the [GitHub issue tracker](https://github.com/laser-base/laser-measles/issues).
 
 <div class="grid cards" markdown>
 
@@ -96,6 +96,14 @@ Bug reports and feature requests can be filed on the [GitHub issue tracker](http
     An interactive tour of key features.
 
     [:octicons-arrow-right-24: Tutorials](tutorials/index.md)
+
+-   :simple-jupyter:{ .lg .middle } __User guide__
+
+    ---
+
+    Overview of key features and how to use them.
+
+    [:octicons-arrow-right-24: User guide](user-guide/index.md)
 
 -   :material-api:{ .lg .middle } __Reference__
 

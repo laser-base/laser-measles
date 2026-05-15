@@ -9,7 +9,7 @@ pip install laser-measles
 You can also install the in-development version with:
 
 ```bash
-pip install git+https://github.com/InstituteforDiseaseModeling/laser-measles.git@main
+pip install git+https://github.com/laser-base/laser-measles.git@main
 ```
 
 !!! tip "Offline installation"
@@ -70,7 +70,7 @@ pip install laser-measles[full]
 
 You can use this GitHub Codespace for fast development:
 
-<a href='https://codespaces.new/InstituteforDiseaseModeling/laser-measles'><img src='https://github.com/codespaces/badge.svg' alt='Open in GitHub Codespaces' style='max-width: 100%;'></a>
+<a href='https://codespaces.new/laser-base/laser-measles'><img src='https://github.com/codespaces/badge.svg' alt='Open in GitHub Codespaces' style='max-width: 100%;'></a>
 
 To run all the tests run:
 

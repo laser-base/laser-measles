@@ -320,5 +320,5 @@ for target_r0 in [4.0, 8.0, 16.0]:
 - [How to create a custom component](custom-component.md) — write your own process or tracker
 - [Configuring spatial mixing](../model-types/configuring-spatial-mixing.md) — set up disease spread between patches
 - [Snapshotting](../snapshotting/index.md) — save and resume long simulation runs
-- [Troubleshooting](troubleshooting.md) — common pitfalls and error resolution
-- [Tutorials](../tutorials/index.md) — interactive learning with Jupyter notebooks
+- [Troubleshooting](../troubleshooting.md) — common pitfalls and error resolution
+- [Tutorials](../../tutorials/index.md) — interactive learning with Jupyter notebooks

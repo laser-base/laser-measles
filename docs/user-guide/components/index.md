@@ -101,9 +101,9 @@ Several performance features are built into the component system:
 
 - [How to create a custom component](custom-component.md) — step-by-step guide to writing your own component
 - [Worked examples](worked-examples.md) — runnable scripts showing component wiring for all three models
-- [Troubleshooting](troubleshooting.md) — common pitfalls with components and parameters
-- [Tutorial: Creating a component](../tutorials/tut_creating_component.py) — hands-on tutorial for component creation
-- [Tutorial: Pydantic component parameters](../tutorials/tut_pydantic_component_parameters.py) — validated configuration with Pydantic
+- [Troubleshooting](../troubleshooting.md) — common pitfalls with components and parameters
+- [Tutorial: Creating a component](../../tutorials/tut_creating_component.py) — hands-on tutorial for component creation
+- [Tutorial: Pydantic component parameters](../../tutorials/tut_pydantic_component_parameters.py) — validated configuration with Pydantic
 - [Model types](../model-types/index.md) — overview of the three model types
 - [Snapshotting](../snapshotting/index.md) — save and resume simulations with their component state
-- [API reference](../reference/laser/measles/index.md) — full class and parameter details
+- [API reference](../../reference/laser/measles/index.md) — full class and parameter details

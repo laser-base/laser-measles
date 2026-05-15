@@ -158,7 +158,7 @@ Place your component in the list based on what it needs:
 
 - [Components](index.md) — explanation of the component architecture and base class hierarchy
 - [Worked examples](worked-examples.md) — complete runnable scripts showing component wiring
-- [Troubleshooting](troubleshooting.md) — common pitfalls
-- [Tutorial: Creating a component](../tutorials/tut_creating_component.py) — hands-on tutorial for component creation
-- [Tutorial: Pydantic component parameters](../tutorials/tut_pydantic_component_parameters.py) — validated configuration with Pydantic
-- [API reference](../reference/laser/measles/index.md) — full class and parameter details
+- [Troubleshooting](../troubleshooting.md) — common pitfalls
+- [Tutorial: Creating a component](../../tutorials/tut_creating_component.py) — hands-on tutorial for component creation
+- [Tutorial: Pydantic component parameters](../../tutorials/tut_pydantic_component_parameters.py) — validated configuration with Pydantic
+- [API reference](../../reference/laser/measles/index.md) — full class and parameter details
