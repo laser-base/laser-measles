@@ -8,7 +8,16 @@ from laser.measles.utils import cast_type
 
 
 class ConstantPopParams(BaseConstantPopParams):
-    pass
+    """Parameters for constant-population vital dynamics (inherits all fields from base).
+
+    **Example:**
+
+        ```python
+        from laser.measles.compartmental.components.process_constant_pop import ConstantPopParams
+
+        params = ConstantPopParams(crude_birth_rate=20)
+        ```
+    """
 
 
 class ConstantPopProcess(BaseConstantPopProcess):
@@ -20,6 +29,21 @@ class ConstantPopProcess(BaseConstantPopProcess):
         model: The model instance containing population and parameters.
         initializers (list): List of initializers to be called on birth events.
         metrics (DataFrame): DataFrame to holding timing metrics for initializers.
+    
+
+    **Example:**
+
+        ```python
+        from laser.measles.scenarios.synthetic import single_patch_scenario
+        from laser.measles.compartmental import CompartmentalModel, CompartmentalParams
+        from laser.measles.compartmental import components
+        from laser.measles import create_component
+
+        scenario = single_patch_scenario(population=100_000, mcv1_coverage=0.85)
+        params = CompartmentalParams(num_ticks=365, seed=42, start_time="2000-01")
+        model = CompartmentalModel(scenario, params)
+        model.add_component(create_component(components.ConstantPopProcess, components.ConstantPopParams(crude_birth_rate=20)))
+        ```
     """
 
     def __call__(self, model, tick) -> None:

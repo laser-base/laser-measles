@@ -19,6 +19,14 @@ class PrettyComponentsList(list):
 
     This class maintains full list functionality while adding a formatted
     display similar to the LaserFrame wrapper style.
+    
+
+    **Example:**
+
+        ```python
+        # PrettyComponentsList wraps model.components for readable display
+        model.components  # prints a formatted table of all components
+        ```
     """
 
     def __str__(self) -> str:
@@ -259,6 +267,7 @@ def return_pretty_laserframe(func):
     """
 
     def wrapper_func(*args, **kwargs):
+        """Call *func* and wrap any returned LaserFrame in a pretty-printer."""
         result = func(*args, **kwargs)
         if isinstance(result, LaserFrame):
             return PrettyLaserFrameWrapper(result)
@@ -290,6 +299,8 @@ def pretty_laserframe(cls):
 
     # Create a new class that inherits from the original class
     class WrappedClass(cls):
+        """Subclass of *cls* with enhanced ``__str__`` and ``__repr__`` formatting."""
+
         def __init__(self, *args, **kwargs):
             # Call the parent class __init__
             super().__init__(*args, **kwargs)

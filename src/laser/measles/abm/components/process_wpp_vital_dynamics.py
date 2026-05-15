@@ -1,5 +1,5 @@
 """
-Inititializes the age distribution of the population and
+Initializes the age distribution of the population and
 enforces age structure with age based mortality
 """
 
@@ -19,14 +19,13 @@ from laser.measles.utils import cast_type
 
 
 class WPPVitalDynamicsParams(BaseModel):
-    model_config = ConfigDict(extra="forbid")
     country_code: str = Field(default="nga", description="Country code (ISO3)")
     year: int = Field(default=2000, description="Year to initialize the age distribution")
 
 
 class WPPVitalDynamicsProcess(BasePhase):
-    def __init__(self, model, params: WPPVitalDynamicsParams | None = None) -> None:
-        super().__init__(model)
+    def __init__(self, model, verbose: bool = False, params: WPPVitalDynamicsParams | None = None) -> None:
+        super().__init__(model, verbose)
         if params is None:
             params = WPPVitalDynamicsParams()
         self.params = params
@@ -158,9 +157,16 @@ class WPPVitalDynamicsProcess(BasePhase):
             model.patches.states.S[patch_id] += births
 
     def calculate_wpp_total_pop(self, year: int) -> int:
+        """Return the total WPP population for the given calendar year."""
         return int(np.sum(self.wpp.get_population_pyramid(year)))
 
     def calculate_capacity(self, model: ABMModel, buffer: float = 0.05) -> int:
+        """Estimate the agent-array capacity needed for the full simulation.
+
+        Args:
+            model: The ABM model instance.
+            buffer: Fractional safety margin above the projected population.
+        """
         sim_end_date = timedelta(days=model.params.num_ticks * model.params.time_step_days) + model.current_date
         return int(
             model.scenario["pop"].sum()

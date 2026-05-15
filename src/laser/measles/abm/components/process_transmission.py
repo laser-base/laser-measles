@@ -105,7 +105,16 @@ else:
 
 
 class TransmissionParams(BaseModel):
-    """Parameters specific to the transmission process component."""
+    """Parameters specific to the transmission process component.
+
+    **Example:**
+
+        ```python
+        from laser.measles.abm.components.process_transmission import TransmissionParams
+
+        params = TransmissionParams(beta=0.3)
+        ```
+    """
 
     model_config = ConfigDict(extra="forbid", arbitrary_types_allowed=True)
 
@@ -130,6 +139,21 @@ class TransmissionParams(BaseModel):
 class TransmissionProcess(BasePhase):
     """
     A component to model the transmission of disease in a population.
+    
+
+    **Example:**
+
+        ```python
+        from laser.measles.scenarios.synthetic import single_patch_scenario
+        from laser.measles.abm import ABMModel, ABMParams
+        from laser.measles.abm import components
+        from laser.measles import create_component
+
+        scenario = single_patch_scenario(population=50_000, mcv1_coverage=0.85)
+        params = ABMParams(num_ticks=365, seed=42, start_time="2000-01")
+        model = ABMModel(scenario, params)
+        model.add_component(create_component(components.TransmissionProcess, components.TransmissionParams(beta=0.3)))
+        ```
     """
 
     def __init__(self, model, params: TransmissionParams | None = None) -> None:

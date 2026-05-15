@@ -26,6 +26,20 @@ DOTNAME_FIELDS_DICT = {
 
 
 class GADMShapefile(AdminShapefile):
+    """Shapefile reader for GADM (Global Administrative Areas) boundary data.
+
+    Automatically determines the admin level from the GADM filename and
+    downloads shapefiles from the GADM servers when needed.  Use
+    [`download`][laser.measles.demographics.gadm.GADMShapefile.download] to
+    fetch a country's boundaries, or construct directly from a local file.
+
+    **Example:**
+
+        ```python
+        gadm = GADMShapefile.download("NGA", admin_level=2, directory="./data")
+        df = gadm.get_dataframe()
+        ```
+    """
     @model_validator(mode="after")
     def check_dotname_fields(self) -> "GADMShapefile":
         """

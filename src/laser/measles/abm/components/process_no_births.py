@@ -12,20 +12,46 @@ from laser.measles.components import BaseVitalDynamicsProcess
 
 
 class NoBirthsParams(BaseVitalDynamicsParams):
-    """Parameters for the no births process."""
+    """Parameters for the no births process.
+
+    **Example:**
+
+        ```python
+        from laser.measles.abm.components.process_no_births import NoBirthsParams
+
+        params = NoBirthsParams()
+        ```
+    """
 
     @property
     def crude_birth_rate(self) -> float:
+        """Birth rate fixed at zero (no-birth scenario)."""
         return 0.0
 
     @property
     def crude_death_rate(self) -> float:
+        """Death rate fixed at zero (no-birth scenario)."""
         return 0.0
 
 
 class NoBirthsProcess(BaseVitalDynamicsProcess):
     """
     Component for setting the population of the patches to not have births.
+    
+
+    **Example:**
+
+        ```python
+        from laser.measles.scenarios.synthetic import single_patch_scenario
+        from laser.measles.abm import ABMModel, ABMParams
+        from laser.measles.abm import components
+        from laser.measles import create_component
+
+        scenario = single_patch_scenario(population=50_000, mcv1_coverage=0.85)
+        params = ABMParams(num_ticks=365, seed=42, start_time="2000-01")
+        model = ABMModel(scenario, params)
+        model.add_component(create_component(components.NoBirthsProcess, components.NoBirthsParams()))
+        ```
     """
 
     def __init__(

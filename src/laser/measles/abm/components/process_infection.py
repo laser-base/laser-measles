@@ -89,6 +89,21 @@ class InfectionProcess(BaseInfectionProcess):
     (handled by TransmissionProcess) and disease progression through states
     (handled by DiseaseProcess), similar to the biweekly model's InfectionProcess
     but for agent-based modeling.
+    
+
+    **Example:**
+
+        ```python
+        from laser.measles.scenarios.synthetic import single_patch_scenario
+        from laser.measles.abm import ABMModel, ABMParams
+        from laser.measles.abm import components
+        from laser.measles import create_component
+
+        scenario = single_patch_scenario(population=50_000, mcv1_coverage=0.85)
+        params = ABMParams(num_ticks=365, seed=42, start_time="2000-01")
+        model = ABMModel(scenario, params)
+        model.add_component(create_component(components.InfectionProcess, components.InfectionParams(beta=0.3)))
+        ```
     """
 
     def __init__(self, model: ABMModel, params: InfectionParams | None = None) -> None:
@@ -122,6 +137,12 @@ class InfectionProcess(BaseInfectionProcess):
         self.transmission(model, tick)
 
     def infect(self, model: ABMModel, idx: np.ndarray) -> None:
+        """Move agents at the given indices from susceptible to exposed.
+
+        Args:
+            model: The ABM model instance.
+            idx: Array of agent indices to infect.
+        """
         self.transmission.infect(model, idx)
 
     def plot(self, fig: Figure | None = None):

@@ -14,6 +14,16 @@ from laser.measles.base import BaseScenario as LaserMeaslesBaseScenario
 class PeopleLaserFrame(BasePeopleLaserFrame):
     """
     Laserframe for people (e.g., agent) properties
+    
+
+    **Example:**
+
+        ```python
+        # ABM people LaserFrame tracks individual agents
+        model.people.state     # health state per agent
+        model.people.age       # age in days per agent
+        model.people.patch_id  # patch assignment per agent
+        ```
     """
 
     patch_id: np.ndarray
@@ -27,12 +37,30 @@ class PatchLaserFrame(BasePatchLaserFrame):
 
     This class extends BasePatchLaserFrame to provide patch-level data
     storage and access patterns specific to agent-based models.
+    
+
+    **Example:**
+
+        ```python
+        model.patches.S  # susceptible counts, shape (nticks+1, num_patches)
+        model.patches.I  # infectious counts
+        ```
     """
 
 
 class BaseABMScenarioSchema(pt.Model):
     """
     Schema for the scenario data.
+    
+
+    **Example:**
+
+        ```python
+        from laser.measles.scenarios.synthetic import single_patch_scenario
+
+        scenario = single_patch_scenario(population=50_000, mcv1_coverage=0.85)
+        # Validated automatically when passed to ABMModel(scenario, params)
+        ```
     """
 
     pop: int  # population
@@ -43,6 +71,26 @@ class BaseABMScenarioSchema(pt.Model):
 
 
 class BaseABMScenario(LaserMeaslesBaseScenario):
+    """Scenario wrapper for agent-based models.
+
+    Validates that the input DataFrame conforms to the
+    [`BaseABMScenarioSchema`][laser.measles.abm.base.BaseABMScenarioSchema]
+    (columns ``id``, ``pop``, ``lat``, ``lon``, ``mcv1``) and makes the
+    data available to model components during the *prepare scenario* stage.
+
+    Args:
+        df: Polars DataFrame with patch-level data.
+    
+
+    **Example:**
+
+        ```python
+        from laser.measles.scenarios.synthetic import single_patch_scenario
+
+        scenario = single_patch_scenario(population=50_000, mcv1_coverage=0.85)
+        ```
+    """
+
     def __init__(self, df: pl.DataFrame):
         super().__init__(df)
         BaseABMScenarioSchema.validate(df, allow_superfluous_columns=True)

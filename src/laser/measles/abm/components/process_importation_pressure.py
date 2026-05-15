@@ -123,6 +123,7 @@ class ImportationPressureParams(BaseModel):
     @field_validator("importation_end")
     @classmethod
     def validate_importation_end(cls, v, info):
+        """Validate that ``importation_end`` is greater than ``importation_start`` when not -1."""
         if v != -1:
             start = info.data.get("importation_start", 0)
             if v <= start:
@@ -132,6 +133,7 @@ class ImportationPressureParams(BaseModel):
     @field_validator("crude_importation_rate")
     @classmethod
     def validate_importation_rate(cls, v):
+        """Validate that all ``crude_importation_rate`` values are non-negative."""
         if isinstance(v, (int, float)):
             if v < 0:
                 raise ValueError("crude_importation_rate must be >= 0")
@@ -173,6 +175,21 @@ class ImportationPressureProcess(BasePhase):
     - Importation rates are calculated per year
     - Importation is limited to the susceptible population
     - All state counts are ensured to be non-negative
+    
+
+    **Example:**
+
+        ```python
+        from laser.measles.scenarios.synthetic import single_patch_scenario
+        from laser.measles.abm import ABMModel, ABMParams
+        from laser.measles.abm import components
+        from laser.measles import create_component
+
+        scenario = single_patch_scenario(population=50_000, mcv1_coverage=0.85)
+        params = ABMParams(num_ticks=365, seed=42, start_time="2000-01")
+        model = ABMModel(scenario, params)
+        model.add_component(create_component(components.ImportationPressureProcess, components.ImportationPressureParams()))
+        ```
     """
 
     def __init__(self, model, params: ImportationPressureParams | None = None) -> None:

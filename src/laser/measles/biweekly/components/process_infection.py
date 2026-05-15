@@ -10,7 +10,16 @@ from laser.measles.mixing.gravity import GravityMixing
 
 
 class InfectionParams(BaseInfectionParams):
-    """Parameters specific to the infection process component."""
+    """Parameters specific to the infection process component.
+
+    **Example:**
+
+        ```python
+        from laser.measles.biweekly.components.process_infection import InfectionParams
+
+        params = InfectionParams(beta=0.57, seasonality=0.2)
+        ```
+    """
 
     beta: float = Field(
         default=1 * 8 / 14, description="Base transmission rate (infections per day)", ge=0.0
@@ -21,6 +30,7 @@ class InfectionParams(BaseInfectionParams):
 
     @property
     def beta_per_tick(self) -> float:
+        """Transmission rate scaled from daily ``beta`` to the biweekly tick."""
         return (self.beta * 365) / 26
 
 
@@ -60,6 +70,21 @@ class InfectionProcess(BaseInfectionProcess):
     -----
     The infection process uses a configurable recovery period and seasonal
     transmission rate that varies sinusoidally over time.
+    
+
+    **Example:**
+
+        ```python
+        from laser.measles.scenarios.synthetic import single_patch_scenario
+        from laser.measles.biweekly import BiweeklyModel, BiweeklyParams
+        from laser.measles.biweekly import components
+        from laser.measles import create_component
+
+        scenario = single_patch_scenario(population=100_000, mcv1_coverage=0.85)
+        params = BiweeklyParams(num_ticks=52, seed=42, start_time="2000-01")
+        model = BiweeklyModel(scenario, params)
+        model.add_component(create_component(components.InfectionProcess, components.InfectionParams(beta=0.57)))
+        ```
     """
 
     def __init__(self, model: BaseLaserModel, params: InfectionParams | None = None) -> None:

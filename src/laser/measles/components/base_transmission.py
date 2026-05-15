@@ -38,11 +38,32 @@ class BaseTransmissionParams(BaseModel):
 
 
 class BaseTransmission(BasePhase, ABC):
-    """Abstract base class for transmission components.
+    """Abstract base for transmission components.
 
-    This class defines the common interface that all transmission
-    components must implement, regardless of their underlying
-    mathematical approach (agent-based, compartmental, etc.).
+    Defines the shared interface for all transmission implementations
+    (agent-based, compartmental, biweekly).  Subclasses must implement
+    `__call__` to execute transmission dynamics each tick.  This component
+    belongs to the *per-timestep* stage and should appear in the component
+    list **after** any vital-dynamics component.
+
+    Provides helper methods for seasonality, spatial mixing, and effective
+    β calculation that subclasses can call from their `__call__`
+    implementations.
+
+    Args:
+        model: The simulation model this component is attached to.
+        verbose (bool): Enable verbose logging.
+        params (BaseTransmissionParams | None): Transmission parameters.
+            Uses [`BaseTransmissionParams`][laser.measles.components.base_transmission.BaseTransmissionParams]
+            defaults if ``None``.
+
+    **Example:**
+
+        ```python
+        # Transmission components are typically added via the model's component list:
+        from laser.measles.compartmental.components import InfectionProcess
+        model.add_component(InfectionProcess)
+        ```
     """
 
     def __init__(self, model, params: BaseTransmissionParams | None = None):

@@ -9,31 +9,95 @@ from shapefile import Reader
 
 
 class DemographicsGeneratorProtocol(Protocol):
-    def generate_population(self) -> pl.DataFrame: ...
+    """Protocol for demographic data generators.
 
-    def generate_birth_rates(self) -> pl.DataFrame: ...
+    Implementations provide population counts, birth rates, and mortality
+    rates for the *prepare scenario* stage of the researcher workflow.
+    See [`RasterPatchGenerator`][laser.measles.demographics.raster_patch.RasterPatchGenerator]
+    for the primary implementation.
+    
 
-    def generate_mortality_rates(self) -> pl.DataFrame: ...
+    **Example:**
+
+        ```python
+        from laser.measles.demographics.raster_patch import RasterPatchGenerator, RasterPatchParams
+        from laser.measles.demographics.gadm import GADMShapefile
+
+        shapefile = GADMShapefile("NGA")
+        generator = RasterPatchGenerator(shapefile, RasterPatchParams(admin_level=2))
+        scenario = generator.generate_demographics()
+        ```
+    """
+
+    def generate_population(self) -> pl.DataFrame:
+        """Generate a population DataFrame for all patches."""
+        ...
+
+    def generate_birth_rates(self) -> pl.DataFrame:
+        """Generate birth-rate data for all patches."""
+        ...
+
+    def generate_mortality_rates(self) -> pl.DataFrame:
+        """Generate mortality-rate data for all patches."""
+        ...
 
 
 class ShapefileProtocol(Protocol):
-    def add_dotname(self) -> None: ...
+    """Protocol for shapefile readers used by the demographics pipeline.
 
-    def get_dataframe(self) -> pl.DataFrame: ...
+    **Example:**
+
+        ```python
+        from laser.measles.demographics.gadm import GADMShapefile
+
+        shapefile = GADMShapefile("NGA")  # Nigeria
+        df = shapefile.get_dataframe()
+        ```
+    """
+
+    def add_dotname(self) -> None:
+        """Add a ``DOTNAME`` field to the shapefile for hierarchical naming."""
+        ...
+
+    def get_dataframe(self) -> pl.DataFrame:
+        """Return shapefile records as a Polars DataFrame."""
+        ...
 
 
 class BaseShapefile(BaseModel):
+    """Pydantic base for shapefile wrappers.
+
+    Validates that the shapefile path exists on disk and provides a
+    `get_dataframe` method to read records into a Polars DataFrame.
+
+    Args:
+        shapefile: Path to a ``.shp`` file.
+    
+
+    **Example:**
+
+        ```python
+        from laser.measles.demographics.gadm import GADMShapefile
+
+        shapefile = GADMShapefile("NGA")
+        df = shapefile.get_dataframe()
+        ```
+    """
+
     shapefile: Path
 
     @classmethod
     @field_validator("shapefile", mode="before")
     def convert_to_path(cls, v):
+        """Convert string paths to ``Path`` and verify existence."""
         p = Path(v) if not isinstance(v, Path) else v
         if not p.exists():
             raise FileNotFoundError(f"Shapefile {p} does not exist")
         return p
 
-    def add_dotname(self) -> None: ...
+    def add_dotname(self) -> None:
+        """Add a ``DOTNAME`` field — subclasses override with real logic."""
+        ...
 
     def get_dataframe(self) -> pl.DataFrame:
         """

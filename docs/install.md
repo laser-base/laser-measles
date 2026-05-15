@@ -12,6 +12,17 @@ You can also install the in-development version with:
 pip install git+https://github.com/InstituteforDiseaseModeling/laser-measles.git@main
 ```
 
+!!! tip "Offline installation"
+    If you are working in a setting with limited or intermittent internet access, download the wheel file and its dependencies while connected, then install offline:
+
+    ```bash
+    # While connected: download everything to a local directory
+    pip download laser-measles[examples] -d ./packages
+
+    # Later, offline: install from the local directory
+    pip install --no-index --find-links=./packages laser-measles[examples]
+    ```
+
 ## Optional dependencies
 
 The package supports several optional dependency groups that can be installed for additional functionality:

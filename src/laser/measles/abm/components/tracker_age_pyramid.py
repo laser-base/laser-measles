@@ -22,12 +22,14 @@ class AgePyramidTrackerParams(BaseModel):
 
     @field_validator("frequency")
     def validate_frequency(cls, v):
+        """Validate that ``frequency`` is one of ``yearly``, ``monthly``, or ``daily``."""
         if v not in ["yearly", "monthly", "daily"]:
             raise ValueError("Frequency must be one of: yearly, monthly, daily")
         return v
 
     @field_validator("age_bins")
     def validate_age_bins(cls, v):
+        """Validate that ``age_bins`` are in strictly increasing order."""
         if not np.all(np.diff(v) > 0):
             raise ValueError("Age bins must be in increasing order")
         return v

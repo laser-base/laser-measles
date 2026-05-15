@@ -19,26 +19,23 @@ B = TypeVar("B", bound=BaseModel)
 
 
 def component(cls: type[T] | None = None, **default_params):  # noqa: UP047
-    """
-    Decorator for creating components with default parameters.
+    """Decorator that adds a ``create`` factory to a component class.
 
-    This decorator makes it easier to create components with parameters by:
-    1. Allowing default parameters to be specified at class definition time
-    2. Creating a factory function that can be used to create component instances
-    3. Preserving type hints and docstrings
+    Use this at *set parameters* time to bake default parameter values into
+    a component class.  The decorated class gains a ``create(model, **overrides)``
+    static method that merges defaults with caller-supplied overrides.
 
-    Parameters
-    ----------
-    cls : Type[BaseComponent], optional
-        The component class to decorate. If None, returns a decorator function.
-    **default_params
-        Default parameters to use when creating the component instance.
+    Can be applied with or without arguments:
 
-    Returns
-    -------
-    Union[Type[BaseComponent], Callable]
-        If cls is provided, returns a factory function for creating component instances.
-        If cls is None, returns a decorator function.
+    Args:
+        cls: The component class to decorate.  When ``None``, the decorator
+            returns a wrapper that accepts keyword defaults.
+        **default_params: Default parameter values passed through to the
+            component constructor.
+
+    Returns:
+        The decorated class (with ``create`` attached), or a decorator
+            function if ``cls`` is ``None``.
 
     Examples
     --------
@@ -69,12 +66,14 @@ def component(cls: type[T] | None = None, **default_params):  # noqa: UP047
     """
 
     def decorator(component_cls: type[T]) -> type[T]:
+        """Apply the ``create`` factory to *component_cls*."""
         # Store the default parameters
         component_cls._default_params = default_params  # type: ignore
 
         # Create a factory function for creating instances
         @wraps(component_cls)
         def create(model: Any, **kwargs) -> T:
+            """Instantiate the component, merging default and caller-supplied params."""
             # Merge default parameters with provided parameters
             params = {**default_params, **kwargs}
             return component_cls(model, **params)
@@ -112,15 +111,32 @@ def create_component(component_class: type[T], params: type[B] | None = None) ->
         A single-argument factory: when called by the model with the model
         instance, it returns ``component_class(model, params=params)``.
 
-    Examples
-    --------
-    >>> model.components = [
-    ...     create_component(MyComponent, params=MyComponentParams),
-    ...     AnotherComponent,
-    ... ]
+    **Example:**
+
+        ```python
+        from laser.measles import create_component
+        from laser.measles.compartmental.components import InfectionProcess, InfectionParams
+
+        model.components = [
+            create_component(InfectionProcess, InfectionParams(beta=0.8)),
+        ]
+        ```
     """
 
     class ComponentFactory:
+        """Callable wrapper that pairs a component class with its parameters.
+
+    **Example:**
+
+        ```python
+        from laser.measles.components.utils import ComponentFactory
+        from laser.measles.biweekly.components.process_infection import InfectionProcess, InfectionParams
+
+        factory = ComponentFactory()
+        component = factory.create(InfectionProcess, InfectionParams(beta=0.57), model=model)
+        ```
+    """
+
         def __init__(self, component_class: type[T], params: BaseModel | None = None):
             self.component_class = component_class
             if params is not None:
