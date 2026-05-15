@@ -3,7 +3,6 @@ Component for initializing the population in each of the model states by rough e
 """
 
 import numpy as np
-import polars as pl
 
 from laser.measles.abm.base import PatchLaserFrame
 from laser.measles.abm.base import PeopleLaserFrame
@@ -54,10 +53,8 @@ class InitializeEquilibriumStatesProcess(BaseInitializeEquilibriumStatesProcess)
         num_active = len(model.people)
 
         # Assign patch_id to each agent based on patch population
-        people.patch_id[:num_active] = np.array(
-            scenario_df.with_row_index().select(pl.col("index").repeat_by(pl.col("pop"))).explode("index")["index"].to_numpy(),
-            dtype=people.patch_id.dtype,
-        )
+        pops = scenario_df["pop"].to_numpy()
+        people.patch_id[:num_active] = np.repeat(np.arange(len(pops), dtype=people.patch_id.dtype), pops)
 
         # Initialize all agents as susceptible first
         people.state[:num_active] = model.params.states.index("S")

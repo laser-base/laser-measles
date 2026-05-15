@@ -3,7 +3,6 @@ Component defining the ConstantPopProcess, which handles the birth events in a m
 """
 
 import numpy as np
-import polars as pl
 
 from laser.measles.abm.model import ABMModel
 from laser.measles.components import BaseConstantPopParams
@@ -121,13 +120,10 @@ class ConstantPopProcess(BaseConstantPopProcess):
             return
 
         people = model.people
-        scenario = model.scenario
 
         # Initialize patch_id according to scenario population
-        people.patch_id[:] = np.array(
-            scenario.with_row_index().select(pl.col("index").repeat_by(pl.col("pop"))).explode("index")["index"].to_numpy(),
-            dtype=people.patch_id.dtype,
-        )
+        pops = model.scenario["pop"].to_numpy()
+        people.patch_id[:] = np.repeat(np.arange(len(pops), dtype=people.patch_id.dtype), pops)
 
         # Simple initializer for ages where birth rate = mortality rate:
         # Initialize ages for existing population

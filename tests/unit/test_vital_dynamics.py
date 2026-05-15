@@ -88,6 +88,42 @@ def test_infection_with_vital_dynamics_no_underflow(measles_module):
     assert state_total == active_count, f"State total {state_total} != active agent count {active_count}"
 
 
+def test_abm_vital_dynamics_births_per_patch_assignment():
+    """Given a multi-patch ABM scenario with VitalDynamicsProcess (combined
+    with InitializeEquilibriumStatesProcess to set up initial patch_ids),
+    when the model is run for enough ticks to generate births, then every
+    active agent's patch_id must agree with the per-patch state-count totals.
+
+    VitalDynamicsProcess assigns newborn patch_ids by run-length expansion
+    of the per-patch birth counts. A regression in that expansion (e.g. a
+    bad np.repeat replacement) would skew the per-patch active-agent
+    distribution and cause it to diverge from patches.states.sum(axis=0).
+    """
+    MeaslesModel = importlib.import_module("laser.measles.abm")
+    scenario = MeaslesModel.BaseScenario(lm.scenarios.synthetic.two_patch_scenario(population=50_000))
+    model = MeaslesModel.Model(
+        scenario,
+        MeaslesModel.Params(num_ticks=180, verbose=VERBOSE, seed=SEED),
+    )
+    # InitializeEquilibriumStatesProcess sets initial patch_ids from scenario["pop"];
+    # VitalDynamicsProcess then handles births whose patch_ids are assigned by the
+    # run-length expansion under test.
+    model.components = [
+        MeaslesModel.components.VitalDynamicsProcess,
+        MeaslesModel.components.InitializeEquilibriumStatesProcess,
+    ]
+    model.run()
+
+    num_patches = len(scenario)
+    active_idx = np.where(model.people.active[: model.people.count])[0]
+    agent_counts = np.bincount(model.people.patch_id[active_idx], minlength=num_patches)
+    state_counts = np.asarray(model.patches.states.sum(axis=0))
+
+    assert np.array_equal(agent_counts, state_counts), (
+        f"Active agents per patch {agent_counts} do not match patches.states sum {state_counts}"
+    )
+
+
 if __name__ == "__main__":
     for module in MEASLES_MODULES:
         print(f"Testing {module}...")
