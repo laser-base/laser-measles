@@ -122,7 +122,7 @@ class InfectionProcess(BaseInfectionProcess):
         self.transmission = TransmissionProcess(model, self.params.transmission_params)
         self.disease = DiseaseProcess(model, self.params.disease_params)
 
-    def __call__(self, model, tick: int) -> None:
+    def __call__(self, model: "ABMModel", tick: int) -> None:
         """
         Execute both transmission and disease progression for the given tick.
 

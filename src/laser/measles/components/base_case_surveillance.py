@@ -3,6 +3,7 @@ Component for tracking case surveillance
 """
 
 from collections.abc import Callable
+from collections.abc import Iterator
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -75,7 +76,7 @@ class BaseCaseSurveillanceTracker(BasePhase):
         ```
     """
 
-    def __init__(self, model, params: BaseCaseSurveillanceParams | None = None) -> None:
+    def __init__(self, model: BaseLaserModel, params: BaseCaseSurveillanceParams | None = None) -> None:
         super().__init__(model)
         self.params = params or BaseCaseSurveillanceParams()
         self._validate_params()
@@ -111,7 +112,7 @@ class BaseCaseSurveillanceTracker(BasePhase):
         if self.params.aggregation_level < -1:
             raise ValueError("aggregation_level must be at least -1")
 
-    def __call__(self, model, tick: int) -> None:
+    def __call__(self, model: BaseLaserModel, tick: int) -> None:
         """Process case surveillance for the current tick.
 
         Args:
@@ -159,7 +160,7 @@ class BaseCaseSurveillanceTracker(BasePhase):
     def initialize(self, model: BaseLaserModel) -> None:
         """No-op — surveillance tracking requires no additional setup."""
 
-    def plot(self, fig: Figure | None = None):
+    def plot(self, fig: Figure | None = None) -> Iterator[Figure]:
         """Create a heatmap visualization of log(cases+1) over time.
 
         Args:

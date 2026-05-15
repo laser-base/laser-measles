@@ -185,12 +185,12 @@ class ImportationPressureProcess(BasePhase):
         ```
     """
 
-    def __init__(self, model, params: ImportationPressureParams | None = None) -> None:
+    def __init__(self, model: BiweeklyModel, params: ImportationPressureParams | None = None) -> None:
         super().__init__(model)
         self.params = params or ImportationPressureParams()
         self.patch_rates_per_year_per_1k: np.ndarray | None = None
 
-    def __call__(self, model, tick: int) -> None:
+    def __call__(self, model: BiweeklyModel, tick: int) -> None:
         """
         Process importation pressure for the current tick.
 

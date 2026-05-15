@@ -15,6 +15,8 @@ from pydantic import BaseModel
 from pydantic import ConfigDict
 from pydantic import Field
 
+from laser.measles.abm.model import ABMModel
+
 from ..utils import seed_infections_in_patch
 from ..utils import seed_infections_randomly
 
@@ -61,7 +63,7 @@ class InfectRandomAgentsProcess:
         ```
     """
 
-    def __init__(self, model, params: ImportationParams | None = None) -> None:
+    def __init__(self, model: "ABMModel", params: ImportationParams | None = None) -> None:
         """
         Initialize an InfectRandomAgentsProcess instance.
 
@@ -151,7 +153,7 @@ class InfectAgentsInPatchProcess:
         ```
     """
 
-    def __init__(self, model, params: ImportationParams | None = None) -> None:
+    def __init__(self, model: "ABMModel", params: ImportationParams | None = None) -> None:
         """
         Initialize an InfectAgentsInPatchProcess instance.
 

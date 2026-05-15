@@ -28,10 +28,12 @@ import os
 import warnings
 from collections.abc import Callable
 from functools import wraps
+from typing import Any
 
 import numpy as np
 from laser.core.laserframe import LaserFrame
 from laser.core.migration import distance
+from numpy.typing import DTypeLike
 
 
 def assert_row_vector(vec: np.ndarray) -> None:
@@ -167,7 +169,7 @@ def seed_infections_in_patch(model, ipatch: int, ninfections: int = 100) -> None
     return
 
 
-def cast_type(a, dtype, round: bool = False):
+def cast_type(a: Any, dtype: DTypeLike, round: bool = False) -> Any:
     """
     Cast a value to a specified data type.
     Note that this casting truncates by default.
@@ -202,15 +204,6 @@ class StateArray(np.ndarray):
         >>> prevalence = states.I / states.sum(axis=0)  # Calculate prevalence
         >>> states[0] += births  # Numeric indexing still works
         >>> N = states.sum(axis=states.state_axis)  # Sum over state axis to get total population per patch
-
-    Args:
-        state_names: List or tuple of state compartment names (e.g., ["S", "E", "I", "R"])
-        state_axis: The axis along which the state compartments are stored
-        source_array: The numpy array to wrap
-        shape: The shape of the array if source_array is not provided
-        dtype: The data type of the array
-        default_value: The default value to fill the array with if source_array is not provided
-
     """
 
     def __new__(
@@ -219,8 +212,8 @@ class StateArray(np.ndarray):
         state_axis: int,
         source_array: np.ndarray | None = None,
         shape: tuple[int, ...] | None = None,
-        dtype=np.uint32,
-        default_value=0,
+        dtype: DTypeLike = np.uint32,
+        default_value: Any = 0,
     ):
 
         if (source_array is not None) and (shape is not None):
