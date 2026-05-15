@@ -188,7 +188,9 @@ class ResultsWriter(BaseComponent):
             S_final_signed = S[-1].astype(np.int64)
             new_infections = np.maximum(S0_signed - S_final_signed, 0)
             attack_per_group = np.clip(new_infections / np.maximum(S0_signed, 1), 0.0, 1.0).astype(float).tolist()
-            attack_global = float(new_infections.sum() / max(int(S0_signed.sum()), 1))
+            attack_global = float(
+                np.clip(new_infections.sum() / max(int(S0_signed.sum()), 1), 0.0, 1.0)
+            )
         else:
             attack_global = None
             attack_per_group = None
