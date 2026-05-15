@@ -60,9 +60,14 @@ class ResultsWriter(BaseComponent):
             peak_tick:                  int (tick index of global peak;
                                         consumers convert to calendar time
                                         using the model's tick→day mapping)
-            attack_rate_global:         float
+            attack_rate_global:         float | None  (fraction of initial
+                                        susceptibles globally that left the
+                                        S compartment; in [0, 1]; null when
+                                        ``S`` isn't in model.params.states)
+            attack_rate_per_group:      list[float] | None  (per-group
+                                        version of attack_rate_global; in
+                                        [0, 1] per entry)
             final_state_global:         dict[str, int]
-            attack_rate_per_group:      list[float] | None
             peak_infectious_per_group:  list[int]   | None
             final_state_per_group:      dict[str, list[int]] | None
 
@@ -129,7 +134,7 @@ class ResultsWriter(BaseComponent):
         tracker = max(trackers, key=lambda t: int(getattr(t.params, "aggregation_level", -1)))
 
         arr = np.asarray(tracker.state_tracker)  # (num_states, num_ticks, num_groups)
-        _, num_ticks, num_groups = arr.shape
+        _, num_ticks, _num_groups = arr.shape
         state_names = list(model.params.states)
         state_idx = {s: i for i, s in enumerate(state_names)}
         group_ids = list(tracker.group_ids)
@@ -152,17 +157,26 @@ class ResultsWriter(BaseComponent):
         peak_global = int(I_global.max())
         peak_tick = int(I_global.argmax())
 
-        # Initial population per group (sum over states at tick 0). Used as the
-        # attack-rate denominator. Falls back to 1 to avoid div-by-zero on
-        # malformed inputs.
-        pop_per_group = sum(
-            (x[0] for x in (S, E, I, R) if x is not None),
-            start=np.zeros(num_groups, dtype=arr.dtype),
-        )
-
-        if R is not None:
-            attack_global = float(R[-1].sum() / max(int(pop_per_group.sum()), 1))
-            attack_per_group = (R[-1] / np.maximum(pop_per_group, 1)).astype(float).tolist()
+        # Attack rate = "fraction of initial susceptibles in this group that
+        # ever left S during the run". Depends only on S, which avoids two
+        # problems with an R-based definition under spatial migration:
+        #   1. Migrating agents who recover in a destination patch inflate
+        #      R[-1] for that patch beyond its initial population, producing
+        #      attack rates > 1.0.
+        #   2. Per-patch state counters in patches.states are known to
+        #      underflow when migration shuffles agents across patches
+        #      faster than the tracker can reconcile (laser-measles issue:
+        #      per-patch state underflow under migration). The S channel is
+        #      more robust because it only decreases under transmission and
+        #      increases under births — both conserved end-to-end.
+        # int64 math defuses any uint32 underflow already baked into the
+        # tracker; the final fraction is clamped to [0, 1].
+        if S is not None:
+            S0_signed = S[0].astype(np.int64)
+            S_final_signed = S[-1].astype(np.int64)
+            new_infections = np.maximum(S0_signed - S_final_signed, 0)
+            attack_per_group = np.clip(new_infections / np.maximum(S0_signed, 1), 0.0, 1.0).astype(float).tolist()
+            attack_global = float(new_infections.sum() / max(int(S0_signed.sum()), 1))
         else:
             attack_global = None
             attack_per_group = None

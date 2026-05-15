@@ -18,6 +18,7 @@ the schema.
 
 import json
 
+import numpy as np
 import polars as pl
 import pytest
 
@@ -180,6 +181,60 @@ def test_missing_state_tracker_raises_at_add_component_time(tmp_path):
             state_tracker_params=None,
             results_writer_params=ResultsWriterParams(path=str(tmp_path / "results.json")),
         )
+
+
+def test_attack_rate_stays_in_unit_interval_even_with_corrupted_R(tmp_path):
+    """Regression for laser-mcp prompt p07: when the per-patch state
+    counters in ``patches.states`` underflow (a known family of bugs;
+    see laser-measles issue #117 — uint32 wraparound when any
+    state-to-state transition decrements past zero without a
+    ``min(delta, available)`` clamp), the StateTracker faithfully
+    records the corrupted values and ``_per_group`` arrays end up with
+    ≈ 2³² magnitude entries. ``attack_rate_per_group`` MUST still land
+    in [0, 1] because our S-only formula bypasses the corrupted E/I/R
+    channels and clamps the result.
+
+    We force the corruption directly by writing pathological values into the
+    tracker after the model runs — the fix lives in ``_build()``'s formula,
+    not in the framework's state-conservation code, so this test pins the
+    contract independently of whether #117 is resolved.
+    """
+    out_path = tmp_path / "results.json"
+    model = _make_model(
+        state_tracker_params=BaseStateTrackerParams(aggregation_level=0),
+        results_writer_params=ResultsWriterParams(path=str(out_path)),
+        add_writer=False,  # we'll add it manually after corrupting the tracker
+    )
+    # Run without ResultsWriter so we have a chance to corrupt the tracker
+    # before finalize() reads it.
+    model.run()
+
+    # Reach into the tracker and force-set patch 1 to look like a migration
+    # casualty: R well above initial pop, E/I at uint32-overflow levels.
+    state_names = list(model.params.states)
+    tracker = next(i for i in model.instances if hasattr(i, "state_tracker"))
+    arr = np.asarray(tracker.state_tracker)
+    i_state = state_names.index("I")
+    e_state = state_names.index("E") if "E" in state_names else None
+    r_state = state_names.index("R")
+    if e_state is not None:
+        arr[e_state, -1, 1] = 4_294_966_457  # uint32 underflow signature
+    arr[i_state, -1, 1] = 4_294_967_082
+    # R[-1] for patch 1 above its initial pop_per_group (50K) by a small amount
+    arr[r_state, -1, 1] = 51_053
+
+    # Now do the build via a freshly-constructed ResultsWriter and verify
+    # attack rates are clamped to [0, 1].
+    writer = ResultsWriter(model, params=ResultsWriterParams(path=str(out_path)))
+    writer.finalize(model)
+
+    on_disk = json.loads(out_path.read_text())
+    rates = on_disk["summary"]["attack_rate_per_group"]
+    assert rates is not None
+    assert len(rates) == N_PATCHES
+    for r in rates:
+        assert 0.0 <= r <= 1.0, f"attack rate {r} out of [0, 1]"
+    assert 0.0 <= on_disk["summary"]["attack_rate_global"] <= 1.0
 
 
 def test_default_path_is_results_json_in_cwd(tmp_path, monkeypatch):
