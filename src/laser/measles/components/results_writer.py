@@ -169,18 +169,20 @@ class ResultsWriter(BaseComponent):
         peak_global = int(I_global.max())
         peak_tick = int(I_global.argmax())
 
-        # Attack rate = "fraction of initial susceptibles in this group that
-        # ever left S during the run". Depends only on S, which avoids two
-        # problems with an R-based definition under spatial migration:
+        # Attack rate here is an endpoint proxy: the net decline in S over
+        # the run, divided by the initial susceptible count in the same
+        # group (`max(S[0] - S[-1], 0) / S[0]`). This is not a cumulative
+        # "ever left S" measure when births or other dynamics can increase
+        # S during the run; those processes can offset infections in the
+        # endpoint difference. We still prefer an S-based endpoint metric
+        # over an R-based definition under spatial migration because:
         #   1. Migrating agents who recover in a destination patch inflate
         #      R[-1] for that patch beyond its initial population, producing
         #      attack rates > 1.0.
         #   2. Per-patch state counters in patches.states are known to
         #      underflow when migration shuffles agents across patches
         #      faster than the tracker can reconcile (laser-measles issue:
-        #      per-patch state underflow under migration). The S channel is
-        #      more robust because it only decreases under transmission and
-        #      increases under births — both conserved end-to-end.
+        #      per-patch state underflow under migration).
         # int64 math defuses any uint32 underflow already baked into the
         # tracker; the final fraction is clamped to [0, 1].
         if S is not None:
