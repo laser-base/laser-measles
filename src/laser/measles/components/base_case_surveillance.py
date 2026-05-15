@@ -75,8 +75,13 @@ class BaseCaseSurveillanceTracker(BasePhase):
         # Initialize reported cases tracker
         # For aggregated cases: nticks x num_groups
         self.reported_cases = np.zeros((len(self.node_mapping), model.params.num_ticks), dtype=model.patches.states.dtype)
-        # Store group IDs in order
-        self.group_ids = sorted(self.node_mapping.keys())
+        # Use insertion order so group_ids[i] always corresponds to
+        # reported_cases[i, ...]. __call__ below iterates
+        # ``self.node_mapping.items()`` (dict insertion order) when
+        # writing tick data; sorting here would silently misalign the
+        # label list with the storage axis whenever scenario IDs aren't
+        # already in sorted order.
+        self.group_ids = list(self.node_mapping.keys())
 
     def _validate_params(self) -> None:
         """Validate component parameters.

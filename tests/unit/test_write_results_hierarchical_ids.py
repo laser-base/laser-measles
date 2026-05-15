@@ -204,5 +204,55 @@ def test_results_writer_path_is_relative_to_cwd(tmp_path, monkeypatch):
     assert target.exists(), f"ResultsWriter should write its default path 'results.json' relative to cwd ({tmp_path}); found nothing there."
 
 
+def test_group_ids_match_axis_order_for_unsorted_scenario(tmp_path):
+    """Regression for the BaseStateTracker contract: ``group_ids[i]`` must
+    correspond to ``state_tracker[..., i]``. Previously ``group_ids`` was
+    sorted while the tracker's last axis is filled in the insertion order
+    of ``node_mapping.items()`` — so for a scenario whose IDs aren't already
+    in sorted order, the labels in the emitted JSON were misaligned with
+    the per-group arrays.
+
+    Forces an unsorted ID order at scenario construction; verifies the
+    emitted ``group_ids`` reflects scenario row order AND the per-group
+    arrays are consistent with that order (the patch with the highest
+    initial pop should also have the largest peak_infectious_per_group).
+    """
+    out_path = tmp_path / "results.json"
+
+    # IDs chosen so sorted order (apple, banana, cherry) differs from
+    # the scenario row order (banana, apple, cherry).
+    scenario = pl.DataFrame(
+        {
+            "id": ["banana", "apple", "cherry"],
+            "pop": [200_000, 50_000, 80_000],  # banana is largest
+            "lat": [0.0, 0.1, 0.2],
+            "lon": [0.0, 0.0, 0.0],
+            "mcv1": [0.0, 0.0, 0.0],
+        }
+    )
+    params = ABMParams(num_ticks=60, seed=42, start_time="2000-01", verbose=False, show_progress=False)
+    model = ABMModel(scenario, params)
+    model.add_component(NoBirthsProcess)
+    model.add_component(create_component(InfectionSeedingProcess, params=InfectionSeedingParams(num_infections=20)))
+    model.add_component(InfectionProcess)
+    model.add_component(create_component(StateTracker, params=BaseStateTrackerParams(aggregation_level=0)))
+    model.add_component(create_component(ResultsWriter, params=ResultsWriterParams(path=str(out_path))))
+    model.run()
+
+    out = json.loads(out_path.read_text())
+    assert out["group_ids"] == ["banana", "apple", "cherry"], (
+        f"group_ids should reflect scenario row order, not sorted; got {out['group_ids']}"
+    )
+
+    # Sanity: the per-group arrays line up with group_ids. The banana
+    # patch (200K pop, index 0) should have a strictly larger peak than
+    # apple (50K, index 1) — would be impossible if labels and array
+    # were misaligned (apple would appear at index 0).
+    peaks = out["summary"]["peak_infectious_per_group"]
+    assert peaks[0] > peaks[1], (
+        f"index 0 should be banana (largest pop), but peak[0]={peaks[0]} < peak[1]={peaks[1]} — labels and axis are out of sync"
+    )
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])
