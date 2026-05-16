@@ -37,7 +37,7 @@ class NoBirthsParams(BaseVitalDynamicsParams):
 class NoBirthsProcess(BaseVitalDynamicsProcess):
     """
     Component for setting the population of the patches to not have births.
-    
+
 
     **Example:**
 

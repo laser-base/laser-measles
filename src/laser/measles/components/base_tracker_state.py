@@ -32,7 +32,7 @@ class BaseStateTrackerParams(BaseModel):
             minus one.  For flat IDs (no ``":"``), ``aggregation_level=0`` gives per-patch rows.
             The ``patch_id`` column in ``get_dataframe()`` matches the ``id`` column of the
             scenario DataFrame at the requested hierarchy level.
-    
+
 
     **Example:**
 
@@ -72,7 +72,7 @@ class BaseStateTracker(BasePhase):
     Args:
         model: The simulation model containing nodes, states, and parameters.
         params: Component-specific parameters. If None, will use default parameters.
-    
+
 
     **Example:**
 

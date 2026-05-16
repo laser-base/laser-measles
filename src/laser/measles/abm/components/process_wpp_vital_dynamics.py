@@ -9,7 +9,6 @@ import numpy as np
 from laser.core import SortedQueue
 from laser.core.demographics import AliasedDistribution
 from pydantic import BaseModel
-from pydantic import ConfigDict
 from pydantic import Field
 
 from laser.measles.abm.model import ABMModel

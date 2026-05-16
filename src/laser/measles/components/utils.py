@@ -126,16 +126,16 @@ def create_component(component_class: type[T], params: type[B] | None = None) ->
     class ComponentFactory:
         """Callable wrapper that pairs a component class with its parameters.
 
-    **Example:**
+        **Example:**
 
-        ```python
-        from laser.measles.components.utils import ComponentFactory
-        from laser.measles.biweekly.components.process_infection import InfectionProcess, InfectionParams
+            ```python
+            from laser.measles.components.utils import ComponentFactory
+            from laser.measles.biweekly.components.process_infection import InfectionProcess, InfectionParams
 
-        factory = ComponentFactory()
-        component = factory.create(InfectionProcess, InfectionParams(beta=0.57), model=model)
-        ```
-    """
+            factory = ComponentFactory()
+            component = factory.create(InfectionProcess, InfectionParams(beta=0.57), model=model)
+            ```
+        """
 
         def __init__(self, component_class: type[T], params: BaseModel | None = None):
             self.component_class = component_class

@@ -15,7 +15,7 @@ from laser.measles.components import BaseInitializeEquilibriumStatesProcess
 class InitializeEquilibriumStatesParams(BaseInitializeEquilibriumStatesParams):
     """
     Parameters for the InitializeEquilibriumStatesProcess.
-    
+
 
     **Example:**
 
@@ -33,7 +33,7 @@ class InitializeEquilibriumStatesProcess(BaseInitializeEquilibriumStatesProcess)
 
     This component extends the base functionality to handle both patch-level state counts
     and individual agent initialization consistent with those counts.
-    
+
 
     **Example:**
 

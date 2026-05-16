@@ -14,7 +14,7 @@ from laser.measles.base import BasePhase
 class BaseInitializeEquilibriumStatesParams(BaseModel):
     """
     Parameters for the InitializeEquilibriumStatesProcess.
-    
+
 
     **Example:**
 
@@ -33,7 +33,7 @@ class BaseInitializeEquilibriumStatesParams(BaseModel):
 class BaseInitializeEquilibriumStatesProcess(BasePhase):
     """
     Initialize S, R states of the population in each of the model states by rough equilibrium of R0.
-    
+
 
     **Example:**
 

@@ -33,7 +33,7 @@ class ConstantPopProcess(BaseConstantPopProcess):
         model: The model instance containing population and parameters.
         initializers (list): List of initializers to be called on birth events.
         metrics (DataFrame): DataFrame to holding timing metrics for initializers.
-    
+
 
     **Example:**
 

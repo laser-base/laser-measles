@@ -28,7 +28,7 @@ class PatchLaserFrame(BasePatchLaserFrame):
 class BaseScenarioSchema(pt.Model):
     """
     Schema for the scenario data.
-    
+
 
     **Example:**
 
@@ -56,7 +56,7 @@ class BaseCompartmentalScenario(BaseScenario):
 
     Args:
         df: Polars DataFrame with patch-level data.
-    
+
 
     **Example:**
 

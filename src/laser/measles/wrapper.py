@@ -19,7 +19,7 @@ class PrettyComponentsList(list):
 
     This class maintains full list functionality while adding a formatted
     display similar to the LaserFrame wrapper style.
-    
+
 
     **Example:**
 

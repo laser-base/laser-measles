@@ -40,6 +40,7 @@ class GADMShapefile(AdminShapefile):
         df = gadm.get_dataframe()
         ```
     """
+
     @model_validator(mode="after")
     def check_dotname_fields(self) -> "GADMShapefile":
         """

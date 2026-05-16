@@ -107,7 +107,7 @@ class InfectionProcess(BaseInfectionProcess):
     -----
     The infection process uses daily rates and seasonal transmission that varies
     sinusoidally over time with a period of 365 days.
-    
+
 
     **Example:**
 

@@ -12,7 +12,7 @@ class StateTrackerParams(BaseStateTrackerParams):
 
     Inherits all parameters from BaseStateTrackerParams with
     ABM-specific defaults and validation.
-    
+
 
     **Example:**
 
@@ -31,7 +31,7 @@ class StateTracker(BaseStateTracker):
     Tracks disease state populations over time in agent-based models.
     Records detailed temporal dynamics of S, E, I, R compartments
     at the patch level.
-    
+
 
     **Example:**
 

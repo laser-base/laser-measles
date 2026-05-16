@@ -174,7 +174,7 @@ class ImportationPressureProcess(BasePhase):
     - Importation rates are calculated per year
     - Importation is limited to the susceptible population
     - All state counts are ensured to be non-negative
-    
+
 
     **Example:**
 

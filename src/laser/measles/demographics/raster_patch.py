@@ -39,7 +39,7 @@ class RasterPatchParams(BaseModel):
         population_raster: Path to a population-count raster (GeoTIFF).
         mcv1_raster: Path to a MCV1 coverage raster (GeoTIFF).
         mcv2_raster: Path to a MCV2 coverage raster (GeoTIFF).
-    
+
 
     **Example:**
 
@@ -270,11 +270,9 @@ class RasterPatchGenerator:
 
     def generate_birth_rates(self) -> pl.DataFrame:
         """Generate birth-rate data (not yet implemented)."""
-        ...
 
     def generate_mortality_rates(self) -> pl.DataFrame:
         """Generate mortality-rate data (not yet implemented)."""
-        ...
 
     def _add_dotname(self) -> None: ...
 

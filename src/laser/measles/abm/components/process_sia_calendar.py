@@ -58,7 +58,7 @@ class SIACalendarProcess(BasePhase):
     - Vaccination moves agents from susceptible (S=0) to recovered (R=3) state
     - Both individual agent states and patch-level state aggregations are updated
     - Each SIA is implemented exactly once
-    
+
 
     **Example:**
 
@@ -186,7 +186,6 @@ class SIACalendarProcess(BasePhase):
 
     def initialize(self, model: BaseLaserModel) -> None:
         """No-op; SIA calendar state is set up during construction."""
-        pass
 
     def get_sia_schedule(self) -> pl.DataFrame:
         """

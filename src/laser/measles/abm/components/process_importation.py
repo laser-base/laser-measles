@@ -44,7 +44,7 @@ class ImportationParams(BaseModel):
 class InfectRandomAgentsProcess:
     """
     A component to update the infection timers of a population in a model.
-    
+
 
     **Example:**
 
@@ -134,7 +134,7 @@ class InfectRandomAgentsProcess:
 class InfectAgentsInPatchProcess:
     """
     A component to update the infection timers of a population in a model.
-    
+
 
     **Example:**
 

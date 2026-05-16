@@ -15,7 +15,7 @@ from laser.measles.utils import cast_type
 class VitalDynamicsParams(BaseVitalDynamicsParams):
     """
     Parameters for VitalDynamicsProcess.
-    
+
 
     **Example:**
 
@@ -32,7 +32,7 @@ class VitalDynamicsParams(BaseVitalDynamicsParams):
 class VitalDynamicsProcess(BaseVitalDynamicsProcess):
     """
     Process for simulating vital dynamics in the ABM model with MCV1 and constant birth and mortality rates (not age-structured).
-    
+
 
     **Example:**
 

@@ -15,7 +15,7 @@ class DemographicsGeneratorProtocol(Protocol):
     rates for the *prepare scenario* stage of the researcher workflow.
     See [`RasterPatchGenerator`][laser.measles.demographics.raster_patch.RasterPatchGenerator]
     for the primary implementation.
-    
+
 
     **Example:**
 
@@ -72,7 +72,7 @@ class BaseShapefile(BaseModel):
 
     Args:
         shapefile: Path to a ``.shp`` file.
-    
+
 
     **Example:**
 
@@ -97,7 +97,6 @@ class BaseShapefile(BaseModel):
 
     def add_dotname(self) -> None:
         """Add a ``DOTNAME`` field — subclasses override with real logic."""
-        ...
 
     def get_dataframe(self) -> pl.DataFrame:
         """

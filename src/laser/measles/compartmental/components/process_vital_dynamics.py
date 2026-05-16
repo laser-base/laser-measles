@@ -11,7 +11,7 @@ from laser.measles.components import BaseVitalDynamicsProcess
 class VitalDynamicsParams(BaseVitalDynamicsParams):
     """
     Parameters for the vital dynamics process.
-    
+
 
     **Example:**
 
@@ -26,7 +26,7 @@ class VitalDynamicsParams(BaseVitalDynamicsParams):
 class VitalDynamicsProcess(BaseVitalDynamicsProcess):
     """
     Phase for simulating the vital dynamics in the model with MCV1.
-    
+
 
     **Example:**
 

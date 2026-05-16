@@ -16,7 +16,7 @@ class BaseVitalDynamicsProcess(BasePhase):
     `model.run()`) and `calculate_capacity` (called during model construction to
     pre-allocate agent storage in
     [`ABMModel`][laser.measles.abm.model.ABMModel]).
-    
+
 
     **Example:**
 

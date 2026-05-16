@@ -139,7 +139,7 @@ class TransmissionParams(BaseModel):
 class TransmissionProcess(BasePhase):
     """
     A component to model the transmission of disease in a population.
-    
+
 
     **Example:**
 

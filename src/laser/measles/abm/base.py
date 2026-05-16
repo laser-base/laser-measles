@@ -14,7 +14,7 @@ from laser.measles.base import BaseScenario as LaserMeaslesBaseScenario
 class PeopleLaserFrame(BasePeopleLaserFrame):
     """
     Laserframe for people (e.g., agent) properties
-    
+
 
     **Example:**
 
@@ -37,7 +37,7 @@ class PatchLaserFrame(BasePatchLaserFrame):
 
     This class extends BasePatchLaserFrame to provide patch-level data
     storage and access patterns specific to agent-based models.
-    
+
 
     **Example:**
 
@@ -51,7 +51,7 @@ class PatchLaserFrame(BasePatchLaserFrame):
 class BaseABMScenarioSchema(pt.Model):
     """
     Schema for the scenario data.
-    
+
 
     **Example:**
 
@@ -80,7 +80,7 @@ class BaseABMScenario(LaserMeaslesBaseScenario):
 
     Args:
         df: Polars DataFrame with patch-level data.
-    
+
 
     **Example:**
 

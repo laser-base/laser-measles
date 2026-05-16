@@ -89,7 +89,7 @@ class InfectionProcess(BaseInfectionProcess):
     (handled by TransmissionProcess) and disease progression through states
     (handled by DiseaseProcess), similar to the biweekly model's InfectionProcess
     but for agent-based modeling.
-    
+
 
     **Example:**
 

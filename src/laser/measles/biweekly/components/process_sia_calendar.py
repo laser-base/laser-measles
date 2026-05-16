@@ -56,7 +56,7 @@ class SIACalendarProcess(BasePhase):
     - SIAs are implemented when the model's current_date has passed the scheduled date
     - Since the model steps in 14-day increments, SIAs are implemented on the first step after their scheduled date
     - Each SIA is implemented exactly once
-    
+
 
     **Example:**
 
@@ -152,7 +152,6 @@ class SIACalendarProcess(BasePhase):
 
     def initialize(self, model: BaseLaserModel) -> None:
         """No-op; SIA calendar state is set up during construction."""
-        pass
 
     def get_sia_schedule(self) -> pl.DataFrame:
         """

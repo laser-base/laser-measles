@@ -70,7 +70,7 @@ class InfectionProcess(BaseInfectionProcess):
     -----
     The infection process uses a configurable recovery period and seasonal
     transmission rate that varies sinusoidally over time.
-    
+
 
     **Example:**
 

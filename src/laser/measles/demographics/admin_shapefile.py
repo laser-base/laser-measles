@@ -18,7 +18,7 @@ class AdminShapefile(BaseShapefile):
     Args:
         admin_level (int): Admin level of the shapefile.
         dotname_fields (list[str]): List of fields to use for dotname. e.g., ["ADMIN0", "ADMIN1", "ADMIN2"]
-    
+
 
     **Example:**
 

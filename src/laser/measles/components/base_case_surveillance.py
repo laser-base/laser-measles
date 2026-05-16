@@ -25,7 +25,7 @@ class BaseCaseSurveillanceParams(BaseModel):
         filter_fn: Function to filter which nodes to include in aggregation.
         aggregate_cases: Whether to aggregate cases by geographic level.
         aggregation_level: Number of levels to use for aggregation (e.g., 2 for country:state:lga).
-    
+
 
     **Example:**
 
@@ -58,7 +58,7 @@ class BaseCaseSurveillanceTracker(BasePhase):
     Args:
         model: The simulation model containing nodes, states, and parameters.
         params: Component-specific parameters. If None, will use default parameters.
-    
+
 
     **Example:**
 

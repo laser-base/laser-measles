@@ -113,7 +113,7 @@ class BaseModelParams(BaseModel):
         use_numba (bool):
             If True, enables numba JIT acceleration when available.
             Falls back to pure Python if numba is unavailable.
-    
+
 
     **Example:**
 
@@ -184,7 +184,7 @@ class BasePeopleLaserFrame(LaserFrame):
 
     This class provides factory methods for creating new instances with the same
     properties but different capacity, making it easy to resize people collections.
-    
+
 
     **Example:**
 
@@ -265,7 +265,7 @@ class BaseLaserModel(ABC):
 
     Provides common functionality for model initialization, component management,
     timing, metrics collection, and execution loops.
-    
+
 
     **Example:**
 
@@ -836,7 +836,7 @@ class BaseComponent:
 
     Components follow a uniform interface with __call__(model, tick) method
     for execution during simulation loops.
-    
+
 
     **Example:**
 
@@ -935,7 +935,7 @@ class BasePhase(BaseComponent):
     Base class for all laser-measles phases.
 
     Phases are components that are called every tick and include a __call__ method.
-    
+
 
     **Example:**
 
@@ -970,7 +970,7 @@ class BaseScenario(ABC):
 
     Provides a wrapper around polars DataFrames with additional validation
     and convenience methods.
-    
+
 
     **Example:**
 

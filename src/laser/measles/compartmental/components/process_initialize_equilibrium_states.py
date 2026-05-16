@@ -9,7 +9,7 @@ from laser.measles.components import BaseInitializeEquilibriumStatesProcess
 class InitializeEquilibriumStatesParams(BaseInitializeEquilibriumStatesParams):
     """
     Parameters for the InitializeEquilibriumStatesProcess.
-    
+
 
     **Example:**
 
@@ -24,7 +24,7 @@ class InitializeEquilibriumStatesParams(BaseInitializeEquilibriumStatesParams):
 class InitializeEquilibriumStatesProcess(BaseInitializeEquilibriumStatesProcess):
     """
     Initialize S, R states of the population in each of the model states by rough equilibrium of R0.
-    
+
 
     **Example:**
 
