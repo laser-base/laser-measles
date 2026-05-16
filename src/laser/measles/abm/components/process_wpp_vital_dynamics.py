@@ -134,6 +134,21 @@ class WPPVitalDynamicsProcess(BasePhase):
                     np.bincount(people.state[patch_idx], minlength=len(model.params.states)), model.patches.states.dtype
                 )
 
+        # Reset dead agents' epidemic state to prevent ghost processing by downstream components.
+        # Without this, agents deactivated mid-epidemic retain non-zero exposure/infection timers
+        # and their state slot, causing DiseaseProcess to generate spurious E→I and I→R transitions
+        # on subsequent ticks that decrement patches.states below zero (uint32 underflow — issue
+        # #117). VitalDynamicsProcess (the non-WPP variant) does this same reset; it was missing
+        # here. Symptom in the wild: per-tick birth lambda computed off a wrapped patches.states
+        # sum reaching ~2³², causing PeopleLaserFrame.add() to overflow capacity by a huge margin.
+        if len(death_idx) > 0:
+            r_state = np.uint8(model.params.states.index("R"))
+            people.state[death_idx] = r_state
+            if hasattr(people, "etimer"):
+                people.etimer[death_idx] = 0
+            if hasattr(people, "itimer"):
+                people.itimer[death_idx] = 0
+
         # Births
         idx = np.where(~people.active)[0]
         i_start = 0
@@ -153,6 +168,19 @@ class WPPVitalDynamicsProcess(BasePhase):
             people.date_of_birth[idx[i_start:i_end]] = tick
             people.state[idx[i_start:i_end]] = model.params.states.index("S")
             people.susceptibility[idx[i_start:i_end]] = 1.0
+            # CRITICAL: stamp the newborn's patch_id. `idx` is a pool of all
+            # inactive slots regardless of their previous patch, so a slot
+            # being reactivated as a newborn in patch X may carry over the
+            # patch_id of whichever agent died in some other patch Y. Without
+            # this assignment, agent-level state.S in patch Y is inflated and
+            # state.S in patch X is deflated, while patches.states.S[X] is
+            # incremented correctly — producing per-patch agent/patch drift
+            # that compounds over ticks and eventually underflows
+            # patches.states.E (issue #117). VitalDynamicsProcess avoids this
+            # by allocating birth slots sequentially via people.add(); WPP
+            # mixes recycled and freshly-added slots, so the explicit stamp
+            # is required here.
+            people.patch_id[idx[i_start:i_end]] = patch_id
             i_start = i_end
             # update state counts
             model.patches.states.S[patch_id] += births
