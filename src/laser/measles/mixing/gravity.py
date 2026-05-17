@@ -8,18 +8,27 @@ from laser.measles.mixing.base import BaseMixing
 
 
 class GravityParams(BaseModel):
-    """
-    Parameters for the gravity migration model.
+    """Parameters for the gravity migration model.
 
-    Formula:
-        .. math::
-            M_{i,j} = k \\cdot p_i^{a-1} \\cdot p_j^b \\cdot d_{i,j}^{-c}
+    The gravity kernel computes migration flow as:
+
+    $$M_{i,j} = k \\cdot p_i^{a-1} \\cdot p_j^{b} \\cdot d_{i,j}^{-c}$$
 
     Args:
-        a (float): Population source scale parameter
-        b (float): Population target scale parameter
-        c (float): Distance exponent
-        k (float): Scale parameter
+        a (float): Population source exponent (applied as *a − 1*
+            inside the kernel).
+        b (float): Population destination exponent.
+        c (float): Distance decay exponent — larger values suppress
+            long-distance travel.
+        k (float): Average trip probability (scales the overall matrix).
+
+    **Example:**
+
+        ```python
+        from laser.measles.mixing.gravity import GravityParams
+
+        params = GravityParams(a=1.0, b=1.0, c=2.0, k=0.01)
+        ```
     """
 
     a: float = Field(default=1.0, description="Population source scale parameter", ge=1.0)
@@ -29,36 +38,28 @@ class GravityParams(BaseModel):
 
 
 class GravityMixing(BaseMixing):
-    """
-    Gravity migration model.
+    """Gravity migration model for spatial mixing.
 
-    Computes a spatial mixing matrix based on patch populations and distances:
+    Computes a spatial mixing matrix where travel probability between
+    patches is proportional to population sizes and inversely proportional
+    to distance:
 
-    .. math::
+    $$M_{i,j} = k \\cdot p_i^{a-1} \\cdot p_j^{b} \\cdot d_{i,j}^{-c}$$
 
-        M_{i,j} = k \\cdot p_i^{a-1} \\cdot p_j^b \\cdot d_{i,j}^{-c}
+    The ``scenario`` is optional at construction time.  When attached to a
+    model via ``InfectionParams(mixer=...)``, the model sets the scenario
+    automatically before the mixing matrix is first computed.
 
-    The ``scenario`` argument is optional. When this mixer is attached to a model via
-    ``InfectionParams(mixer=...)`` the model automatically sets the scenario before
-    the mixing matrix is first computed (lazy initialisation). You only need to pass
-    ``scenario`` explicitly when using the mixer standalone (e.g. to inspect the
-    matrix before running a simulation).
+    Args:
+        scenario (pl.DataFrame | None): Patch data with ``pop``, ``lat``,
+            and ``lon`` columns.  ``None`` when the model will set it.
+        params (GravityParams | None): Gravity model parameters.  Uses
+            [`GravityParams`][laser.measles.mixing.gravity.GravityParams]
+            defaults if ``None``.
 
-    Parameters
-    ----------
-    scenario : pl.DataFrame or None, optional
-        Patch data with ``id``, ``lat``, ``lon``, ``pop``, and ``mcv1`` columns.
-        If ``None``, must be set before the mixing matrix is accessed (happens
-        automatically when the mixer is attached to a model component).
-    params : GravityParams or None, optional
-        Gravity model parameters. Uses :class:`GravityParams` defaults if ``None``.
+    **Example:**
 
-    Examples
-    --------
-    Typical usage — let the model set the scenario automatically:
-
-    .. code-block:: python
-
+        ```python
         from laser.measles.mixing.gravity import GravityMixing, GravityParams
         from laser.measles.compartmental import components
         from laser.measles import create_component
@@ -66,13 +67,7 @@ class GravityMixing(BaseMixing):
         mixer = GravityMixing(params=GravityParams(a=1.0, b=1.0, c=2.0, k=0.01))
         infection_params = components.InfectionParams(beta=0.8, mixer=mixer)
         model.components = [create_component(components.InfectionProcess, infection_params)]
-
-    Standalone usage (inspect the matrix before running):
-
-    .. code-block:: python
-
-        mixer = GravityMixing(scenario=scenario, params=GravityParams(c=2.0, k=0.01))
-        print(mixer.mixing_matrix)
+        ```
     """
 
     def __init__(self, scenario: pl.DataFrame | None = None, params: GravityParams | None = None):
@@ -81,6 +76,12 @@ class GravityMixing(BaseMixing):
         super().__init__(scenario, params)
 
     def get_migration_matrix(self) -> np.ndarray:
+        """Compute the gravity-based migration matrix.
+
+        Returns:
+            Migration matrix of shape ``(N, N)`` where entry ``[i, j]``
+                is the probability of travel from patch *i* to patch *j*.
+        """
         if len(self.scenario) == 1:
             return np.array([[0.0]])
         distances = self.get_distances()

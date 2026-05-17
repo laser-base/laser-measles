@@ -35,6 +35,7 @@ from laser.core.migration import distance
 
 
 def assert_row_vector(vec: np.ndarray) -> None:
+    """Assert that *vec* is a scalar, 1-D array, or 2-D row vector."""
     # for scalars
     if vec.size == 1:
         return
@@ -426,6 +427,7 @@ def dual_implementation(numpy_func: Callable, numba_func: Callable) -> Callable:
 
     @wraps(numpy_func)
     def wrapper(*args, use_numba: bool = True, **kwargs):
+        """Dispatch to the NumPy or Numba implementation based on *use_numba*."""
         selected_func = select_implementation(numpy_func, numba_func, use_numba)
         return selected_func(*args, **kwargs)
 

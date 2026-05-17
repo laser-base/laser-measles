@@ -16,7 +16,16 @@ from laser.measles.utils import cast_type
 
 
 class BaseInfectionSeedingParams(BaseModel):
-    """Parameters for the infection seeding component."""
+    """Parameters for the infection seeding component.
+
+    **Example:**
+
+        ```python
+        from laser.measles.biweekly.components.process_infection_seeding import InfectionSeedingParams
+
+        params = InfectionSeedingParams()
+        ```
+    """
 
     model_config = ConfigDict(extra="forbid")
 

@@ -10,6 +10,15 @@ from shapefile import Writer
 
 
 def check_field(path: str | Path, field_name: str) -> bool:
+    """Check whether a shapefile contains a named attribute field.
+
+    Args:
+        path: Path to the ``.shp`` file.
+        field_name: Field name to look for (e.g. ``"DOTNAME"``).
+
+    Returns:
+        ``True`` if the field exists in the shapefile's DBF schema.
+    """
     path = Path(path) if isinstance(path, str) else path
     with Reader(path) as sf:
         fields = [field[0] for field in sf.fields[1:]]
@@ -31,6 +40,7 @@ def add_dotname(
     """
 
     def make_temp_path(path: Path, append_suffix: str, suffix: str) -> Path:
+        """Build a temporary file path by appending a suffix to the stem."""
         return path.with_name(path.stem + "_" + append_suffix + suffix)
 
     # Resolve shapefile
@@ -120,6 +130,18 @@ def get_shapefile_dataframe(shapefile_path: str | Path) -> pl.DataFrame:
 
 
 def plot_shapefile_dataframe(df: pl.DataFrame, ax: plt.Axes | None = None, plot_kwargs: dict | None = None) -> plt.Figure:
+    """Render shapefile polygons onto a matplotlib axes.
+
+    Args:
+        df: DataFrame returned by `get_shapefile_dataframe` containing
+            a ``shape`` column.
+        ax: Matplotlib axes.  A new figure is created if ``None``.
+        plot_kwargs: Additional keyword arguments forwarded to
+            `matplotlib.patches.Polygon`.
+
+    Returns:
+        The matplotlib `Figure` containing the rendered map.
+    """
     if ax is None:
         _fig, ax = plt.subplots()
     if plot_kwargs is None:
@@ -138,6 +160,7 @@ def plot_shapefile_dataframe(df: pl.DataFrame, ax: plt.Axes | None = None, plot_
     ylim = [float("inf"), float("-inf")]
 
     def get_data(data: list[tuple[float, float]], index: int) -> list[float]:
+        """Extract the *index*-th coordinate from each point in *data*."""
         return [x[index] for x in data]
 
     for shape in df["shape"]:

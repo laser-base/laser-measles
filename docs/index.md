@@ -1,16 +1,29 @@
 # Welcome to laser-measles
 
-[![PyPI Package latest release](https://img.shields.io/pypi/v/laser-measles.svg)](https://pypi.org/project/laser-measles/)
-[![MIT License](https://img.shields.io/github/license/InstituteforDiseaseModeling/laser-measles.svg)](https://github.com/InstituteforDiseaseModeling/laser-measles/blob/main/LICENSE)
-[![Documentation Status](https://github.com/laser-base/laser-measles/actions/workflows/github-actions.yml/badge.svg)](https://laser.idmod.org/laser-measles/)
+laser-measles is a spatial epidemiological modeling toolkit that helps answer critical questions about measles transmission, vaccination strategy, and outbreak response. It enables researchers and public health teams to simulate how measles spreads across communities, evaluate the impact of immunization campaigns, and identify where susceptible populations are most at risk.
 
-laser-measles helps you build and analyze spatial models of measles implemented with the [LASER framework](https://github.com/InstituteforDiseaseModeling/laser).
+Measles remains one of the leading causes of vaccine-preventable death worldwide, disproportionately affecting children in low- and middle-income countries. Modeling tools like laser-measles support evidence-based decision-making by translating surveillance data and demographic information into actionable projections that inform vaccination planning, resource allocation, and outbreak preparedness.
+
+laser-measles is developed and maintained by the [Institute for Disease Modeling](https://idmod.org) (IDM) at the Gates Foundation. It is built on the [LASER framework](https://github.com/laser-base), an open-source platform for large-scale agent-based and compartmental simulation.
+
+---
+
+## What questions can laser-measles help answer?
+
+- **Where are children most vulnerable?** Identify subnational regions with low vaccination coverage and high transmission risk.
+- **How effective is a planned campaign?** Simulate supplementary immunization activities (SIAs) and estimate their impact on outbreak probability.
+- **What happens if routine coverage drops?** Project the accumulation of susceptible children over time and the resulting outbreak risk.
+- **How does disease spread between communities?** Model spatial transmission driven by population movement and geographic connectivity.
+
+---
+
+## Getting started
+
+Install laser-measles using pip (requires Python 3.10+):
 
 ```bash
 pip install laser-measles
 ```
-
-## Getting started
 
 **Recommended stable release: version 0.10**
 
@@ -20,9 +33,7 @@ New users should install the latest 0.10.x release, which is the current stable 
 pip install "laser-measles>=0.10,<1.0"
 ```
 
-Version 0.10 is the recommended starting point for all new projects. Development continues on the `main` branch, but v0.10 is the version that has been validated and is supported for most use cases.
-
-Our recommended first example is here: [Quick Start Tutorial](tutorials/tut_quickstart_hello_world.ipynb)
+Our recommended first example is the [Quick Start Tutorial](tutorials/tut_quickstart_hello_world.py).
 
 ## AI-powered on-ramp: JENNER-MEASLES
 
@@ -60,28 +71,21 @@ Special compute becomes relevant only when you move to:
 
 For day-to-day exploration, scenario building, and learning the framework, your local machine is all you need.
 
-## Documentation
-
-The documentation includes:
-
-- Getting started guides and installation instructions
-- API reference for all model types and components
-- Tutorials covering the ABM, biweekly compartmental, and daily compartmental model types
-- Examples demonstrating spatial transmission, importation, and vaccination scenarios
-
 ## Model types
 
-laser-measles provides three modeling approaches:
+laser-measles provides three modeling approaches, all sharing the same [component system](user-guide/components/index.md) and [scenario format](user-guide/model-types/demographics.md):
 
-- **ABM (Agent-Based Model)**: Individual-level simulation with stochastic agents. Best for detailed heterogeneity and contact structure.
-- **Biweekly Compartmental Model**: Population-level SEIR dynamics with 2-week timesteps. Recommended for scenario building and policy analysis.
-- **Compartmental Model**: Population-level SEIR dynamics with daily timesteps. Recommended for parameter estimation and outbreak modeling.
+- **ABM (Agent-based model)**: Individual-level simulation with stochastic agents. Best for detailed heterogeneity and contact structure. Supports [snapshotting](user-guide/snapshotting/index.md) for long runs.
+- **Biweekly compartmental model**: Population-level SIR dynamics with 2-week timesteps. Recommended for scenario building and policy analysis.
+- **Compartmental model**: Population-level SEIR dynamics with daily timesteps. Recommended for parameter estimation and outbreak modeling. Supports [snapshotting](user-guide/snapshotting/index.md).
+
+Not sure which model to use? See [Choosing a model type](user-guide/model-types/choosing-a-model.md) or start with the [model types overview](user-guide/model-types/index.md).
 
 ## Contributing
 
-Contributions are welcome. Please see the documentation for development guidelines, including how to write tests, follow code style conventions, and submit pull requests.
+Contributions are welcome. Please see the [contributing guide](contributing.md) for development guidelines, including how to write tests, follow code style conventions, and submit pull requests.
 
-Bug reports and feature requests can be filed on the [GitHub issue tracker](https://github.com/InstituteforDiseaseModeling/laser-measles/issues).
+Bug reports and feature requests can be filed on the [GitHub issue tracker](https://github.com/laser-base/laser-measles/issues).
 
 <div class="grid cards" markdown>
 
@@ -92,6 +96,14 @@ Bug reports and feature requests can be filed on the [GitHub issue tracker](http
     An interactive tour of key features.
 
     [:octicons-arrow-right-24: Tutorials](tutorials/index.md)
+
+-   :simple-jupyter:{ .lg .middle } __User guide__
+
+    ---
+
+    Overview of key features and how to use them.
+
+    [:octicons-arrow-right-24: User guide](user-guide/index.md)
 
 -   :material-api:{ .lg .middle } __Reference__
 

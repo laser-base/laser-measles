@@ -7,8 +7,34 @@ from laser.core.migration import distance
 
 
 class BaseMixing(ABC):
-    """
-    Base class for migration models.
+    """Abstract base for spatial mixing models.
+
+    Subclasses implement a specific migration kernel (gravity, radiation, etc.)
+    that computes patch-to-patch travel probabilities from population sizes
+    and distances.  The resulting matrices drive spatial transmission in
+    infection components.
+
+    Use a concrete mixer at *set parameters* time by passing it to an
+    infection component's parameter object, e.g.
+    ``InfectionParams(mixer=GravityMixing(...))``.  The model automatically
+    sets the `scenario` before the matrix is first accessed.
+
+    Args:
+        scenario: Patch data with ``pop``, ``lat``, and ``lon`` columns.
+            May be ``None`` when the mixer is attached to a model component
+            (the model sets it automatically).
+        params: Pydantic parameter object specific to the mixing model.
+
+    **Example:**
+
+        ```python
+        from laser.measles.mixing.gravity import GravityMixing, GravityParams
+
+        # Construct a mixer — scenario is set automatically by the model
+        mixer = GravityMixing(params=GravityParams(k=0.01, c=2.0))
+        migration = mixer.migration_matrix  # (N, N) patch-to-patch travel
+        mixing = mixer.mixing_matrix        # rows sum to 1 (includes self-mixing)
+        ```
     """
 
     def __init__(self, scenario, params):
@@ -19,10 +45,12 @@ class BaseMixing(ABC):
 
     @property
     def scenario(self) -> pl.DataFrame:
+        """Scenario DataFrame providing patch populations and coordinates."""
         return self._scenario
 
     @scenario.setter
     def scenario(self, scenario: pl.DataFrame) -> None:
+        """Set the scenario DataFrame and invalidate cached matrices."""
         self._scenario = scenario
 
     @property
@@ -74,6 +102,11 @@ class BaseMixing(ABC):
         return np.sum(self.migration_matrix * self.scenario["pop"].to_numpy()[:, np.newaxis], axis=1)
 
     def get_distances(self) -> np.ndarray:
+        """Compute pairwise great-circle distances between all patches.
+
+        Returns:
+            Distance matrix of shape ``(N, N)`` in kilometres.
+        """
         return distance(
             self.scenario["lat"].to_numpy(),
             self.scenario["lon"].to_numpy(),

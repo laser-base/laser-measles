@@ -25,6 +25,31 @@ from laser.measles.demographics.gadm import GADMShapefile
 
 
 class RasterPatchParams(BaseModel):
+    """Configuration for raster-based demographic data extraction.
+
+    Specifies the geographic region, shapefile boundaries, and raster
+    data sources used by
+    [`RasterPatchGenerator`][laser.measles.demographics.raster_patch.RasterPatchGenerator]
+    to build a scenario DataFrame during the *prepare scenario* stage.
+
+    Args:
+        id: Unique identifier for this scenario configuration.
+        region: ISO-3166 alpha-3 country code (e.g. ``"NGA"``).
+        shapefile: Path to the admin-boundary shapefile (``.shp``).
+        population_raster: Path to a population-count raster (GeoTIFF).
+        mcv1_raster: Path to a MCV1 coverage raster (GeoTIFF).
+        mcv2_raster: Path to a MCV2 coverage raster (GeoTIFF).
+
+
+    **Example:**
+
+        ```python
+        from laser.measles.demographics.raster_patch import RasterPatchParams
+
+        params = RasterPatchParams(admin_level=2)
+        ```
+    """
+
     id: str = Field(..., description="Unique identifier for the scenario")
     region: str = Field(..., description="Country identifier (ISO3 code)")
     shapefile: str | Path = Field(..., description="Path to the shapefile")
@@ -34,6 +59,7 @@ class RasterPatchParams(BaseModel):
 
     @field_validator("shapefile")
     def shapefile_exists(cls, v, info):
+        """Verify the shapefile path exists on disk."""
         path = Path(v) if isinstance(v, str) else v
         if not path.exists():
             raise ValueError(f"Shapefile does not exist: {path}")
@@ -41,6 +67,41 @@ class RasterPatchParams(BaseModel):
 
 
 class RasterPatchGenerator:
+    """Generate a scenario DataFrame by clipping raster data to shapefile boundaries.
+
+    This is the primary tool for the *prepare scenario* stage.  Given
+    population and vaccination-coverage rasters plus an admin-boundary
+    shapefile, it produces a Polars DataFrame with one row per patch
+    containing ``id``, ``pop``, ``lat``, ``lon``, ``mcv1``, and optionally
+    ``mcv2`` columns — ready to pass to any model constructor.
+
+    Results are cached on disk; subsequent calls with the same configuration
+    skip the raster-clipping step.
+
+    Args:
+        config: A [`RasterPatchParams`][laser.measles.demographics.raster_patch.RasterPatchParams]
+            specifying inputs.
+        verbose: Print progress messages.
+
+    **Example:**
+
+        ```python
+        from laser.measles.demographics.raster_patch import (
+            RasterPatchGenerator, RasterPatchParams,
+        )
+
+        config = RasterPatchParams(
+            id="nga_admin2",
+            region="NGA",
+            shapefile="gadm41_NGA_2.shp",
+            population_raster="nga_ppp_2020.tif",
+            mcv1_raster="nga_mcv1_2020.tif",
+        )
+        generator = RasterPatchGenerator(config)
+        scenario_df = generator.generate_demographics()
+        ```
+    """
+
     def __init__(self, config: RasterPatchParams, verbose: bool = True):
         self.config = config
         self.verbose = verbose
@@ -81,6 +142,11 @@ class RasterPatchGenerator:
             return False
 
     def generate_demographics(self) -> None:
+        """Run the full demographic extraction pipeline.
+
+        Clips population (and optionally MCV1) rasters to the shapefile
+        boundaries and stores results in `self.population` and `self.mcv1`.
+        """
         self._validate_shapefile()
         self.population = self.generate_population()
         if self.config.mcv1_raster is not None:
@@ -108,6 +174,14 @@ class RasterPatchGenerator:
         self.shapefile = path
 
     def get_cache_key(self, key) -> str:
+        """Build a namespaced cache key for this configuration.
+
+        Args:
+            key: One of ``"shapefile"``, ``"population"``, or ``"mcv1"``.
+
+        Returns:
+            Cache key string in the form ``"{config.id}:{key}"``.
+        """
         keys = ["shapefile", "population", "mcv1"]
         if key not in keys:
             raise ValueError(f"Invalid key: {key}\nValid keys are: {keys}")
@@ -188,14 +262,17 @@ class RasterPatchGenerator:
         return pl.DataFrame(new_dict)
 
     def clear_cache(self) -> None:
+        """Remove all cached entries for this configuration's ID."""
         with cache.load_cache() as c:
             for k in c.iterkeys():
                 if k.startswith(self.config.id):
                     del c[k]
 
-    def generate_birth_rates(self) -> pl.DataFrame: ...
+    def generate_birth_rates(self) -> pl.DataFrame:
+        """Generate birth-rate data (not yet implemented)."""
 
-    def generate_mortality_rates(self) -> pl.DataFrame: ...
+    def generate_mortality_rates(self) -> pl.DataFrame:
+        """Generate mortality-rate data (not yet implemented)."""
 
     def _add_dotname(self) -> None: ...
 
