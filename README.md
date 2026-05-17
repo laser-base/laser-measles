@@ -15,10 +15,10 @@ Developed by the [Institute for Disease Modeling](https://idmod.org) (IDM) at th
 pip install laser-measles
 ```
 
-**Recommended stable release: version 0.10** — the current validated and supported version:
+**Recommended stable release: version 0.13** — the current validated and supported version:
 
 ```bash
-pip install "laser-measles>=0.10,<1.0"
+pip install "laser-measles>=0.13,<1.0"
 ```
 
 For development installation:
