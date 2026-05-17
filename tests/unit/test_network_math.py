@@ -181,8 +181,7 @@ def _assert_only_sink_patch_has_new_infections(
             )
         elif i == seeded_patch:
             assert states_S[i] == initial_pop - seeded, (
-                f"Seeded patch (0,0) idx={i}: expected S=={initial_pop - seeded} (seeded only, no new infections), "
-                f"got S={int(states_S[i])}"
+                f"Seeded patch (0,0) idx={i}: expected S=={initial_pop - seeded} (seeded only, no new infections), got S={int(states_S[i])}"
             )
         else:
             assert states_S[i] == initial_pop, (
