@@ -9,6 +9,8 @@ Classes:
 Both process classes share the same ``__init__(model, params: ImportationParams | None = None)`` signature; if ``params`` is omitted, values are read from ``model.params`` for backward compatibility.
 """
 
+from __future__ import annotations
+
 import numpy as np
 from matplotlib.figure import Figure
 from pydantic import BaseModel
@@ -63,7 +65,7 @@ class InfectRandomAgentsProcess:
         ```
     """
 
-    def __init__(self, model: "ABMModel", params: ImportationParams | None = None) -> None:
+    def __init__(self, model: ABMModel, params: ImportationParams | None = None) -> None:
         """
         Initialize an InfectRandomAgentsProcess instance.
 
@@ -153,7 +155,7 @@ class InfectAgentsInPatchProcess:
         ```
     """
 
-    def __init__(self, model: "ABMModel", params: ImportationParams | None = None) -> None:
+    def __init__(self, model: ABMModel, params: ImportationParams | None = None) -> None:
         """
         Initialize an InfectAgentsInPatchProcess instance.
 

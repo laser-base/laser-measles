@@ -6,6 +6,7 @@ from pydantic import ConfigDict
 from pydantic import Field
 from pydantic import field_validator
 
+from laser.measles.base import BaseLaserModel
 from laser.measles.base import BasePhase
 from laser.measles.biweekly.model import BiweeklyModel
 from laser.measles.utils import cast_type
@@ -190,7 +191,7 @@ class ImportationPressureProcess(BasePhase):
         self.params = params or ImportationPressureParams()
         self.patch_rates_per_year_per_1k: np.ndarray | None = None
 
-    def __call__(self, model: BiweeklyModel, tick: int) -> None:
+    def __call__(self, model: BaseLaserModel, tick: int) -> None:
         """
         Process importation pressure for the current tick.
 
@@ -198,8 +199,8 @@ class ImportationPressureProcess(BasePhase):
             model: The simulation model instance
             tick: The current simulation tick
         """
-        if tick < (self.params.importation_start // model.params.time_step_days) or (
-            self.params.importation_end != -1 and tick > (self.params.importation_end // model.params.time_step_days)
+        if tick < (self.params.importation_start // model.params.time_step_days) or (  # type: ignore
+            self.params.importation_end != -1 and tick > (self.params.importation_end // model.params.time_step_days)  # type: ignore
         ):
             return
 
@@ -224,7 +225,7 @@ class ImportationPressureProcess(BasePhase):
         states.S -= imported_cases
         states.I += imported_cases  # Move to infected state
 
-    def _initialize(self, model: BiweeklyModel) -> None:
+    def _initialize(self, model: BaseLaserModel) -> None:
         """
         Initialize the importation pressure component.
 
@@ -234,7 +235,7 @@ class ImportationPressureProcess(BasePhase):
         n_patches = model.patches.count
         patch_ids = model.scenario["id"].to_list()
 
-        rates = self.params.crude_importation_rate
+        rates = self.params.crude_importation_rate  # type:ignore
 
         if isinstance(rates, (int, float)):
             arr = np.full(n_patches, float(rates), dtype=np.float64)

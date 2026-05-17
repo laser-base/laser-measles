@@ -82,7 +82,7 @@ class BaseTransmission(BasePhase, ABC):
             np.random.seed(self.params.random_seed)
 
     @abstractmethod
-    def __call__(self, model: BaseLaserModel, tick: int):
+    def __call__(self, model: BaseLaserModel, tick: int) -> None:
         """Execute transmission dynamics for one time step.
 
         This method must be implemented by each model type to define
