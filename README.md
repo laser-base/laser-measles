@@ -3,7 +3,6 @@
 [![PyPI Package latest release](https://img.shields.io/pypi/v/laser-measles.svg)](https://pypi.org/project/laser-measles/)
 [![MIT License](https://img.shields.io/github/license/laser-base/laser-measles.svg)](https://github.com/laser-base/laser-measles/blob/main/LICENSE)
 [![Documentation Status](https://github.com/laser-base/laser-measles/actions/workflows/github-actions.yml/badge.svg)](https://laser.idmod.org/laser-measles/)
-[![Coverage Status](https://codecov.io/gh/laser-base/laser-measles/graph/badge.svg?branch=main)](https://app.codecov.io/github/laser-base/laser-measles)
 
 laser-measles is a spatial epidemiological modeling toolkit that helps researchers and public health teams simulate measles transmission, evaluate vaccination strategies, and plan outbreak responses. It translates surveillance data and demographic information into projections that inform immunization planning and resource allocation — with a focus on settings where measles remains a leading cause of vaccine-preventable death.
 
