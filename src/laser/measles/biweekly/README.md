@@ -1,6 +1,6 @@
 # Biweekly model
 
-Compartmental SIR model using biweekly (14-day) timesteps. Recommended for scenario building and policy analysis.
+Compartmental SIR model using biweekly (14-day) timesteps. Recommended for scenario building.
 
 ## Example
 
