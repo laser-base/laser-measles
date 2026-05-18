@@ -5,6 +5,7 @@ import polars as pl
 from pydantic import BaseModel
 from pydantic import ConfigDict
 from pydantic import Field
+from pydantic import model_validator
 
 from laser.measles.abm.model import ABMModel
 from laser.measles.base import BaseLaserModel
@@ -22,6 +23,28 @@ class SIACalendarParams(BaseModel):
     sia_schedule: pl.DataFrame = Field(description="DataFrame containing SIA schedule information")
     date_column: str = Field("date", description="Name of the column containing SIA dates")
     group_column: str = Field("id", description="Name of the column containing group identifiers")
+
+    @model_validator(mode="after")
+    def _coerce_sia_schedule_date_column(self) -> "SIACalendarParams":
+        """Auto-cast a string date column on ``sia_schedule`` to polars Datetime.
+
+        When users build the schedule with date strings (e.g.
+        ``[\"2024-06-15\"]``), polars defaults to ``Utf8`` dtype.
+        ``SIACalendarProcess`` later does
+        ``pl.col(date_column) <= model.current_date`` (a ``datetime.date``)
+        and polars rejects the type mismatch with an
+        ``InvalidOperationError`` pointing at framework internals —
+        confusing for the user. See issue #215.
+
+        Detect ``Utf8`` here at construction time and silently cast to
+        ``Datetime``. Leaves already-typed columns alone. Mis-formatted
+        strings will raise a clear ``ValueError`` at this construction
+        step rather than mid-run, which is the desired failure mode.
+        """
+        col = self.date_column
+        if col in self.sia_schedule.columns and self.sia_schedule.schema[col] == pl.Utf8:
+            self.sia_schedule = self.sia_schedule.with_columns(pl.col(col).str.strptime(pl.Datetime, format="%Y-%m-%d").alias(col))
+        return self
 
 
 class SIACalendarProcess(BasePhase):
