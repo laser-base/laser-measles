@@ -52,7 +52,10 @@ class ChainTransmissionProcess(lm.base.BaseComponent):
         assert len(c) == 1, "There should be exactly one infection process"
         assert c[0].initialized, "Infection process must be initialized"
         num_patches = len(model.scenario)
-        if hasattr(c[0].params, "mixer"):
+        # ABM InfectionParams now has a `mixer` field that defaults to None
+        # (the actual mixer lives on TransmissionParams in that case), so we
+        # check for a non-None value rather than just the attribute's presence.
+        if getattr(c[0].params, "mixer", None) is not None:
             c[0].params.mixer._mixing_matrix = np.diag(np.ones(num_patches - 1), k=1)
         elif hasattr(c[0], "transmission"):
             c[0].transmission.params.mixer._mixing_matrix = np.diag(np.ones(num_patches - 1), k=1)
