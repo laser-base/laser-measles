@@ -13,12 +13,12 @@ class CompetingDestinationsParams(BaseModel):
     Extends the gravity kernel with a correction factor that penalises
     destinations surrounded by many other attractive alternatives.
 
-    Args:
-        a (float): Population source exponent.
-        b (float): Population destination exponent.
-        c (float): Distance decay exponent.
-        k (float): Average trip probability.
-        delta (float): Destination-competition exponent — negative values
+    Attributes:
+        a: Population source exponent.
+        b: Population destination exponent.
+        c: Distance decay exponent.
+        k: Average trip probability.
+        delta: Destination-competition exponent — negative values
             penalise destinations with many nearby competitors.
 
     **Example:**

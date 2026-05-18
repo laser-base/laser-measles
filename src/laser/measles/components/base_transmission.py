@@ -53,8 +53,7 @@ class BaseTransmission(BasePhase, ABC):
 
     Args:
         model: The simulation model this component is attached to.
-        verbose (bool): Enable verbose logging.
-        params (BaseTransmissionParams | None): Transmission parameters.
+        params: Transmission parameters.
             Uses [`BaseTransmissionParams`][laser.measles.components.base_transmission.BaseTransmissionParams]
             defaults if ``None``.
 

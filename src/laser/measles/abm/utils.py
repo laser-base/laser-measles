@@ -226,7 +226,7 @@ def set_initial_susceptibility_randomly(model, susc_frac: float = 1.0) -> None:
     return
 
 
-def add_at(A, indices, B):
+def add_at(A: np.ndarray, indices: np.ndarray, B: np.ndarray) -> None:
     """Accumulate rows of *B* into *A* at the given indices (scatter-add).
 
     Args:
