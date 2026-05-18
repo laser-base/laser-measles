@@ -359,3 +359,96 @@ class TestSIACalendarProcess:
         # Should not crash and should not implement any SIAs
         component(model, tick=10)
         assert len(component.implemented_sias) == 0
+
+
+@pytest.mark.parametrize("measles_module", MEASLES_MODULES)
+class TestSIAScheduleDateCoercion:
+    """Regression tests for laser-measles #215.
+
+    Users frequently build the SIA schedule with ``date`` as Python strings
+    (e.g. ``["2024-06-15"]``). Polars defaults string columns to ``Utf8``,
+    and the SIACalendarProcess later compares
+    ``pl.col(date_column) <= model.current_date`` — polars rejects the type
+    mismatch with an ``InvalidOperationError`` deep in framework internals,
+    which is confusing for the user.
+
+    The ``SIACalendarParams.@model_validator`` silently coerces a ``Utf8``
+    date column to ``Datetime`` at construction time. These tests pin that
+    behaviour: passing string dates results in the model_validator casting
+    them to ``Datetime`` so the comparison works downstream.
+    """
+
+    def test_string_dates_are_coerced_to_date(self, measles_module):
+        """Build sia_schedule with ``date`` as Python strings (Utf8 in polars).
+        After SIACalendarParams construction, the column must be polars Datetime.
+        """
+        module = importlib.import_module(measles_module)
+        schedule = pl.DataFrame(
+            {
+                "id": ["NG:KN", "NG:KD"],
+                "date": ["2023-01-10", "2023-01-15"],  # left as strings on purpose
+            }
+        )
+        assert schedule.schema["date"] == pl.Utf8, "fixture sanity: starting dtype should be Utf8"
+        params = module.components.SIACalendarParams(sia_schedule=schedule)
+        assert params.sia_schedule.schema["date"] == pl.Datetime, (
+            f"SIACalendarParams should coerce Utf8 date column to Datetime, got {params.sia_schedule.schema['date']}"
+        )
+
+    def test_already_typed_column_is_preserved(self, measles_module):
+        """If the user already passed a properly-typed date column, the
+        validator must NOT touch it (no spurious re-cast). The framework
+        compares against ``datetime.datetime`` internally, so Datetime is
+        the canonical pre-typed dtype here."""
+        module = importlib.import_module(measles_module)
+        schedule = pl.DataFrame(
+            {
+                "id": ["NG:KN", "NG:KD"],
+                "date": ["2023-01-10", "2023-01-15"],
+            }
+        ).with_columns(pl.col("date").str.strptime(pl.Datetime, format="%Y-%m-%d"))
+        assert schedule.schema["date"] == pl.Datetime
+
+        params = module.components.SIACalendarParams(sia_schedule=schedule)
+        assert params.sia_schedule.schema["date"] == pl.Datetime
+
+    def test_custom_date_column_name_is_honored(self, measles_module):
+        """The coercion targets ``date_column``, not a hard-coded ``date``."""
+        module = importlib.import_module(measles_module)
+        schedule = pl.DataFrame(
+            {
+                "id": ["NG:KN", "NG:KD"],
+                "schedule_date": ["2023-01-10", "2023-01-15"],  # Utf8
+            }
+        )
+        params = module.components.SIACalendarParams(
+            sia_schedule=schedule,
+            date_column="schedule_date",
+        )
+        assert params.sia_schedule.schema["schedule_date"] == pl.Datetime
+
+    def test_string_dates_drive_a_run_without_crashing(self, mock_scenario, measles_module):
+        """End-to-end smoke: build params from a string-date schedule and
+        run a few ticks. The comparison inside SIACalendarProcess.__call__
+        used to raise InvalidOperationError; with the validator it does not.
+        """
+        module = importlib.import_module(measles_module)
+        schedule = pl.DataFrame(
+            {
+                "id": ["NG:KN", "NG:KD"],
+                "date": ["2023-01-10", "2023-01-15"],  # Utf8 — the bug trigger
+            }
+        )
+        params = module.components.SIACalendarParams(sia_schedule=schedule, aggregation_level=2)
+        model = setup_sia_sim(
+            mock_scenario,
+            create_model_params(module),
+            params,
+            module,
+        )
+        # 30 ticks is past the second SIA date in the schedule; the
+        # comparison runs every tick. If the date column were still Utf8
+        # we'd get InvalidOperationError at tick 1.
+        for tick in range(30):
+            component = next(p for p in model.phases if type(p).__name__ == "SIACalendarProcess")
+            component(model, tick=tick)
