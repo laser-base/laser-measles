@@ -373,14 +373,14 @@ class TestSIAScheduleDateCoercion:
     which is confusing for the user.
 
     The ``SIACalendarParams.@model_validator`` silently coerces a ``Utf8``
-    date column to ``Date`` at construction time. These tests pin that
+    date column to ``Datetime`` at construction time. These tests pin that
     behaviour: passing string dates results in the model_validator casting
-    them to ``Date`` so the comparison works downstream.
+    them to ``Datetime`` so the comparison works downstream.
     """
 
     def test_string_dates_are_coerced_to_date(self, measles_module):
         """Build sia_schedule with ``date`` as Python strings (Utf8 in polars).
-        After SIACalendarParams construction, the column must be polars Date.
+        After SIACalendarParams construction, the column must be polars Datetime.
         """
         module = importlib.import_module(measles_module)
         schedule = pl.DataFrame(
