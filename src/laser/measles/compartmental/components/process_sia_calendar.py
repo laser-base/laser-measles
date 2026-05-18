@@ -16,6 +16,7 @@ from pydantic import model_validator
 from laser.measles.base import BasePhase
 from laser.measles.compartmental.model import CompartmentalModel
 from laser.measles.utils import cast_type
+from laser.measles.utils import coerce_utf8_date_column
 
 
 class SIACalendarParams(BaseModel):
@@ -32,17 +33,12 @@ class SIACalendarParams(BaseModel):
 
     @model_validator(mode="after")
     def _coerce_sia_schedule_date_column(self) -> "SIACalendarParams":
-        """Auto-cast a string date column on ``sia_schedule`` to polars Datetime.
-
-        Same fix as the ABM SIACalendarParams variant — see issue #215.
-        Users who build the schedule with date strings get a confusing
-        runtime ``InvalidOperationError`` deep in polars; coerce ``Utf8``
-        to ``Datetime`` here at construction time so the failure mode
-        is invisible.
+        """Silently cast a Utf8 date column on ``sia_schedule`` to ``Datetime``
+        so the per-tick filter in ``SIACalendarProcess.__call__`` doesn't
+        blow up on string-typed user input. Shared logic lives in
+        ``coerce_utf8_date_column``; see laser-measles #215.
         """
-        col = self.date_column
-        if col in self.sia_schedule.columns and self.sia_schedule.schema[col] == pl.Utf8:
-            self.sia_schedule = self.sia_schedule.with_columns(pl.col(col).str.strptime(pl.Datetime, format="%Y-%m-%d").alias(col))
+        self.sia_schedule = coerce_utf8_date_column(self.sia_schedule, self.date_column)
         return self
 
 

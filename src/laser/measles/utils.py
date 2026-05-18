@@ -30,6 +30,7 @@ from collections.abc import Callable
 from functools import wraps
 
 import numpy as np
+import polars as pl
 from laser.core.laserframe import LaserFrame
 from laser.core.migration import distance
 
@@ -434,3 +435,34 @@ def dual_implementation(numpy_func: Callable, numba_func: Callable) -> Callable:
     wrapper.numba_func = numba_func
 
     return wrapper
+
+
+def coerce_utf8_date_column(df: "pl.DataFrame", date_column: str) -> "pl.DataFrame":
+    """Cast a ``Utf8`` (string) date column on a polars DataFrame to ``Datetime``.
+
+    Used by ``SIACalendarParams`` validators across all three model variants
+    to silently fix the laser-measles #215 footgun: users build the SIA
+    schedule with date strings (e.g. ``["2024-06-15"]``), polars defaults
+    to ``Utf8``, and the per-tick filter in ``SIACalendarProcess.__call__``
+    later raises an opaque ``InvalidOperationError`` when polars compares
+    the string column to a ``datetime.datetime``.
+
+    Args:
+        df: The polars DataFrame holding the schedule.
+        date_column: Name of the column to coerce.
+
+    Returns:
+        The same DataFrame if the column is missing or already typed; a new
+        DataFrame with the named column cast to ``Datetime`` if it was Utf8.
+        Mis-formatted date strings raise a clear ``ValueError`` from polars
+        at this call rather than at a much later filter site.
+
+    The format pinning (``"%Y-%m-%d"``) is intentional — schedules with
+    non-ISO date strings should fail loud at coercion time rather than
+    being silently misinterpreted.
+    """
+    if date_column in df.columns and df.schema[date_column] == pl.Utf8:
+        return df.with_columns(
+            pl.col(date_column).str.strptime(pl.Datetime, format="%Y-%m-%d").alias(date_column),
+        )
+    return df
