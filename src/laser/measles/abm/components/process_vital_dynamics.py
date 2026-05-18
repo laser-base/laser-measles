@@ -145,11 +145,8 @@ class VitalDynamicsProcess(BaseVitalDynamicsProcess):
             people.date_of_birth[istart:iend] = tick  # born today
             people.susceptibility[istart:iend] = 1.0  # all newborns are susceptible TODO: add maternal immunity component
             people.date_of_vaccination[istart:iend] = tick + self._routine_immunization_delay()
-            index = istart
             # update patch id
-            for this_patch_id, this_patch_births in enumerate(births):
-                people.patch_id[index : index + this_patch_births] = this_patch_id
-                index += this_patch_births
+            people.patch_id[istart:iend] = np.repeat(np.arange(len(births), dtype=people.patch_id.dtype), births)
             # update states
             patches.states.S += cast_type(births, patches.states.dtype)
             # Record per-patch birth count for tracking

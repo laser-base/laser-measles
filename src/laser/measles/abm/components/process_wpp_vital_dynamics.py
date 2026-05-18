@@ -68,7 +68,8 @@ class WPPVitalDynamicsProcess(BasePhase):
         self.vaccination_queue: SortedQueue = SortedQueue(capacity=capacity, values=people.date_of_vaccination)
 
         # initialize patch id
-        patch_ids = np.concatenate([np.full(pop, i) for i, pop in enumerate(model.scenario["pop"].to_numpy())])
+        pops = model.scenario["pop"].to_numpy()
+        patch_ids = np.repeat(np.arange(len(pops), dtype=people.patch_id.dtype), pops)
         model.prng.shuffle(patch_ids)
         people.patch_id[: len(people)] = patch_ids
 

@@ -3,7 +3,6 @@ Process for setting a static population (no vital dynamics).
 """
 
 import numpy as np
-import polars as pl
 
 from laser.measles.abm.model import ABMModel
 from laser.measles.base import BaseLaserModel
@@ -97,11 +96,7 @@ class NoBirthsProcess(BaseVitalDynamicsProcess):
         model.initialize_people_capacity(self.calculate_capacity(model))
         # people laserframe
         people = model.people
-        # scenario dataframe
-        scenario = model.scenario
         # initialize the patch ids according to the scenario population
-        people.patch_id[:] = np.array(
-            scenario.with_row_index().select(pl.col("index").repeat_by(pl.col("pop"))).explode("index")["index"].to_numpy(),
-            dtype=people.patch_id.dtype,
-        )
+        pops = model.scenario["pop"].to_numpy()
+        people.patch_id[:] = np.repeat(np.arange(len(pops), dtype=people.patch_id.dtype), pops)
         return
