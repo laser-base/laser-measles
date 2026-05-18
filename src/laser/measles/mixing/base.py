@@ -4,6 +4,7 @@ from abc import abstractmethod
 import numpy as np
 import polars as pl
 from laser.core.migration import distance
+from pydantic import BaseModel
 
 
 class BaseMixing(ABC):
@@ -37,7 +38,7 @@ class BaseMixing(ABC):
         ```
     """
 
-    def __init__(self, scenario, params):
+    def __init__(self, scenario: pl.DataFrame | None, params: BaseModel | None):
         self._scenario = scenario
         self.params = params
         self._migration_matrix = None

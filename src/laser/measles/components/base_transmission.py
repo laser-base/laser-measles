@@ -12,6 +12,7 @@ from pydantic import BaseModel
 from pydantic import ConfigDict
 from pydantic import Field
 
+from ..base import BaseLaserModel
 from ..base import BasePhase
 
 
@@ -52,8 +53,7 @@ class BaseTransmission(BasePhase, ABC):
 
     Args:
         model: The simulation model this component is attached to.
-        verbose (bool): Enable verbose logging.
-        params (BaseTransmissionParams | None): Transmission parameters.
+        params: Transmission parameters.
             Uses [`BaseTransmissionParams`][laser.measles.components.base_transmission.BaseTransmissionParams]
             defaults if ``None``.
 
@@ -66,7 +66,7 @@ class BaseTransmission(BasePhase, ABC):
         ```
     """
 
-    def __init__(self, model, params: BaseTransmissionParams | None = None):
+    def __init__(self, model: BaseLaserModel, params: BaseTransmissionParams | None = None):
         """Initialize the transmission component.
 
         Args:
@@ -81,7 +81,7 @@ class BaseTransmission(BasePhase, ABC):
             np.random.seed(self.params.random_seed)
 
     @abstractmethod
-    def __call__(self, model, tick: int):
+    def __call__(self, model: BaseLaserModel, tick: int) -> None:
         """Execute transmission dynamics for one time step.
 
         This method must be implemented by each model type to define
@@ -92,7 +92,7 @@ class BaseTransmission(BasePhase, ABC):
             tick: Current time step
         """
 
-    def get_force_of_infection(self, model, tick: int) -> np.ndarray:
+    def get_force_of_infection(self, model: BaseLaserModel, tick: int) -> np.ndarray:
         """Calculate force of infection for each patch.
 
         This method provides a common interface for calculating

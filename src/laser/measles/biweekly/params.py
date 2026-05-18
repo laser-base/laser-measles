@@ -17,13 +17,13 @@ class BiweeklyParams(BaseModelParams):
     represents 14 days, and the model tracks three SIR states (no explicit
     Exposed compartment).
 
-    Args:
-        num_ticks (int): Number of biweekly simulation steps
+    Attributes:
+        num_ticks: Number of biweekly simulation steps
             (e.g., 26 ≈ 1 year, 130 ≈ 5 years).
-        seed (int): Random seed for reproducibility.  Default: ``20250314``.
-        start_time (str): Simulation start in ``"YYYY-MM"`` format.
+        seed: Random seed for reproducibility.  Default: ``20250314``.
+        start_time: Simulation start in ``"YYYY-MM"`` format.
             Default: ``"2000-01"``.
-        verbose (bool): Print detailed logging.  Default: ``False``.
+        verbose: Print detailed logging.  Default: ``False``.
 
     **Example:**
 

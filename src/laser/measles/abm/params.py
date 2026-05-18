@@ -18,12 +18,12 @@ class ABMParams(BaseModelParams):
     [`BaseModelParams`][laser.measles.base.BaseModelParams].  Each tick
     represents one day, and the model tracks four SEIR states.
 
-    Args:
-        num_ticks (int): Number of daily simulation steps (e.g., 365 = 1 year).
-        seed (int): Random seed for reproducibility.  Default: ``20250314``.
-        start_time (str): Simulation start in ``"YYYY-MM"`` format.
+    Attributes:
+        num_ticks: Number of daily simulation steps (e.g., 365 = 1 year).
+        seed: Random seed for reproducibility.  Default: ``20250314``.
+        start_time: Simulation start in ``"YYYY-MM"`` format.
             Default: ``"2000-01"``.
-        verbose (bool): Print detailed logging.  Default: ``False``.
+        verbose: Print detailed logging.  Default: ``False``.
 
     **Example:**
 

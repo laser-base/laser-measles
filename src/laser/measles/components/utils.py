@@ -18,7 +18,7 @@ T = TypeVar("T", bound=BaseComponent)
 B = TypeVar("B", bound=BaseModel)
 
 
-def component(cls: type[T] | None = None, **default_params):  # noqa: UP047
+def component(cls: type[T] | None = None, **default_params: Any) -> Callable[[type[T]], type[T]] | type[T]:  # noqa: UP047
     """Decorator that adds a ``create`` factory to a component class.
 
     Use this at *set parameters* time to bake default parameter values into

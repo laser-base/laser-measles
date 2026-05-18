@@ -70,7 +70,7 @@ class BaseShapefile(BaseModel):
     Validates that the shapefile path exists on disk and provides a
     `get_dataframe` method to read records into a Polars DataFrame.
 
-    Args:
+    Attributes:
         shapefile: Path to a ``.shp`` file.
 
 

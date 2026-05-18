@@ -2,6 +2,8 @@
 A class to represent the agent-based model.
 """
 
+from pathlib import Path
+
 import numpy as np
 import polars as pl
 from matplotlib import pyplot as plt
@@ -203,7 +205,7 @@ class ABMModel(BaseLaserModel):
         return
 
     @classmethod
-    def from_snapshot(cls, path, params: "ABMParams", components: list | None = None, verbose: bool = True) -> "ABMModel":
+    def from_snapshot(cls, path: str | Path, params: "ABMParams", components: list | None = None, verbose: bool = True) -> "ABMModel":
         """Restore an ABMModel from an HDF5 snapshot file.
 
         Convenience wrapper around

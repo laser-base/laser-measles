@@ -14,13 +14,11 @@ class GravityParams(BaseModel):
 
     $$M_{i,j} = k \\cdot p_i^{a-1} \\cdot p_j^{b} \\cdot d_{i,j}^{-c}$$
 
-    Args:
-        a (float): Population source exponent (applied as *a − 1*
-            inside the kernel).
-        b (float): Population destination exponent.
-        c (float): Distance decay exponent — larger values suppress
-            long-distance travel.
-        k (float): Average trip probability (scales the overall matrix).
+    Attributes:
+        a: Population source exponent (applied as *a - 1* inside the kernel).
+        b: Population destination exponent.
+        c: Distance decay exponent - larger values suppress long-distance travel.
+        k: Average trip probability (scales the overall matrix).
 
     **Example:**
 

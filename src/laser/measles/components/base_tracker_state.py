@@ -1,5 +1,6 @@
 import inspect
 from collections.abc import Callable
+from collections.abc import Iterator
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -91,7 +92,7 @@ class BaseStateTracker(BasePhase):
         ```
     """
 
-    def __init__(self, model, params: BaseStateTrackerParams | None = None) -> None:
+    def __init__(self, model: BaseLaserModel, params: BaseStateTrackerParams | None = None) -> None:
         super().__init__(model)
         self.name = "StateTracker"
         self.params = params or BaseStateTrackerParams()
@@ -159,7 +160,7 @@ class BaseStateTracker(BasePhase):
             # Return (num_ticks, num_groups)
             return self.state_tracker[state_idx, :, :]
 
-    def __call__(self, model, tick: int) -> None:
+    def __call__(self, model: BaseLaserModel, tick: int) -> None:
         if self.params.aggregation_level >= 0:
             # For each group, aggregate states from its nodes
             for group_idx, (_, node_indices) in enumerate(self.node_mapping.items()):
@@ -176,7 +177,7 @@ class BaseStateTracker(BasePhase):
                 filtered_states = model.patches.states.sum(axis=1)
             self.state_tracker[:, tick, 0] = filtered_states
 
-    def plot(self, fig: Figure | None = None):
+    def plot(self, fig: Figure | None = None) -> Iterator[None]:
         """
         Plots the time series of SEIR state counts across all nodes using subplots.
 
@@ -227,7 +228,7 @@ class BaseStateTracker(BasePhase):
             if frame:
                 del frame
 
-    def plot_combined(self, fig: Figure | None = None):
+    def plot_combined(self, fig: Figure | None = None) -> Iterator[None]:
         """
         Plots all SEIR states on a single plot for easy comparison.
 

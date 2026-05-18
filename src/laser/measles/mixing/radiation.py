@@ -10,9 +10,9 @@ from laser.measles.mixing.base import BaseMixing
 class RadiationParams(BaseModel):
     """Parameters for the radiation migration model.
 
-    Args:
-        include_home (bool): Whether to include home in the migration matrix
-        k (float): Scale parameter (avg trip probability)
+    Attributes:
+        include_home: Whether to include home in the migration matrix
+        k: Scale parameter (avg trip probability)
 
     **Example:**
 
@@ -57,6 +57,9 @@ class RadiationMixing(BaseMixing):
         infection_params = components.InfectionParams(beta=0.8, mixer=mixer)
         model.add_component(create_component(components.InfectionProcess, infection_params))
         ```
+
+    The ``include_home`` and ``k`` model parameters are configured via
+    :class:`RadiationParams`.
     """
 
     def __init__(self, scenario: pl.DataFrame | None = None, params: RadiationParams | None = None):

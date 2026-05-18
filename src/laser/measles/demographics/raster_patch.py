@@ -32,7 +32,7 @@ class RasterPatchParams(BaseModel):
     [`RasterPatchGenerator`][laser.measles.demographics.raster_patch.RasterPatchGenerator]
     to build a scenario DataFrame during the *prepare scenario* stage.
 
-    Args:
+    Attributes:
         id: Unique identifier for this scenario configuration.
         region: ISO-3166 alpha-3 country code (e.g. ``"NGA"``).
         shapefile: Path to the admin-boundary shapefile (``.shp``).
@@ -173,7 +173,7 @@ class RasterPatchGenerator:
             raise ValueError(f"Shapefile {path} does not have a DOTNAME field")
         self.shapefile = path
 
-    def get_cache_key(self, key) -> str:
+    def get_cache_key(self, key: str) -> str:
         """Build a namespaced cache key for this configuration.
 
         Args:

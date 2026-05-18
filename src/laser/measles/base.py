@@ -16,6 +16,7 @@ import gc
 import json
 from abc import ABC
 from abc import abstractmethod
+from collections.abc import Iterator
 from datetime import datetime
 from datetime import timedelta
 from pathlib import Path
@@ -906,7 +907,7 @@ class BaseComponent:
         use_numba = getattr(self.model.params, "use_numba", True)
         return select_implementation(numpy_func, numba_func, use_numba)
 
-    def plot(self, fig: Figure | None = None):
+    def plot(self, fig: Figure | None = None) -> Iterator[None]:
         """
         Placeholder for plotting method.
 
@@ -950,7 +951,7 @@ class BasePhase(BaseComponent):
     """
 
     @abstractmethod
-    def __call__(self, model, tick: int) -> None:
+    def __call__(self, model: BaseLaserModel, tick: int) -> None:
         """
         Execute component logic for a given simulation tick.
 
@@ -991,7 +992,7 @@ class BaseScenario(ABC):
         """
         self._df = df
 
-    def __getattr__(self, attr):
+    def __getattr__(self, attr: str) -> Any:
         """
         Forward attribute access to the underlying DataFrame.
 
@@ -1004,7 +1005,7 @@ class BaseScenario(ABC):
         # Forward attribute access to the underlying DataFrame
         return getattr(self._df, attr)
 
-    def __getitem__(self, key):
+    def __getitem__(self, key: Any) -> Any:
         """
         Forward item access to the underlying DataFrame.
 
@@ -1016,7 +1017,7 @@ class BaseScenario(ABC):
         """
         return self._df[key]
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         """
         Return string representation of the scenario.
 
@@ -1025,7 +1026,7 @@ class BaseScenario(ABC):
         """
         return repr(self._df)
 
-    def __len__(self):
+    def __len__(self) -> int:
         """
         Return the length of the underlying DataFrame.
 

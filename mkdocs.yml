@@ -115,6 +115,7 @@ plugins:
       execute: false
       allow_errors: true # set to true to continue executing cells even if one fails
       include_source: true
+      ignore: ["*.md"] # skip .md scanning to avoid jupytext→pandoc warnings on mkdocstrings autoref pages
   - gen-files:
       scripts:
         - docs/customization/gen-files.py
