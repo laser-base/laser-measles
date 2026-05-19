@@ -3,7 +3,6 @@ Component for initializing the population in each of the model states by rough e
 """
 
 import numpy as np
-import polars as pl
 
 from laser.measles.abm.base import PatchLaserFrame
 from laser.measles.abm.base import PeopleLaserFrame
@@ -15,6 +14,15 @@ from laser.measles.components import BaseInitializeEquilibriumStatesProcess
 class InitializeEquilibriumStatesParams(BaseInitializeEquilibriumStatesParams):
     """
     Parameters for the InitializeEquilibriumStatesProcess.
+
+
+    **Example:**
+
+        ```python
+        from laser.measles.abm.components.process_initialize_equilibrium_states import InitializeEquilibriumStatesParams
+
+        params = InitializeEquilibriumStatesParams()
+        ```
     """
 
 
@@ -24,6 +32,21 @@ class InitializeEquilibriumStatesProcess(BaseInitializeEquilibriumStatesProcess)
 
     This component extends the base functionality to handle both patch-level state counts
     and individual agent initialization consistent with those counts.
+
+
+    **Example:**
+
+        ```python
+        from laser.measles.scenarios.synthetic import single_patch_scenario
+        from laser.measles.abm import ABMModel, ABMParams
+        from laser.measles.abm import components
+        from laser.measles import create_component
+
+        scenario = single_patch_scenario(population=50_000, mcv1_coverage=0.85)
+        params = ABMParams(num_ticks=365, seed=42, start_time="2000-01")
+        model = ABMModel(scenario, params)
+        model.add_component(create_component(components.InitializeEquilibriumStatesProcess, components.InitializeEquilibriumStatesParams()))
+        ```
     """
 
     def _initialize(self, model: ABMModel) -> None:
@@ -54,10 +77,8 @@ class InitializeEquilibriumStatesProcess(BaseInitializeEquilibriumStatesProcess)
         num_active = len(model.people)
 
         # Assign patch_id to each agent based on patch population
-        people.patch_id[:num_active] = np.array(
-            scenario_df.with_row_index().select(pl.col("index").repeat_by(pl.col("pop"))).explode("index")["index"].to_numpy(),
-            dtype=people.patch_id.dtype,
-        )
+        pops = scenario_df["pop"].to_numpy()
+        people.patch_id[:num_active] = np.repeat(np.arange(len(pops), dtype=people.patch_id.dtype), pops)
 
         # Initialize all agents as susceptible first
         people.state[:num_active] = model.params.states.index("S")

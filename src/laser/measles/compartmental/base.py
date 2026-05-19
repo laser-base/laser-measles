@@ -12,12 +12,32 @@ from laser.measles.base import BasePatchLaserFrame
 from laser.measles.base import BaseScenario
 
 
-class PatchLaserFrame(BasePatchLaserFrame): ...
+class PatchLaserFrame(BasePatchLaserFrame):
+    """Patch-level LaserFrame for the compartmental model.
+
+    **Example:**
+
+        ```python
+        model.patches.S  # susceptible counts, shape (nticks+1, num_patches)
+        model.patches.E  # exposed counts (SEIR model)
+        model.patches.I  # infectious counts
+        ```
+    """
 
 
 class BaseScenarioSchema(pt.Model):
     """
     Schema for the scenario data.
+
+
+    **Example:**
+
+        ```python
+        from laser.measles.scenarios.synthetic import single_patch_scenario
+
+        scenario = single_patch_scenario(population=100_000, mcv1_coverage=0.85)
+        # Validated automatically when passed to CompartmentalModel(scenario, params)
+        ```
     """
 
     pop: int  # population
@@ -28,6 +48,25 @@ class BaseScenarioSchema(pt.Model):
 
 
 class BaseCompartmentalScenario(BaseScenario):
+    """Scenario wrapper for the compartmental model.
+
+    Validates that the input DataFrame conforms to the
+    `BaseScenarioSchema` (columns ``id``, ``pop``, ``lat``, ``lon``,
+    ``mcv1``) and makes the data available to model components.
+
+    Args:
+        df: Polars DataFrame with patch-level data.
+
+
+    **Example:**
+
+        ```python
+        from laser.measles.scenarios.synthetic import single_patch_scenario
+
+        scenario = single_patch_scenario(population=100_000, mcv1_coverage=0.85)
+        ```
+    """
+
     def __init__(self, df: pl.DataFrame):
         super().__init__(df)
         BaseScenarioSchema.validate(df, allow_superfluous_columns=True)

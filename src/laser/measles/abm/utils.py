@@ -226,7 +226,14 @@ def set_initial_susceptibility_randomly(model, susc_frac: float = 1.0) -> None:
     return
 
 
-def add_at(A, indices, B):
+def add_at(A: np.ndarray, indices: np.ndarray, B: np.ndarray) -> None:
+    """Accumulate rows of *B* into *A* at the given indices (scatter-add).
+
+    Args:
+        A: Destination array that is updated in-place.
+        indices: Index into *A* for each row of *B*.
+        B: Source values to accumulate.
+    """
     sorted_indices = np.argsort(indices)
     uniques, run_lengths = np.unique(indices[sorted_indices], return_counts=True)
     for i, length, end in zip(uniques, run_lengths, run_lengths.cumsum(), strict=False):

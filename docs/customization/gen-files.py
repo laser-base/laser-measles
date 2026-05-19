@@ -9,6 +9,11 @@ import mkdocs_gen_files as gen
 
 logger = logging.getLogger(__name__)
 
+# Silence mkdocs-jupyter's per-file "Copied jupyter file" / "Cache hit" INFO chatter
+# while keeping MkDocs core build messages and any WARNING/ERROR output visible.
+logging.getLogger("mkdocs.plugins.mkdocs_jupyter").setLevel(logging.WARNING)
+logging.getLogger("mkdocs.mkdocs-jupyter").setLevel(logging.WARNING)
+
 SRC = Path("src")
 NS = "laser"
 NS_ROOT = SRC / NS

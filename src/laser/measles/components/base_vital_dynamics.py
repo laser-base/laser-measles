@@ -14,7 +14,16 @@ ModelType = TypeVar("ModelType")
 
 
 class BaseVitalDynamicsParams(BaseModel):
-    """Parameters specific to vital dynamics."""
+    """Parameters specific to vital dynamics.
+
+    **Example:**
+
+        ```python
+        from laser.measles.biweekly.components.process_vital_dynamics import VitalDynamicsParams
+
+        params = VitalDynamicsParams()
+        ```
+    """
 
     model_config = ConfigDict(extra="forbid")
 

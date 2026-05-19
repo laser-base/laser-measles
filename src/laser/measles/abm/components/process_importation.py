@@ -9,18 +9,31 @@ Classes:
 Both process classes share the same ``__init__(model, params: ImportationParams | None = None)`` signature; if ``params`` is omitted, values are read from ``model.params`` for backward compatibility.
 """
 
+from __future__ import annotations
+
 import numpy as np
 from matplotlib.figure import Figure
 from pydantic import BaseModel
 from pydantic import ConfigDict
 from pydantic import Field
 
+from laser.measles.abm.model import ABMModel
+
 from ..utils import seed_infections_in_patch
 from ..utils import seed_infections_randomly
 
 
 class ImportationParams(BaseModel):
-    """Parameters specific to the importation process components."""
+    """Parameters specific to the importation process components.
+
+    **Example:**
+
+        ```python
+        from laser.measles.abm.components.process_importation import ImportationParams
+
+        params = ImportationParams()
+        ```
+    """
 
     model_config = ConfigDict(extra="forbid")
 
@@ -35,9 +48,24 @@ class ImportationParams(BaseModel):
 class InfectRandomAgentsProcess:
     """
     A component to update the infection timers of a population in a model.
+
+
+    **Example:**
+
+        ```python
+        from laser.measles.scenarios.synthetic import single_patch_scenario
+        from laser.measles.abm import ABMModel, ABMParams
+        from laser.measles.abm import components
+        from laser.measles import create_component
+
+        scenario = single_patch_scenario(population=50_000, mcv1_coverage=0.85)
+        params = ABMParams(num_ticks=365, seed=42, start_time="2000-01")
+        model = ABMModel(scenario, params)
+        model.add_component(create_component(components.InfectRandomAgentsProcess, components.ImportationParams()))
+        ```
     """
 
-    def __init__(self, model, params: ImportationParams | None = None) -> None:
+    def __init__(self, model: ABMModel, params: ImportationParams | None = None) -> None:
         """
         Initialize an InfectRandomAgentsProcess instance.
 
@@ -110,9 +138,24 @@ class InfectRandomAgentsProcess:
 class InfectAgentsInPatchProcess:
     """
     A component to update the infection timers of a population in a model.
+
+
+    **Example:**
+
+        ```python
+        from laser.measles.scenarios.synthetic import single_patch_scenario
+        from laser.measles.abm import ABMModel, ABMParams
+        from laser.measles.abm import components
+        from laser.measles import create_component
+
+        scenario = single_patch_scenario(population=50_000, mcv1_coverage=0.85)
+        params = ABMParams(num_ticks=365, seed=42, start_time="2000-01")
+        model = ABMModel(scenario, params)
+        model.add_component(create_component(components.InfectAgentsInPatchProcess, components.ImportationParams()))
+        ```
     """
 
-    def __init__(self, model, params: ImportationParams | None = None) -> None:
+    def __init__(self, model: ABMModel, params: ImportationParams | None = None) -> None:
         """
         Initialize an InfectAgentsInPatchProcess instance.
 

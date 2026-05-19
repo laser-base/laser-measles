@@ -1,5 +1,6 @@
 import inspect
 from collections.abc import Callable
+from collections.abc import Iterator
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -32,6 +33,15 @@ class BaseStateTrackerParams(BaseModel):
             minus one.  For flat IDs (no ``":"``), ``aggregation_level=0`` gives per-patch rows.
             The ``patch_id`` column in ``get_dataframe()`` matches the ``id`` column of the
             scenario DataFrame at the requested hierarchy level.
+
+
+    **Example:**
+
+        ```python
+        from laser.measles.biweekly.components.tracker_state import StateTrackerParams
+
+        params = StateTrackerParams()
+        ```
     """
 
     model_config = ConfigDict(extra="forbid")
@@ -63,9 +73,26 @@ class BaseStateTracker(BasePhase):
     Args:
         model: The simulation model containing nodes, states, and parameters.
         params: Component-specific parameters. If None, will use default parameters.
+
+
+    **Example:**
+
+        ```python
+        from laser.measles.scenarios.synthetic import single_patch_scenario
+        from laser.measles.biweekly import BiweeklyModel, BiweeklyParams
+        from laser.measles.biweekly import components
+        from laser.measles import create_component
+
+        scenario = single_patch_scenario(population=100_000, mcv1_coverage=0.85)
+        params = BiweeklyParams(num_ticks=52, seed=42, start_time="2000-01")
+        model = BiweeklyModel(scenario, params)
+        model.add_component(create_component(components.StateTracker, components.StateTrackerParams()))
+        model.run()
+        state_tracker = model.get_component("StateTracker")
+        ```
     """
 
-    def __init__(self, model, params: BaseStateTrackerParams | None = None) -> None:
+    def __init__(self, model: BaseLaserModel, params: BaseStateTrackerParams | None = None) -> None:
         super().__init__(model)
         self.name = "StateTracker"
         self.params = params or BaseStateTrackerParams()
@@ -133,7 +160,7 @@ class BaseStateTracker(BasePhase):
             # Return (num_ticks, num_groups)
             return self.state_tracker[state_idx, :, :]
 
-    def __call__(self, model, tick: int) -> None:
+    def __call__(self, model: BaseLaserModel, tick: int) -> None:
         if self.params.aggregation_level >= 0:
             # For each group, aggregate states from its nodes
             for group_idx, (_, node_indices) in enumerate(self.node_mapping.items()):
@@ -150,7 +177,7 @@ class BaseStateTracker(BasePhase):
                 filtered_states = model.patches.states.sum(axis=1)
             self.state_tracker[:, tick, 0] = filtered_states
 
-    def plot(self, fig: Figure | None = None):
+    def plot(self, fig: Figure | None = None) -> Iterator[None]:
         """
         Plots the time series of SEIR state counts across all nodes using subplots.
 
@@ -201,7 +228,7 @@ class BaseStateTracker(BasePhase):
             if frame:
                 del frame
 
-    def plot_combined(self, fig: Figure | None = None):
+    def plot_combined(self, fig: Figure | None = None) -> Iterator[None]:
         """
         Plots all SEIR states on a single plot for easy comparison.
 

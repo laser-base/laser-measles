@@ -4,7 +4,7 @@ import numpy as np
 import polars as pl
 
 
-def pairwise_haversine(df):  # TODO: use angular separation formula instead
+def pairwise_haversine(df: pl.DataFrame) -> np.ndarray:  # TODO: use angular separation formula instead
     """Pairwise distances for all (lon, lat) points using the Haversine formula.
 
     Args:
@@ -32,6 +32,45 @@ def pairwise_haversine(df):  # TODO: use angular separation formula instead
 
 
 def get_diffusion_matrix(df: pl.DataFrame, scale: float, func: Callable, f_kwargs: dict, enforce_scale: bool = True) -> np.ndarray:
+    """Build a row-stochastic diffusion matrix from a migration kernel.
+
+    Computes a raw migration matrix using ``func(**f_kwargs)``, normalises it
+    so the average row sum equals 1, scales by ``scale``, then fills the
+    diagonal so every row sums exactly to 1.  The result can be used directly
+    as a spatial mixing matrix in infection components.
+
+    Args:
+        df: Scenario DataFrame (only its length is used to handle the
+            single-patch edge case).
+        scale: Average fraction of a patch's population that travels per
+            tick.  Capped automatically when ``enforce_scale`` is ``True``.
+        func: Migration kernel function (e.g.,
+            [`gravity`][laser.core.migration.gravity]).
+        f_kwargs: Keyword arguments forwarded to ``func``.
+        enforce_scale: If ``True``, cap ``scale`` so that no diagonal entry
+            becomes negative (i.e., no patch sends out more than 100 % of
+            its population).
+
+    Returns:
+        Row-stochastic diffusion matrix of shape ``(N, N)`` where ``N`` is
+            the number of patches.
+
+    **Example:**
+
+        ```python
+        from laser.measles.migration import get_diffusion_matrix, pairwise_haversine
+        from laser.core.migration import gravity
+
+        distances = pairwise_haversine(scenario)
+        mat = get_diffusion_matrix(
+            scenario,
+            scale=0.01,
+            func=gravity,
+            f_kwargs=dict(populations=scenario["pop"].to_numpy(),
+                          distances=distances, k=1.0, a=1.0, b=1.0, c=2.0),
+        )
+        ```
+    """
     if len(df) == 1:
         return np.ones((1, 1))
 

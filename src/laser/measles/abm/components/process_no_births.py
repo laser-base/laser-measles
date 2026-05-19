@@ -3,7 +3,6 @@ Process for setting a static population (no vital dynamics).
 """
 
 import numpy as np
-import polars as pl
 
 from laser.measles.abm.model import ABMModel
 from laser.measles.base import BaseLaserModel
@@ -12,20 +11,46 @@ from laser.measles.components import BaseVitalDynamicsProcess
 
 
 class NoBirthsParams(BaseVitalDynamicsParams):
-    """Parameters for the no births process."""
+    """Parameters for the no births process.
+
+    **Example:**
+
+        ```python
+        from laser.measles.abm.components.process_no_births import NoBirthsParams
+
+        params = NoBirthsParams()
+        ```
+    """
 
     @property
     def crude_birth_rate(self) -> float:
+        """Birth rate fixed at zero (no-birth scenario)."""
         return 0.0
 
     @property
     def crude_death_rate(self) -> float:
+        """Death rate fixed at zero (no-birth scenario)."""
         return 0.0
 
 
 class NoBirthsProcess(BaseVitalDynamicsProcess):
     """
     Component for setting the population of the patches to not have births.
+
+
+    **Example:**
+
+        ```python
+        from laser.measles.scenarios.synthetic import single_patch_scenario
+        from laser.measles.abm import ABMModel, ABMParams
+        from laser.measles.abm import components
+        from laser.measles import create_component
+
+        scenario = single_patch_scenario(population=50_000, mcv1_coverage=0.85)
+        params = ABMParams(num_ticks=365, seed=42, start_time="2000-01")
+        model = ABMModel(scenario, params)
+        model.add_component(create_component(components.NoBirthsProcess, components.NoBirthsParams()))
+        ```
     """
 
     def __init__(
@@ -71,11 +96,7 @@ class NoBirthsProcess(BaseVitalDynamicsProcess):
         model.initialize_people_capacity(self.calculate_capacity(model))
         # people laserframe
         people = model.people
-        # scenario dataframe
-        scenario = model.scenario
         # initialize the patch ids according to the scenario population
-        people.patch_id[:] = np.array(
-            scenario.with_row_index().select(pl.col("index").repeat_by(pl.col("pop"))).explode("index")["index"].to_numpy(),
-            dtype=people.patch_id.dtype,
-        )
+        pops = model.scenario["pop"].to_numpy()
+        people.patch_id[:] = np.repeat(np.arange(len(pops), dtype=people.patch_id.dtype), pops)
         return

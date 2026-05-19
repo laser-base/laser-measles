@@ -16,6 +16,7 @@ import gc
 import json
 from abc import ABC
 from abc import abstractmethod
+from collections.abc import Iterator
 from datetime import datetime
 from datetime import timedelta
 from pathlib import Path
@@ -44,7 +45,18 @@ from laser.measles.wrapper import pretty_laserframe
 
 
 class ParamsProtocol(Protocol):
-    """Protocol defining the expected structure of model parameters."""
+    """Protocol defining the expected structure of model parameters.
+
+    **Example:**
+
+        ```python
+        from laser.measles.biweekly import BiweeklyParams
+
+        params = BiweeklyParams(num_ticks=52, seed=42, start_time="2000-01")
+        params.time_step_days  # 14 (biweekly)
+        params.states          # ["S", "I", "R"]
+        ```
+    """
 
     seed: int
     start_time: str
@@ -53,9 +65,14 @@ class ParamsProtocol(Protocol):
     show_progress: bool
 
     @property
-    def time_step_days(self) -> int: ...
+    def time_step_days(self) -> int:
+        """Number of calendar days represented by one simulation tick."""
+        ...
+
     @property
-    def states(self) -> list[str]: ...
+    def states(self) -> list[str]:
+        """Ordered list of compartment state names (e.g. ``["S", "E", "I", "R"]``)."""
+        ...
 
 
 class BaseModelParams(BaseModel):
@@ -97,6 +114,15 @@ class BaseModelParams(BaseModel):
         use_numba (bool):
             If True, enables numba JIT acceleration when available.
             Falls back to pure Python if numba is unavailable.
+
+
+    **Example:**
+
+        ```python
+        from laser.measles.biweekly import BiweeklyParams
+
+        params = BiweeklyParams(num_ticks=52, seed=42, start_time="2000-01")
+        ```
     """
 
     model_config = ConfigDict(extra="forbid")
@@ -111,6 +137,7 @@ class BaseModelParams(BaseModel):
     @field_validator("start_time")
     @classmethod
     def validate_start_time(cls, v: str) -> str:
+        """Accept ``YYYY-MM`` or ``YYYY-MM-DD`` and normalise to ``YYYY-MM``."""
         # Accept "YYYY-MM" (canonical) or "YYYY-MM-DD" (strip the day).
         try:
             datetime.strptime(v, "%Y-%m")  # noqa DTZ007
@@ -126,18 +153,27 @@ class BaseModelParams(BaseModel):
 
     @property
     def time_step_days(self) -> int:
-        """Time step in days. Must be implemented by subclasses."""
+        """Duration of one tick in days.  Subclasses must override."""
         raise NotImplementedError("Subclasses must implement time_step_days")
 
     @property
     def states(self) -> list[str]:
-        """List of model states. Must be implemented by subclasses."""
+        """Ordered list of compartment names (e.g. ``["S", "E", "I", "R"]``).  Subclasses must override."""
         raise NotImplementedError("Subclasses must implement states")
 
 
 @pretty_laserframe
 class BasePatchLaserFrame(LaserFrame):
-    """LaserFrame that has a states property."""
+    """LaserFrame that has a states property.
+
+    **Example:**
+
+        ```python
+        model.run()
+        model.patches.S  # shape (nticks+1, num_patches), susceptible counts
+        model.patches.I  # shape (nticks+1, num_patches), infectious counts
+        ```
+    """
 
     states: StateArray  # StateArray with attribute access (S, E, I, R, etc.)
 
@@ -149,6 +185,16 @@ class BasePeopleLaserFrame(LaserFrame):
 
     This class provides factory methods for creating new instances with the same
     properties but different capacity, making it easy to resize people collections.
+
+
+    **Example:**
+
+        ```python
+        # ABM models have a people LaserFrame for individual agents
+        model.people.state     # agent health states
+        model.people.age       # agent ages in days
+        model.people.patch_id  # which patch each agent belongs to
+        ```
     """
 
     @classmethod
@@ -220,6 +266,19 @@ class BaseLaserModel(ABC):
 
     Provides common functionality for model initialization, component management,
     timing, metrics collection, and execution loops.
+
+
+    **Example:**
+
+        ```python
+        from laser.measles.scenarios.synthetic import single_patch_scenario
+        from laser.measles.biweekly import BiweeklyModel, BiweeklyParams
+
+        scenario = single_patch_scenario(population=100_000, mcv1_coverage=0.85)
+        params = BiweeklyParams(num_ticks=52, seed=42, start_time="2000-01")
+        model = BiweeklyModel(scenario, params)
+        model.run()
+        ```
     """
 
     ScenarioType = TypeVar("ScenarioType")
@@ -778,6 +837,16 @@ class BaseComponent:
 
     Components follow a uniform interface with __call__(model, tick) method
     for execution during simulation loops.
+
+
+    **Example:**
+
+        ```python
+        from laser.measles.biweekly import BiweeklyModel, BiweeklyParams, components
+        from laser.measles import create_component
+
+        model.add_component(create_component(components.InfectionProcess, components.InfectionParams(beta=0.57)))
+        ```
     """
 
     ModelType = TypeVar("ModelType")
@@ -838,7 +907,7 @@ class BaseComponent:
         use_numba = getattr(self.model.params, "use_numba", True)
         return select_implementation(numpy_func, numba_func, use_numba)
 
-    def plot(self, fig: Figure | None = None):
+    def plot(self, fig: Figure | None = None) -> Iterator[None]:
         """
         Placeholder for plotting method.
 
@@ -867,10 +936,22 @@ class BasePhase(BaseComponent):
     Base class for all laser-measles phases.
 
     Phases are components that are called every tick and include a __call__ method.
+
+
+    **Example:**
+
+        ```python
+        from laser.measles.biweekly import components
+        from laser.measles import create_component
+
+        # Processes (BasePhase subclasses) execute in order each tick
+        model.add_component(create_component(components.VitalDynamicsProcess, components.VitalDynamicsParams()))
+        model.add_component(create_component(components.InfectionProcess, components.InfectionParams()))
+        ```
     """
 
     @abstractmethod
-    def __call__(self, model, tick: int) -> None:
+    def __call__(self, model: BaseLaserModel, tick: int) -> None:
         """
         Execute component logic for a given simulation tick.
 
@@ -890,6 +971,16 @@ class BaseScenario(ABC):
 
     Provides a wrapper around polars DataFrames with additional validation
     and convenience methods.
+
+
+    **Example:**
+
+        ```python
+        from laser.measles.scenarios.synthetic import single_patch_scenario
+
+        scenario = single_patch_scenario(population=100_000, mcv1_coverage=0.85)
+        # scenario is a Polars DataFrame with columns: id, pop, lat, lon, mcv1
+        ```
     """
 
     def __init__(self, df: pl.DataFrame):
@@ -901,7 +992,7 @@ class BaseScenario(ABC):
         """
         self._df = df
 
-    def __getattr__(self, attr):
+    def __getattr__(self, attr: str) -> Any:
         """
         Forward attribute access to the underlying DataFrame.
 
@@ -914,7 +1005,7 @@ class BaseScenario(ABC):
         # Forward attribute access to the underlying DataFrame
         return getattr(self._df, attr)
 
-    def __getitem__(self, key):
+    def __getitem__(self, key: Any) -> Any:
         """
         Forward item access to the underlying DataFrame.
 
@@ -926,7 +1017,7 @@ class BaseScenario(ABC):
         """
         return self._df[key]
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         """
         Return string representation of the scenario.
 
@@ -935,7 +1026,7 @@ class BaseScenario(ABC):
         """
         return repr(self._df)
 
-    def __len__(self):
+    def __len__(self) -> int:
         """
         Return the length of the underlying DataFrame.
 

@@ -132,10 +132,12 @@ class DiseaseParams(BaseModel):
 
     @property
     def inf_shape(self) -> float:
+        """Gamma distribution shape parameter derived from ``inf_mean`` and ``inf_sigma``."""
         return (self.inf_mean / self.inf_sigma) ** 2
 
     @property
     def inf_scale(self) -> float:
+        """Gamma distribution scale parameter derived from ``inf_mean`` and ``inf_sigma``."""
         return self.inf_sigma**2 / self.inf_mean
 
 

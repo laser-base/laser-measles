@@ -107,7 +107,7 @@ def single_test(MeaslesModel, problem_params, measles_module):
 def test_no_vital_dynamics(measles_module, num_reps):
     """
     Test logistic growth for SI model with no vital dynamics.
-    https://github.com/InstituteforDiseaseModeling/laser-generic/blob/main/notebooks/01_SI_nobirths_logistic_growth.ipynb
+    https://github.com/laser-base/laser-generic/blob/main/notebooks/01_SI_nobirths_logistic_growth.ipynb
     """
     MeaslesModel = importlib.import_module(measles_module)
 

@@ -25,7 +25,14 @@ import polars as pl
 import pytest
 
 import laser.measles as lm
+from laser.measles import MEASLES_MODULES
 from laser.measles.mixing.base import BaseMixing
+
+# Per-module override for ``num_ticks``; modules not listed use the default.
+_DEFAULT_NUM_TICKS = 365
+_MODULE_NUM_TICKS = {
+    "laser.measles.biweekly": 52,
+}
 
 GRID_ROWS = 5
 GRID_COLS = 5
@@ -131,6 +138,24 @@ class _FixedMatrixMixing(BaseMixing):
         return self._migration_matrix
 
 
+def _build_transmission_components(MeaslesModel, mixer):
+    """Build the seeding + infection components list for a given model."""
+    return [
+        lm.create_component(
+            MeaslesModel.components.InfectionSeedingProcess,
+            MeaslesModel.components.InfectionSeedingParams(
+                target_patches=["0_0"],
+                infections_per_patch=SEEDED_INFECTIONS,
+                use_largest_patch=False,
+            ),
+        ),
+        lm.create_component(
+            MeaslesModel.components.InfectionProcess,
+            MeaslesModel.components.InfectionParams(beta=2.0, seasonality=0.0, mixer=mixer),
+        ),
+    ]
+
+
 def _assert_all_patches_have_new_infections(
     states_S: np.ndarray,
     initial_pop: int,
@@ -191,35 +216,23 @@ def _assert_only_sink_patch_has_new_infections(
 
 
 @pytest.mark.slow
-def test_network_routing_compartmental():
+@pytest.mark.parametrize("measles_module", MEASLES_MODULES)
+def test_network_routing(measles_module):
     """Given a 5x5 patch grid with all contagion from (0,0) routed to (4,4) and
-    no contagion leaving (4,4), when the compartmental SEIR model runs with
-    seed infections only in (0,0), then only (4,4) sees new infections.
+    no contagion leaving (4,4), when the model runs with seed infections only
+    in (0,0), then only (4,4) sees new infections.
 
-    Failure here would indicate a regression in how
-    ``compartmental.components.InfectionProcess`` applies the mixing matrix to
-    compute the per-patch force of infection.
+    Failure here would indicate a regression in how the model's transmission
+    component applies the mixing matrix to compute the per-patch force of
+    infection (or, for ABM, in patch_id bookkeeping during transmission).
     """
-    MeaslesModel = importlib.import_module("laser.measles.compartmental")
+    MeaslesModel = importlib.import_module(measles_module)
     scenario = MeaslesModel.BaseScenario(make_grid_scenario())
     mixer = _FixedMatrixMixing(make_routing_mixing_matrix())
 
-    params = MeaslesModel.Params(num_ticks=365, seed=SEED, verbose=False)
+    params = MeaslesModel.Params(num_ticks=_MODULE_NUM_TICKS.get(measles_module, _DEFAULT_NUM_TICKS), seed=SEED, verbose=False)
     model = MeaslesModel.Model(scenario, params)
-    model.components = [
-        lm.create_component(
-            MeaslesModel.components.InfectionSeedingProcess,
-            MeaslesModel.components.InfectionSeedingParams(
-                target_patches=["0_0"],
-                infections_per_patch=SEEDED_INFECTIONS,
-                use_largest_patch=False,
-            ),
-        ),
-        lm.create_component(
-            MeaslesModel.components.InfectionProcess,
-            MeaslesModel.components.InfectionParams(beta=2.0, seasonality=0.0, mixer=mixer),
-        ),
-    ]
+    model.components = _build_transmission_components(MeaslesModel, mixer)
     model.run()
 
     _assert_only_sink_patch_has_new_infections(
@@ -232,202 +245,24 @@ def test_network_routing_compartmental():
 
 
 @pytest.mark.slow
-def test_network_routing_biweekly():
-    """Given a 5x5 patch grid with all contagion from (0,0) routed to (4,4) and
-    no contagion leaving (4,4), when the biweekly SIR model runs with seed
-    infections only in (0,0), then only (4,4) sees new infections.
-
-    Failure here would indicate a regression in how
-    ``biweekly.components.InfectionProcess`` applies the mixing matrix.
-    """
-    MeaslesModel = importlib.import_module("laser.measles.biweekly")
-    scenario = MeaslesModel.BaseScenario(make_grid_scenario())
-    mixer = _FixedMatrixMixing(make_routing_mixing_matrix())
-
-    params = MeaslesModel.Params(num_ticks=52, seed=SEED, verbose=False)
-    model = MeaslesModel.Model(scenario, params)
-    model.components = [
-        lm.create_component(
-            MeaslesModel.components.InfectionSeedingProcess,
-            MeaslesModel.components.InfectionSeedingParams(
-                target_patches=["0_0"],
-                infections_per_patch=SEEDED_INFECTIONS,
-                use_largest_patch=False,
-            ),
-        ),
-        lm.create_component(
-            MeaslesModel.components.InfectionProcess,
-            MeaslesModel.components.InfectionParams(beta=2.0, seasonality=0.0, mixer=mixer),
-        ),
-    ]
-    model.run()
-
-    _assert_only_sink_patch_has_new_infections(
-        states_S=np.asarray(model.patches.states.S),
-        initial_pop=GRID_POP,
-        seeded=SEEDED_INFECTIONS,
-        seeded_patch=_grid_index(0, 0),
-        sink_patch=_grid_index(GRID_ROWS - 1, GRID_COLS - 1),
-    )
-
-
-@pytest.mark.slow
-def test_network_routing_abm():
-    """Given a 5x5 patch grid with all contagion from (0,0) routed to (4,4) and
-    no contagion leaving (4,4), when the ABM SEIR model runs with seed
-    infections only in (0,0), then only (4,4) sees new infections.
-
-    Uses ``TransmissionProcess`` + ``DiseaseProcess`` directly rather than the
-    convenience ``InfectionProcess`` because ABM's ``InfectionParams`` does
-    not expose a ``mixer=`` argument (only ``distance_exponent`` /
-    ``mixing_scale`` for its default ``GravityMixing``).
-
-    Failure here would indicate a regression in how the ABM
-    ``TransmissionProcess`` applies the mixing matrix to compute per-patch
-    forces of infection, or in patch_id bookkeeping when transmitting.
-    """
-    MeaslesModel = importlib.import_module("laser.measles.abm")
-    scenario = MeaslesModel.BaseScenario(make_grid_scenario())
-    mixer = _FixedMatrixMixing(make_routing_mixing_matrix())
-
-    params = MeaslesModel.Params(num_ticks=365, seed=SEED, verbose=False)
-    model = MeaslesModel.Model(scenario, params)
-    model.components = [
-        lm.create_component(
-            MeaslesModel.components.InfectionSeedingProcess,
-            MeaslesModel.components.InfectionSeedingParams(
-                target_patches=["0_0"],
-                infections_per_patch=SEEDED_INFECTIONS,
-                use_largest_patch=False,
-            ),
-        ),
-        lm.create_component(
-            MeaslesModel.components.TransmissionProcess,
-            MeaslesModel.components.TransmissionParams(beta=2.0, seasonality=0.0, mixer=mixer),
-        ),
-        MeaslesModel.components.DiseaseProcess,
-    ]
-    model.run()
-
-    _assert_only_sink_patch_has_new_infections(
-        states_S=np.asarray(model.patches.states.S),
-        initial_pop=GRID_POP,
-        seeded=SEEDED_INFECTIONS,
-        seeded_patch=_grid_index(0, 0),
-        sink_patch=_grid_index(GRID_ROWS - 1, GRID_COLS - 1),
-    )
-
-
-@pytest.mark.slow
-def test_normal_spread_compartmental():
+@pytest.mark.parametrize("measles_module", MEASLES_MODULES)
+def test_normal_spread(measles_module):
     """Given a 5x5 patch grid with pure 4-neighbour adjacency mixing (no routing
-    overrides), when the compartmental SEIR model runs long enough with seed
-    infections in (0,0), then contagion spreads to every patch in the grid.
+    overrides), when the model runs long enough with seed infections in (0,0),
+    then contagion spreads to every patch in the grid.
 
-    Counterpart to ``test_network_routing_compartmental``: removes the row
-    overrides so the wave is free to propagate outward through the adjacency
-    network. Failure here would indicate a regression in normal multi-patch
-    transmission via the mixing matrix.
+    Counterpart to ``test_network_routing``: removes the row overrides so the
+    wave is free to propagate outward through the adjacency network. Failure
+    here would indicate a regression in normal multi-patch transmission via
+    the mixing matrix.
     """
-    MeaslesModel = importlib.import_module("laser.measles.compartmental")
+    MeaslesModel = importlib.import_module(measles_module)
     scenario = MeaslesModel.BaseScenario(make_grid_scenario())
     mixer = _FixedMatrixMixing(make_adjacency_mixing_matrix())
 
-    params = MeaslesModel.Params(num_ticks=365, seed=SEED, verbose=False)
+    params = MeaslesModel.Params(num_ticks=_MODULE_NUM_TICKS.get(measles_module, _DEFAULT_NUM_TICKS), seed=SEED, verbose=False)
     model = MeaslesModel.Model(scenario, params)
-    model.components = [
-        lm.create_component(
-            MeaslesModel.components.InfectionSeedingProcess,
-            MeaslesModel.components.InfectionSeedingParams(
-                target_patches=["0_0"],
-                infections_per_patch=SEEDED_INFECTIONS,
-                use_largest_patch=False,
-            ),
-        ),
-        lm.create_component(
-            MeaslesModel.components.InfectionProcess,
-            MeaslesModel.components.InfectionParams(beta=2.0, seasonality=0.0, mixer=mixer),
-        ),
-    ]
-    model.run()
-
-    _assert_all_patches_have_new_infections(
-        states_S=np.asarray(model.patches.states.S),
-        initial_pop=GRID_POP,
-    )
-
-
-@pytest.mark.slow
-def test_normal_spread_biweekly():
-    """Given a 5x5 patch grid with pure 4-neighbour adjacency mixing (no routing
-    overrides), when the biweekly SIR model runs long enough with seed
-    infections in (0,0), then contagion spreads to every patch in the grid.
-
-    Counterpart to ``test_network_routing_biweekly``: removes the row overrides
-    so the wave is free to propagate outward through the adjacency network.
-    Failure here would indicate a regression in normal multi-patch transmission
-    via the mixing matrix.
-    """
-    MeaslesModel = importlib.import_module("laser.measles.biweekly")
-    scenario = MeaslesModel.BaseScenario(make_grid_scenario())
-    mixer = _FixedMatrixMixing(make_adjacency_mixing_matrix())
-
-    params = MeaslesModel.Params(num_ticks=52, seed=SEED, verbose=False)
-    model = MeaslesModel.Model(scenario, params)
-    model.components = [
-        lm.create_component(
-            MeaslesModel.components.InfectionSeedingProcess,
-            MeaslesModel.components.InfectionSeedingParams(
-                target_patches=["0_0"],
-                infections_per_patch=SEEDED_INFECTIONS,
-                use_largest_patch=False,
-            ),
-        ),
-        lm.create_component(
-            MeaslesModel.components.InfectionProcess,
-            MeaslesModel.components.InfectionParams(beta=2.0, seasonality=0.0, mixer=mixer),
-        ),
-    ]
-    model.run()
-
-    _assert_all_patches_have_new_infections(
-        states_S=np.asarray(model.patches.states.S),
-        initial_pop=GRID_POP,
-    )
-
-
-@pytest.mark.slow
-def test_normal_spread_abm():
-    """Given a 5x5 patch grid with pure 4-neighbour adjacency mixing (no routing
-    overrides), when the ABM SEIR model runs long enough with seed infections
-    in (0,0), then contagion spreads to every patch in the grid.
-
-    Counterpart to ``test_network_routing_abm``: removes the row overrides so
-    the wave is free to propagate outward through the adjacency network.
-    Failure here would indicate a regression in normal multi-patch transmission
-    via the ABM ``TransmissionProcess`` and mixing matrix.
-    """
-    MeaslesModel = importlib.import_module("laser.measles.abm")
-    scenario = MeaslesModel.BaseScenario(make_grid_scenario())
-    mixer = _FixedMatrixMixing(make_adjacency_mixing_matrix())
-
-    params = MeaslesModel.Params(num_ticks=365, seed=SEED, verbose=False)
-    model = MeaslesModel.Model(scenario, params)
-    model.components = [
-        lm.create_component(
-            MeaslesModel.components.InfectionSeedingProcess,
-            MeaslesModel.components.InfectionSeedingParams(
-                target_patches=["0_0"],
-                infections_per_patch=SEEDED_INFECTIONS,
-                use_largest_patch=False,
-            ),
-        ),
-        lm.create_component(
-            MeaslesModel.components.TransmissionProcess,
-            MeaslesModel.components.TransmissionParams(beta=2.0, seasonality=0.0, mixer=mixer),
-        ),
-        MeaslesModel.components.DiseaseProcess,
-    ]
+    model.components = _build_transmission_components(MeaslesModel, mixer)
     model.run()
 
     _assert_all_patches_have_new_infections(
