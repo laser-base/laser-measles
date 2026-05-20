@@ -15,6 +15,15 @@ from laser.measles.utils import cast_type
 class VitalDynamicsParams(BaseVitalDynamicsParams):
     """
     Parameters for VitalDynamicsProcess.
+
+
+    **Example:**
+
+        ```python
+        from laser.measles.abm.components.process_vital_dynamics import VitalDynamicsParams
+
+        params = VitalDynamicsParams()
+        ```
     """
 
     routine_immunization_delay: int = Field(default=9 * 30, description="Delay in days before routine immunization is administered")
@@ -23,11 +32,26 @@ class VitalDynamicsParams(BaseVitalDynamicsParams):
 class VitalDynamicsProcess(BaseVitalDynamicsProcess):
     """
     Process for simulating vital dynamics in the ABM model with MCV1 and constant birth and mortality rates (not age-structured).
+
+
+    **Example:**
+
+        ```python
+        from laser.measles.scenarios.synthetic import single_patch_scenario
+        from laser.measles.abm import ABMModel, ABMParams
+        from laser.measles.abm import components
+        from laser.measles import create_component
+
+        scenario = single_patch_scenario(population=50_000, mcv1_coverage=0.85)
+        params = ABMParams(num_ticks=365, seed=42, start_time="2000-01")
+        model = ABMModel(scenario, params)
+        model.add_component(create_component(components.VitalDynamicsProcess, components.VitalDynamicsParams()))
+        ```
     """
 
-    def __init__(self, model, verbose: bool = False, params: VitalDynamicsParams | None = None) -> None:
+    def __init__(self, model, params: VitalDynamicsParams | None = None) -> None:
         params_: VitalDynamicsParams = params or VitalDynamicsParams()
-        super().__init__(model, verbose=verbose, params=params_)
+        super().__init__(model, params=params_)
 
         date_of_birth_dtype = np.int32
         self.null_value = np.iinfo(date_of_birth_dtype).max
@@ -121,11 +145,8 @@ class VitalDynamicsProcess(BaseVitalDynamicsProcess):
             people.date_of_birth[istart:iend] = tick  # born today
             people.susceptibility[istart:iend] = 1.0  # all newborns are susceptible TODO: add maternal immunity component
             people.date_of_vaccination[istart:iend] = tick + self._routine_immunization_delay()
-            index = istart
             # update patch id
-            for this_patch_id, this_patch_births in enumerate(births):
-                people.patch_id[index : index + this_patch_births] = this_patch_id
-                index += this_patch_births
+            people.patch_id[istart:iend] = np.repeat(np.arange(len(births), dtype=people.patch_id.dtype), births)
             # update states
             patches.states.S += cast_type(births, patches.states.dtype)
             # Record per-patch birth count for tracking

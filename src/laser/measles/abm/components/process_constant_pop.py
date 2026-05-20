@@ -3,7 +3,6 @@ Component defining the ConstantPopProcess, which handles the birth events in a m
 """
 
 import numpy as np
-import polars as pl
 
 from laser.measles.abm.model import ABMModel
 from laser.measles.components import BaseConstantPopParams
@@ -12,7 +11,16 @@ from laser.measles.utils import cast_type
 
 
 class ConstantPopParams(BaseConstantPopParams):
-    pass
+    """Parameters for constant-population vital dynamics (inherits all fields from base).
+
+    **Example:**
+
+        ```python
+        from laser.measles.abm.components.process_constant_pop import ConstantPopParams
+
+        params = ConstantPopParams(crude_birth_rate=20)
+        ```
+    """
 
 
 class ConstantPopProcess(BaseConstantPopProcess):
@@ -22,24 +30,37 @@ class ConstantPopProcess(BaseConstantPopProcess):
     Attributes:
 
         model: The model instance containing population and parameters.
-        verbose (bool): Flag to enable verbose output. Default is False.
         initializers (list): List of initializers to be called on birth events.
         metrics (DataFrame): DataFrame to holding timing metrics for initializers.
+
+
+    **Example:**
+
+        ```python
+        from laser.measles.scenarios.synthetic import single_patch_scenario
+        from laser.measles.abm import ABMModel, ABMParams
+        from laser.measles.abm import components
+        from laser.measles import create_component
+
+        scenario = single_patch_scenario(population=50_000, mcv1_coverage=0.85)
+        params = ABMParams(num_ticks=365, seed=42, start_time="2000-01")
+        model = ABMModel(scenario, params)
+        model.add_component(create_component(components.ConstantPopProcess, components.ConstantPopParams(crude_birth_rate=20)))
+        ```
     """
 
-    def __init__(self, model: ABMModel, verbose: bool = False, params: ConstantPopParams | None = None):
+    def __init__(self, model: ABMModel, params: ConstantPopParams | None = None):
         """
         Initialize the Births component.
 
         Parameters:
 
             model (object): The model object which must have a `population` attribute.
-            verbose (bool, optional): If True, enables verbose output. Defaults to False.
             params (BirthsParams, optional): Component parameters. If None, uses model.params.
 
         """
 
-        super().__init__(model, verbose)
+        super().__init__(model)
 
         self.params = params if params is not None else ConstantPopParams()
 
@@ -123,13 +144,10 @@ class ConstantPopProcess(BaseConstantPopProcess):
             return
 
         people = model.people
-        scenario = model.scenario
 
         # Initialize patch_id according to scenario population
-        people.patch_id[:] = np.array(
-            scenario.with_row_index().select(pl.col("index").repeat_by(pl.col("pop"))).explode("index")["index"].to_numpy(),
-            dtype=people.patch_id.dtype,
-        )
+        pops = model.scenario["pop"].to_numpy()
+        people.patch_id[:] = np.repeat(np.arange(len(pops), dtype=people.patch_id.dtype), pops)
 
         # Simple initializer for ages where birth rate = mortality rate:
         # Initialize ages for existing population

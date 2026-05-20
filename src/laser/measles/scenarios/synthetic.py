@@ -249,7 +249,7 @@ def satellites_scenario(
     mcv1: float = 0.50,
     seed: int | None = 52,
     population_std: float = 0.3,
-):
+) -> pl.DataFrame:
     """
     Create a cluster of nodes with a single large node in the center (core) surrounded by smaller nodes (satellites).
 

@@ -1,35 +1,4 @@
-"""
-This module defines the `CompartmentalModel` class for SEIR simulation with daily timesteps
-
-Classes:
-    CompartmentalModel: A class to represent the compartmental SEIR model.
-
-Imports:
-
-
-Model Class:
-    Methods:
-        __init__(self, scenario: BaseScenario, parameters: CompartmentalParams, name: str = "compartmental") -> None:
-            Initializes the model with the given scenario and parameters.
-
-        components(self) -> list:
-            Gets the list of components in the model.
-
-        components(self, components: list) -> None:
-            Sets the list of components in the model and initializes instances and phases.
-
-        __call__(self, model, tick: int) -> None:
-            Updates the model for a given tick.
-
-        run(self) -> None:
-            Runs the model for the specified number of ticks.
-
-        visualize(self, pdf: bool = True) -> None:
-            Generates visualizations of the model's results, either displaying them or saving to a PDF.
-
-        plot(self, fig: Figure = None):
-            Generates plots for the scenario patches and populations, distribution of day of birth, and update phase times.
-"""
+"""Compartmental SEIR model for measles transmission with daily timesteps."""
 
 from pathlib import Path
 
@@ -45,30 +14,44 @@ from laser.measles.utils import cast_type
 
 
 class CompartmentalModel(BaseLaserModel):
-    """
-    A class to represent the compartmental model with daily timesteps.
+    """Population-level SEIR model for measles transmission with daily timesteps.
+
+    Tracks compartment counts (S, E, I, R) per patch using deterministic
+    difference equations.  This model is the fastest option for calibrating
+    transmission parameters to surveillance data because it avoids stochastic
+    noise.  For individual-level tracking, see
+    [`ABMModel`][laser.measles.abm.model.ABMModel]; for 14-day timesteps, see
+    [`BiweeklyModel`][laser.measles.biweekly.model.BiweeklyModel].
+
+    This is the first object created in the *build model* stage of the
+    researcher workflow.  After construction, attach components with
+    [`add_component`][laser.measles.base.BaseLaserModel.add_component] or
+    by setting the `components` property, then call `model.run()`.
 
     Args:
+        scenario (pl.DataFrame | BaseCompartmentalScenario): Metapopulation
+            patch data.  Required columns: ``id`` (str), ``pop`` (int),
+            ``lat`` (Float64), ``lon`` (Float64), ``mcv1`` (Float64).
+            A plain `polars.DataFrame` is automatically wrapped.
+        params (CompartmentalParams): Simulation parameters including
+            ``num_ticks``, ``seed``, and ``start_time``.
+        name (str): Display name for log messages.  Defaults to
+            ``"compartmental"``.
 
-        scenario (BaseScenario): A scenario containing the scenario data, including population, latitude, and longitude.
-        params (CompartmentalParams): A set of parameters for the model.
-        name (str, optional): The name of the model. Defaults to "compartmental".
+    **Example:**
 
-    Notes:
+        ```python
+        import laser.measles as lm
+        from laser.measles.compartmental.components import (
+            InfectionSeedingProcess,
+            InfectionProcess,
+        )
 
-        This class initializes the model with the given scenario and parameters. The scenario must include the following columns:
-
-            - `id` (string): The name of the patch or location.
-            - `pop` (integer): The population count for the patch.
-            - `lat` (float degrees): The latitude of the patches (e.g., from geographic or population centroid).
-            - `lon` (float degrees): The longitude of the patches (e.g., from geographic or population centroid).
-            - `mcv1` (float): The MCV1 coverage for the patches.
-
-        The default model uses SEIR compartments:
-            - S: Susceptible individuals
-            - E: Exposed individuals (infected but not yet infectious)
-            - I: Infectious individuals
-            - R: Recovered/immune individuals
+        params = lm.CompartmentalParams(num_ticks=365, seed=42, start_time="2000-01")
+        model = lm.CompartmentalModel(scenario=df, params=params)
+        model.components = [InfectionSeedingProcess, InfectionProcess]
+        model.run()
+        ```
     """
 
     # Specify the scenario wrapper class for auto-wrapping DataFrames
@@ -77,19 +60,6 @@ class CompartmentalModel(BaseLaserModel):
     def __init__(
         self, scenario: BaseCompartmentalScenario | pl.DataFrame, params: CompartmentalParams, name: str = "compartmental"
     ) -> None:
-        """
-        Initialize the disease model with the given scenario and parameters.
-
-        Args:
-
-            scenario (BaseScenario): A scenario containing the scenario data, including population, latitude, and longitude.
-            params (CompartmentalParams): A set of parameters for the model, including seed, num_ticks, beta, sigma, gamma, and other SEIR parameters.
-            name (str, optional): The name of the model. Defaults to "compartmental".
-
-        Returns:
-
-            None
-        """
         super().__init__(scenario, params, name)
 
         # Add patches to the model

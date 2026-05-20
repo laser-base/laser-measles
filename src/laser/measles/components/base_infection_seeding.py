@@ -6,6 +6,7 @@ from abc import abstractmethod
 
 import numpy as np
 from pydantic import BaseModel
+from pydantic import ConfigDict
 from pydantic import Field
 from pydantic import field_validator
 
@@ -15,7 +16,18 @@ from laser.measles.utils import cast_type
 
 
 class BaseInfectionSeedingParams(BaseModel):
-    """Parameters for the infection seeding component."""
+    """Parameters for the infection seeding component.
+
+    **Example:**
+
+        ```python
+        from laser.measles.biweekly.components.process_infection_seeding import InfectionSeedingParams
+
+        params = InfectionSeedingParams()
+        ```
+    """
+
+    model_config = ConfigDict(extra="forbid")
 
     num_infections: int = Field(default=1, description="Default number of infections to seed", ge=1)
     target_patches: list[str] | None = Field(default=None, description="List of specific patch IDs to seed")
@@ -66,8 +78,6 @@ class BaseInfectionSeedingProcess(BaseComponent):
     ----------
     model : BaseLaserModel
         The compartmental model instance
-    verbose : bool, default=False
-        Whether to print verbose output during initialization
     params : Optional[InfectionSeedingParams], default=None
         Component-specific parameters. If None, will use default parameters
 
@@ -92,8 +102,8 @@ class BaseInfectionSeedingProcess(BaseComponent):
     )
     """
 
-    def __init__(self, model: BaseLaserModel, verbose: bool = False, params: BaseInfectionSeedingParams | None = None) -> None:
-        super().__init__(model, verbose)
+    def __init__(self, model: BaseLaserModel, params: BaseInfectionSeedingParams | None = None) -> None:
+        super().__init__(model)
         self.params = params or BaseInfectionSeedingParams()
         self._validate_params()
 

@@ -3,6 +3,7 @@ from collections.abc import Callable
 import numpy as np
 import polars as pl
 from pydantic import BaseModel
+from pydantic import ConfigDict
 from pydantic import Field
 
 from laser.measles.abm.model import ABMModel
@@ -11,9 +12,18 @@ from laser.measles.base import BasePhase
 
 
 class SIACalendarParams(BaseModel):
-    """Parameters specific to the SIA calendar component."""
+    """Parameters specific to the SIA calendar component.
 
-    model_config = {"arbitrary_types_allowed": True}
+    **Example:**
+
+        ```python
+        from laser.measles.abm.components.process_sia_calendar import SIACalendarParams
+
+        params = SIACalendarParams()
+        ```
+    """
+
+    model_config = ConfigDict(extra="forbid", arbitrary_types_allowed=True)
 
     sia_efficacy: float = Field(0.9, description="Fraction of susceptibles to vaccinate in SIA", ge=0.0, le=1.0)
     filter_fn: Callable[[str], bool] = Field(lambda x: True, description="Function to filter which nodes to include in aggregation")
@@ -37,8 +47,6 @@ class SIACalendarProcess(BasePhase):
     ----------
     model : ABMModel
         The ABM simulation model containing agents, patches, and parameters
-    verbose : bool, default=False
-        Whether to print verbose output during simulation
     params : Optional[SIACalendarParams], default=None
         Component-specific parameters. If None, will use default parameters
 
@@ -50,10 +58,25 @@ class SIACalendarProcess(BasePhase):
     - Vaccination moves agents from susceptible (S=0) to recovered (R=3) state
     - Both individual agent states and patch-level state aggregations are updated
     - Each SIA is implemented exactly once
+
+
+    **Example:**
+
+        ```python
+        from laser.measles.scenarios.synthetic import single_patch_scenario
+        from laser.measles.abm import ABMModel, ABMParams
+        from laser.measles.abm import components
+        from laser.measles import create_component
+
+        scenario = single_patch_scenario(population=50_000, mcv1_coverage=0.85)
+        params = ABMParams(num_ticks=365, seed=42, start_time="2000-01")
+        model = ABMModel(scenario, params)
+        model.add_component(create_component(components.SIACalendarProcess, components.SIACalendarParams()))
+        ```
     """
 
-    def __init__(self, model: ABMModel, verbose: bool = False, params: SIACalendarParams | None = None) -> None:
-        super().__init__(model, verbose)
+    def __init__(self, model: ABMModel, params: SIACalendarParams | None = None) -> None:
+        super().__init__(model)
         if params is None:
             raise ValueError("SIACalendarParams must be provided")
         self.params = params
@@ -162,7 +185,7 @@ class SIACalendarProcess(BasePhase):
         return len(selected_indices)
 
     def initialize(self, model: BaseLaserModel) -> None:
-        pass
+        """No-op; SIA calendar state is set up during construction."""
 
     def get_sia_schedule(self) -> pl.DataFrame:
         """

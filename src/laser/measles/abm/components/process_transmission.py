@@ -6,6 +6,7 @@ from typing import Any
 
 import numpy as np
 from pydantic import BaseModel
+from pydantic import ConfigDict
 from pydantic import Field
 
 from laser.measles.abm.model import ABMModel
@@ -104,9 +105,18 @@ else:
 
 
 class TransmissionParams(BaseModel):
-    """Parameters specific to the transmission process component."""
+    """Parameters specific to the transmission process component.
 
-    model_config = {"arbitrary_types_allowed": True}
+    **Example:**
+
+        ```python
+        from laser.measles.abm.components.process_transmission import TransmissionParams
+
+        params = TransmissionParams(beta=0.3)
+        ```
+    """
+
+    model_config = ConfigDict(extra="forbid", arbitrary_types_allowed=True)
 
     beta: float = Field(default=1.0, description="Base transmission rate", ge=0.0)
     seasonality: float = Field(default=1.0, description="Seasonality factor", ge=0.0, le=1.0)
@@ -129,29 +139,45 @@ class TransmissionParams(BaseModel):
 class TransmissionProcess(BasePhase):
     """
     A component to model the transmission of disease in a population.
+
+
+    **Example:**
+
+        ```python
+        from laser.measles.scenarios.synthetic import single_patch_scenario
+        from laser.measles.abm import ABMModel, ABMParams
+        from laser.measles.abm import components
+        from laser.measles import create_component
+
+        scenario = single_patch_scenario(population=50_000, mcv1_coverage=0.85)
+        params = ABMParams(num_ticks=365, seed=42, start_time="2000-01")
+        model = ABMModel(scenario, params)
+        model.add_component(create_component(components.TransmissionProcess, components.TransmissionParams(beta=0.3)))
+        ```
     """
 
-    def __init__(self, model, verbose: bool = False, params: TransmissionParams | None = None) -> None:
+    def __init__(self, model, params: TransmissionParams | None = None) -> None:
         """
         Initializes the transmission object.
 
         Args:
 
             model: The model object that contains the patches and parameters.
-            verbose (bool, optional): If True, enables verbose output. Defaults to False.
 
         Attributes:
 
             model: The model object passed during initialization.
 
-        The model's patches are extended with the following properties:
+        The model's patches are extended with the following scalar property:
 
-            - 'cases': A vector property with length equal to the number of ticks, dtype is uint32.
-            - 'forces': A scalar property with dtype float32.
-            - 'incidence': A vector property with length equal to the number of ticks, dtype is uint32.
+            - 'incidence' (uint32, per patch): number of *new* infections
+              during the most recent tick; overwritten each tick. For
+              cumulative incidence over a run, sum this each tick yourself,
+              or compute from per-tick decreases in ``S`` recorded by a
+              StateTracker.
         """
 
-        super().__init__(model, verbose)
+        super().__init__(model)
 
         self.params = params if params is not None else TransmissionParams()
 

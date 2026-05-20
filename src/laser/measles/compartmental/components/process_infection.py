@@ -100,8 +100,6 @@ class InfectionProcess(BaseInfectionProcess):
     ----------
     model : object
         The simulation model containing population states and parameters
-    verbose : bool, default=False
-        Whether to print detailed information during execution
     params : InfectionParams | None, default=None
         Component-specific parameters. If None, will use default parameters
 
@@ -109,10 +107,25 @@ class InfectionProcess(BaseInfectionProcess):
     -----
     The infection process uses daily rates and seasonal transmission that varies
     sinusoidally over time with a period of 365 days.
+
+
+    **Example:**
+
+        ```python
+        from laser.measles.scenarios.synthetic import single_patch_scenario
+        from laser.measles.compartmental import CompartmentalModel, CompartmentalParams
+        from laser.measles.compartmental import components
+        from laser.measles import create_component
+
+        scenario = single_patch_scenario(population=100_000, mcv1_coverage=0.85)
+        params = CompartmentalParams(num_ticks=365, seed=42, start_time="2000-01")
+        model = CompartmentalModel(scenario, params)
+        model.add_component(create_component(components.InfectionProcess, components.InfectionParams(beta=0.8)))
+        ```
     """
 
-    def __init__(self, model: BaseLaserModel, params: InfectionParams | None = None, verbose: bool = False) -> None:
-        super().__init__(model, verbose)
+    def __init__(self, model: BaseLaserModel, params: InfectionParams | None = None) -> None:
+        super().__init__(model)
 
         self.params = params if params is not None else InfectionParams()
 

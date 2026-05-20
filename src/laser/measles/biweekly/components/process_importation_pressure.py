@@ -2,9 +2,11 @@ from collections.abc import Sequence
 
 import numpy as np
 from pydantic import BaseModel
+from pydantic import ConfigDict
 from pydantic import Field
 from pydantic import field_validator
 
+from laser.measles.base import BaseLaserModel
 from laser.measles.base import BasePhase
 from laser.measles.biweekly.model import BiweeklyModel
 from laser.measles.utils import cast_type
@@ -89,6 +91,8 @@ class ImportationPressureParams(BaseModel):
             )
     """
 
+    model_config = ConfigDict(extra="forbid")
+
     crude_importation_rate: float | list[float] | dict[str, float] = Field(
         default=1.0,
         description=(
@@ -123,6 +127,7 @@ class ImportationPressureParams(BaseModel):
     @field_validator("crude_importation_rate")
     @classmethod
     def validate_importation_rate(cls, v):
+        """Validate that all ``crude_importation_rate`` values are non-negative."""
         if isinstance(v, (int, float)):
             if v < 0:
                 raise ValueError("crude_importation_rate must be >= 0")
@@ -156,8 +161,6 @@ class ImportationPressureProcess(BasePhase):
     ----------
     model : object
         The simulation model containing nodes, states, and parameters
-    verbose : bool, default=False
-        Whether to print verbose output during simulation
     params : Optional[ImportationPressureParams], default=None
         Component-specific parameters. If None, will use default parameters
 
@@ -166,14 +169,29 @@ class ImportationPressureProcess(BasePhase):
     - Importation rates are calculated per year
     - Importation is limited to the susceptible population
     - All state counts are ensured to be non-negative
+
+
+    **Example:**
+
+        ```python
+        from laser.measles.scenarios.synthetic import single_patch_scenario
+        from laser.measles.biweekly import BiweeklyModel, BiweeklyParams
+        from laser.measles.biweekly import components
+        from laser.measles import create_component
+
+        scenario = single_patch_scenario(population=100_000, mcv1_coverage=0.85)
+        params = BiweeklyParams(num_ticks=52, seed=42, start_time="2000-01")
+        model = BiweeklyModel(scenario, params)
+        model.add_component(create_component(components.ImportationPressureProcess, components.ImportationPressureParams()))
+        ```
     """
 
-    def __init__(self, model, verbose: bool = False, params: ImportationPressureParams | None = None) -> None:
-        super().__init__(model, verbose)
+    def __init__(self, model: BiweeklyModel, params: ImportationPressureParams | None = None) -> None:
+        super().__init__(model)
         self.params = params or ImportationPressureParams()
         self.patch_rates_per_year_per_1k: np.ndarray | None = None
 
-    def __call__(self, model, tick: int) -> None:
+    def __call__(self, model: BaseLaserModel, tick: int) -> None:
         """
         Process importation pressure for the current tick.
 
@@ -181,8 +199,8 @@ class ImportationPressureProcess(BasePhase):
             model: The simulation model instance
             tick: The current simulation tick
         """
-        if tick < (self.params.importation_start // model.params.time_step_days) or (
-            self.params.importation_end != -1 and tick > (self.params.importation_end // model.params.time_step_days)
+        if tick < (self.params.importation_start // model.params.time_step_days) or (  # type: ignore
+            self.params.importation_end != -1 and tick > (self.params.importation_end // model.params.time_step_days)  # type: ignore
         ):
             return
 
@@ -207,7 +225,7 @@ class ImportationPressureProcess(BasePhase):
         states.S -= imported_cases
         states.I += imported_cases  # Move to infected state
 
-    def _initialize(self, model: BiweeklyModel) -> None:
+    def _initialize(self, model: BaseLaserModel) -> None:
         """
         Initialize the importation pressure component.
 
@@ -217,7 +235,7 @@ class ImportationPressureProcess(BasePhase):
         n_patches = model.patches.count
         patch_ids = model.scenario["id"].to_list()
 
-        rates = self.params.crude_importation_rate
+        rates = self.params.crude_importation_rate  # type:ignore
 
         if isinstance(rates, (int, float)):
             arr = np.full(n_patches, float(rates), dtype=np.float64)

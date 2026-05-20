@@ -1,13 +1,25 @@
 from abc import ABC
 
 from pydantic import BaseModel
+from pydantic import ConfigDict
 from pydantic import Field
 
 from laser.measles.base import BasePhase
 
 
 class BaseInfectionParams(BaseModel):
-    """Parameters specific to the infection process component."""
+    """Parameters specific to the infection process component.
+
+    **Example:**
+
+        ```python
+        from laser.measles.biweekly.components.process_infection import InfectionParams
+
+        params = InfectionParams(beta=0.57, seasonality=0.2)
+        ```
+    """
+
+    model_config = ConfigDict(extra="forbid")
 
     beta: float = Field(
         default=1, description="Base transmission rate (infections per day)", ge=0.0
@@ -19,4 +31,19 @@ class BaseInfectionParams(BaseModel):
 
 
 class BaseInfectionProcess(BasePhase, ABC):
-    """Base class for infection (transmission and disease progression)."""
+    """Base class for infection (transmission and disease progression).
+
+    **Example:**
+
+        ```python
+        from laser.measles.scenarios.synthetic import single_patch_scenario
+        from laser.measles.biweekly import BiweeklyModel, BiweeklyParams
+        from laser.measles.biweekly import components
+        from laser.measles import create_component
+
+        scenario = single_patch_scenario(population=100_000, mcv1_coverage=0.85)
+        params = BiweeklyParams(num_ticks=52, seed=42, start_time="2000-01")
+        model = BiweeklyModel(scenario, params)
+        model.add_component(create_component(components.InfectionProcess, components.InfectionParams(beta=0.57)))
+        ```
+    """

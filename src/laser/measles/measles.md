@@ -1,23 +1,28 @@
-# Base Measles Model
+# Data sources
 
-## Population Pyramid
+Reference links for the data sources used by laser-measles.
 
-- https://www.populationpyramid.net/
-- [USA 2000](https://www.populationpyramid.net/united-states-of-america/2000/)
+## Administrative boundaries
 
-## Mortality
+- [GADM v4.1](https://gadm.org/) — Global Administrative Areas database, used by
+  [`GADMShapefile`](demographics/gadm.py) for country-level shapefiles at admin
+  levels 0–2.
 
-- [Table 1 - National Vital Statistics Reports Volume 51, Number 3](https://www.cdc.gov/nchs/data/nvsr/nvsr51/nvsr51_03.pdf)
+## Population data
 
-## Washington State County Populations (2000)
+- [UN World Population Prospects](https://population.un.org/wpp/) — Used by
+  [`WPP`](demographics/wpp.py) for population pyramids, mortality rates, and
+  birth rates via the `pyvd` library.
+- [WorldPop](https://www.worldpop.org/) — Gridded population estimates used by
+  [`RasterPatchGenerator`](demographics/raster_patch.py) for sub-national
+  population distribution.
 
-- [web page](https://ofm.wa.gov/washington-data-research/population-demographics/decennial-census/2000-census/census-2000-summary-file-3-data)
-- [data file](https://view.officeapps.live.com/op/view.aspx?src=https%3A%2F%2Fofm.wa.gov%2Fsites%2Fdefault%2Ffiles%2Fpublic%2Flegacy%2Fpop%2Fcensus2000%2Fsf3%2Fstcopl%2FPop_hh_C.xls&wdOrigin=BROWSELINK)
+## Historical reference data (tutorials and tests)
 
-## Washington State Counties Shapefile
+The following sources were used during early development and appear in tutorials
+or test fixtures:
 
-- [web page](https://data-wadnr.opendata.arcgis.com/)
-- Select "Cadastre"
-- Select "WA County Boundaries"
-- [arcgis page](https://data-wadnr.opendata.arcgis.com/datasets/12712f465fc44fb58328c6e0255ca27e_11/explore?location=47.176927%2C-120.817600%2C7.25)
-- Download shapefile
+- [Population Pyramid](https://www.populationpyramid.net/) — Visual population
+  pyramid reference.
+- [National Vital Statistics Reports, Volume 51, Number 3](https://www.cdc.gov/nchs/data/nvsr/nvsr51/nvsr51_03.pdf) — US
+  mortality data (Table 1), used in some tutorial examples.

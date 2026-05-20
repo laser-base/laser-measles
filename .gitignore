@@ -71,9 +71,6 @@ nosetests.xml
 output/*.html
 output/*/index.html
 
-# Sphinx
-docs/_build
-
 # Mypy Cache
 .mypy_cache/
 
@@ -94,7 +91,6 @@ tmp/
 docs/reference/
 docs/api/_autosummary/
 docs/tutorials/*.ipynb
-docs/models.rst
 docs-legacy/
 
 # Temp

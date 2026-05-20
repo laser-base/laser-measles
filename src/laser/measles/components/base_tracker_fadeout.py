@@ -9,6 +9,7 @@ and visualization of the model's behavior over time.
 
 import numpy as np
 from pydantic import BaseModel
+from pydantic import ConfigDict
 
 from laser.measles.base import BaseLaserModel
 from laser.measles.base import BasePhase
@@ -16,6 +17,8 @@ from laser.measles.base import BasePhase
 
 class BaseFadeOutTrackerParams(BaseModel):
     """Parameters for the FadeOutTracker component."""
+
+    model_config = ConfigDict(extra="forbid")
 
 
 class BaseFadeOutTracker(BasePhase):
@@ -31,15 +34,14 @@ class BaseFadeOutTracker(BasePhase):
 
     Args:
         model: The simulation model instance.
-        verbose (bool, optional): Whether to enable verbose logging. Defaults to False.
     """
 
-    def __init__(self, model, verbose: bool = False) -> None:
-        super().__init__(model, verbose)
+    def __init__(self, model: BaseLaserModel) -> None:
+        super().__init__(model)
         self.fade_out_tracker = np.zeros(model.params.num_ticks)
 
-    def __call__(self, model, tick: int) -> None:
+    def __call__(self, model: BaseLaserModel, tick: int) -> None:
         self.fade_out_tracker[tick] = np.sum(model.patches.states.I == 0)  # number of nodes with 0 in I state
 
     def initialize(self, model: BaseLaserModel) -> None:
-        pass
+        """No-op — fade-out tracking requires no additional setup."""

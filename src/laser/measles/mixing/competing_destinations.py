@@ -8,8 +8,26 @@ from laser.measles.mixing.base import BaseMixing
 
 
 class CompetingDestinationsParams(BaseModel):
-    """
-    Parameters for the competing destinations mixing model.
+    """Parameters for the competing-destinations mixing model.
+
+    Extends the gravity kernel with a correction factor that penalises
+    destinations surrounded by many other attractive alternatives.
+
+    Attributes:
+        a: Population source exponent.
+        b: Population destination exponent.
+        c: Distance decay exponent.
+        k: Average trip probability.
+        delta: Destination-competition exponent — negative values
+            penalise destinations with many nearby competitors.
+
+    **Example:**
+
+        ```python
+        from laser.measles.mixing.competing_destinations import CompetingDestinationsParams
+
+        params = CompetingDestinationsParams(a=1.0, b=1.0, c=1.5, k=0.01, delta=-0.5)
+        ```
     """
 
     a: float = Field(default=1.0, description="Population source scale parameter", ge=1.0)
@@ -20,19 +38,38 @@ class CompetingDestinationsParams(BaseModel):
 
 
 class CompetingDestinationsMixing(BaseMixing):
-    """
-    Competing destinations mixing model that accounts for the effects of nearby destinations.
+    """Competing-destinations migration model for spatial mixing.
 
-    Formula:
-        .. math::
-            M_{i,j} = k \\frac{p_i^{a-1} p_j^b}{d_{i,j}^c} \\left(\\sum_{k \\ne i,j} \\frac{p_k^b}{d_{ik}^c}\\right)^\\delta
+    Extends the gravity kernel with a correction that accounts for the
+    attractiveness of alternative destinations:
 
-    Where:
-        - M_{i,j}: migration flow from origin i to destination j
-        - k: calibration constant
-        - p_i, p_j, p_k: population at origins/destinations
-        - d_{i,j}, d_{ik}: distances between l  ocations
-        - a, b, c, δ: model parameters
+    $$M_{i,j} = k \\frac{p_i^{a-1} \\, p_j^{b}}{d_{i,j}^{c}}
+    \\left(\\sum_{k \\ne i,j} \\frac{p_k^{b}}{d_{ik}^{c}}\\right)^{\\delta}$$
+
+    When $\\delta < 0$, destinations that are surrounded by many other
+    attractive locations receive *less* travel — the nearby alternatives
+    "compete" for travellers.
+
+    Args:
+        scenario (pl.DataFrame | None): Patch data.  ``None`` when the
+            model will set it automatically.
+        params (CompetingDestinationsParams | None): Model parameters.
+
+    **Example:**
+
+        ```python
+        from laser.measles.mixing.competing_destinations import (
+            CompetingDestinationsMixing, CompetingDestinationsParams,
+        )
+        from laser.measles.compartmental import components
+        from laser.measles import create_component
+
+        mixer = CompetingDestinationsMixing(
+            params=CompetingDestinationsParams(k=0.01, delta=-0.5),
+        )
+        infection_params = components.InfectionParams(beta=0.8, mixer=mixer)
+        model.add_component(create_component(components.InfectionProcess, infection_params))
+        ```
     """
 
     def __init__(self, scenario: pl.DataFrame | None = None, params: CompetingDestinationsParams | None = None):
@@ -41,6 +78,11 @@ class CompetingDestinationsMixing(BaseMixing):
         super().__init__(scenario, params)
 
     def get_migration_matrix(self) -> np.ndarray:
+        """Compute the competing-destinations migration matrix.
+
+        Returns:
+            Migration matrix of shape ``(N, N)``.
+        """
         if len(self.scenario) == 1:
             return np.array([[0.0]])
         distances = self.get_distances()

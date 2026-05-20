@@ -1,31 +1,41 @@
 """
-This module defines Importation classes, which provide methods to import cases into a population during simulation.
+Importation components: periodically introduce new infections into a population during simulation.
 
 Classes:
-    Infect_Random_Agents: A class to periodically infect a random subset of agents in the population
+    ImportationParams: Pydantic schema for configuring importation cadence, count, time window, and patch targets.
+    InfectRandomAgentsProcess: Periodically infects a random subset of agents drawn from anywhere in the population.
+    InfectAgentsInPatchProcess: Periodically infects a fixed number of agents in each patch listed in ``importation_patchlist`` (defaults to all patches).
 
-Functions:
-    Infect_Random_Agents.__init__(self, model, period, count, start, verbose: bool = False) -> None:
-        Initializes the Infect_Random_Agents class with a given model, period, count, and verbosity option.
-
-    Infect_Random_Agents.__call__(self, model, tick) -> None:
-        Checks whether it is time to infect a random subset of agents and infects them if necessary.
-
-    Infect_Random_Agents.plot(self, fig: Figure = None):
-        Nothing yet.
+Both process classes share the same ``__init__(model, params: ImportationParams | None = None)`` signature; if ``params`` is omitted, values are read from ``model.params`` for backward compatibility.
 """
+
+from __future__ import annotations
 
 import numpy as np
 from matplotlib.figure import Figure
 from pydantic import BaseModel
+from pydantic import ConfigDict
 from pydantic import Field
+
+from laser.measles.abm.model import ABMModel
 
 from ..utils import seed_infections_in_patch
 from ..utils import seed_infections_randomly
 
 
 class ImportationParams(BaseModel):
-    """Parameters specific to the importation process components."""
+    """Parameters specific to the importation process components.
+
+    **Example:**
+
+        ```python
+        from laser.measles.abm.components.process_importation import ImportationParams
+
+        params = ImportationParams()
+        ```
+    """
+
+    model_config = ConfigDict(extra="forbid")
 
     nticks: int = Field(description="Total number of simulation ticks", gt=0)
     importation_period: int = Field(description="Period between importation events", gt=0)
@@ -38,19 +48,35 @@ class ImportationParams(BaseModel):
 class InfectRandomAgentsProcess:
     """
     A component to update the infection timers of a population in a model.
+
+
+    **Example:**
+
+        ```python
+        from laser.measles.scenarios.synthetic import single_patch_scenario
+        from laser.measles.abm import ABMModel, ABMParams
+        from laser.measles.abm import components
+        from laser.measles import create_component
+
+        scenario = single_patch_scenario(population=50_000, mcv1_coverage=0.85)
+        params = ABMParams(num_ticks=365, seed=42, start_time="2000-01")
+        model = ABMModel(scenario, params)
+        model.add_component(create_component(components.InfectRandomAgentsProcess, components.ImportationParams()))
+        ```
     """
 
-    def __init__(self, model, verbose: bool = False, params: ImportationParams | None = None) -> None:
+    def __init__(self, model: ABMModel, params: ImportationParams | None = None) -> None:
         """
-        Initialize an Infect_Random_Agents instance.
+        Initialize an InfectRandomAgentsProcess instance.
 
         Args:
-
             model: The model object that contains the population.
-            period: The number of ticks between each infection event.
-            count: The number of agents to infect at each event.
-            start (int, optional): The tick at which to start the infection events.
-            verbose (bool, optional): If True, enables verbose output. Defaults to False.
+            params: Optional importation configuration. If provided, this should be an
+                ``ImportationParams`` instance whose ``importation_period``,
+                ``importation_count``, and ``importation_start`` fields are used to
+                initialize this process's ``period``, ``count``, and ``start``
+                attributes (and ``importation_end`` maps to ``end``). If ``None``,
+                the values are loaded from ``model.params`` for backward compatibility.
 
         Attributes:
 
@@ -112,19 +138,37 @@ class InfectRandomAgentsProcess:
 class InfectAgentsInPatchProcess:
     """
     A component to update the infection timers of a population in a model.
+
+
+    **Example:**
+
+        ```python
+        from laser.measles.scenarios.synthetic import single_patch_scenario
+        from laser.measles.abm import ABMModel, ABMParams
+        from laser.measles.abm import components
+        from laser.measles import create_component
+
+        scenario = single_patch_scenario(population=50_000, mcv1_coverage=0.85)
+        params = ABMParams(num_ticks=365, seed=42, start_time="2000-01")
+        model = ABMModel(scenario, params)
+        model.add_component(create_component(components.InfectAgentsInPatchProcess, components.ImportationParams()))
+        ```
     """
 
-    def __init__(self, model, verbose: bool = False, params: ImportationParams | None = None) -> None:
+    def __init__(self, model: ABMModel, params: ImportationParams | None = None) -> None:
         """
-        Initialize an Infect_Random_Agents instance.
+        Initialize an InfectAgentsInPatchProcess instance.
 
         Args:
-
             model: The model object that contains the population.
-            period: The number of ticks between each infection event.
-            count: The number of agents to infect at each event.
-            start (int, optional): The tick at which to start the infection events.
-            verbose (bool, optional): If True, enables verbose output. Defaults to False.
+            params: Optional importation configuration. When provided, this should
+                be an ``ImportationParams`` instance whose
+                ``importation_period``, ``importation_count``,
+                ``importation_start``, ``importation_end``, and
+                ``importation_patchlist`` fields control the timing, number of
+                imported infections, start/end ticks, and patches targeted by
+                this process. If ``None``, these values are populated from
+                ``model.params`` for backward compatibility.
 
         Attributes:
 

@@ -13,16 +13,20 @@ The BaseLaserModel class is the base class for all laser-measles models.
 from __future__ import annotations
 
 import gc
+import json
 from abc import ABC
 from abc import abstractmethod
+from collections.abc import Iterator
 from datetime import datetime
 from datetime import timedelta
+from pathlib import Path
 from typing import Any
 from typing import Protocol
 from typing import TypeVar
 
 import alive_progress
 import matplotlib.pyplot as plt
+import numpy as np
 import polars as pl
 from laser.core.laserframe import LaserFrame
 from laser.core.random import seed as seed_prng
@@ -41,7 +45,18 @@ from laser.measles.wrapper import pretty_laserframe
 
 
 class ParamsProtocol(Protocol):
-    """Protocol defining the expected structure of model parameters."""
+    """Protocol defining the expected structure of model parameters.
+
+    **Example:**
+
+        ```python
+        from laser.measles.biweekly import BiweeklyParams
+
+        params = BiweeklyParams(num_ticks=52, seed=42, start_time="2000-01")
+        params.time_step_days  # 14 (biweekly)
+        params.states          # ["S", "I", "R"]
+        ```
+    """
 
     seed: int
     start_time: str
@@ -50,9 +65,14 @@ class ParamsProtocol(Protocol):
     show_progress: bool
 
     @property
-    def time_step_days(self) -> int: ...
+    def time_step_days(self) -> int:
+        """Number of calendar days represented by one simulation tick."""
+        ...
+
     @property
-    def states(self) -> list[str]: ...
+    def states(self) -> list[str]:
+        """Ordered list of compartment state names (e.g. ``["S", "E", "I", "R"]``)."""
+        ...
 
 
 class BaseModelParams(BaseModel):
@@ -94,6 +114,15 @@ class BaseModelParams(BaseModel):
         use_numba (bool):
             If True, enables numba JIT acceleration when available.
             Falls back to pure Python if numba is unavailable.
+
+
+    **Example:**
+
+        ```python
+        from laser.measles.biweekly import BiweeklyParams
+
+        params = BiweeklyParams(num_ticks=52, seed=42, start_time="2000-01")
+        ```
     """
 
     model_config = ConfigDict(extra="forbid")
@@ -108,6 +137,7 @@ class BaseModelParams(BaseModel):
     @field_validator("start_time")
     @classmethod
     def validate_start_time(cls, v: str) -> str:
+        """Accept ``YYYY-MM`` or ``YYYY-MM-DD`` and normalise to ``YYYY-MM``."""
         # Accept "YYYY-MM" (canonical) or "YYYY-MM-DD" (strip the day).
         try:
             datetime.strptime(v, "%Y-%m")  # noqa DTZ007
@@ -123,18 +153,27 @@ class BaseModelParams(BaseModel):
 
     @property
     def time_step_days(self) -> int:
-        """Time step in days. Must be implemented by subclasses."""
+        """Duration of one tick in days.  Subclasses must override."""
         raise NotImplementedError("Subclasses must implement time_step_days")
 
     @property
     def states(self) -> list[str]:
-        """List of model states. Must be implemented by subclasses."""
+        """Ordered list of compartment names (e.g. ``["S", "E", "I", "R"]``).  Subclasses must override."""
         raise NotImplementedError("Subclasses must implement states")
 
 
 @pretty_laserframe
 class BasePatchLaserFrame(LaserFrame):
-    """LaserFrame that has a states property."""
+    """LaserFrame that has a states property.
+
+    **Example:**
+
+        ```python
+        model.run()
+        model.patches.S  # shape (nticks+1, num_patches), susceptible counts
+        model.patches.I  # shape (nticks+1, num_patches), infectious counts
+        ```
+    """
 
     states: StateArray  # StateArray with attribute access (S, E, I, R, etc.)
 
@@ -146,6 +185,16 @@ class BasePeopleLaserFrame(LaserFrame):
 
     This class provides factory methods for creating new instances with the same
     properties but different capacity, making it easy to resize people collections.
+
+
+    **Example:**
+
+        ```python
+        # ABM models have a people LaserFrame for individual agents
+        model.people.state     # agent health states
+        model.people.age       # agent ages in days
+        model.people.patch_id  # which patch each agent belongs to
+        ```
     """
 
     @classmethod
@@ -217,6 +266,19 @@ class BaseLaserModel(ABC):
 
     Provides common functionality for model initialization, component management,
     timing, metrics collection, and execution loops.
+
+
+    **Example:**
+
+        ```python
+        from laser.measles.scenarios.synthetic import single_patch_scenario
+        from laser.measles.biweekly import BiweeklyModel, BiweeklyParams
+
+        scenario = single_patch_scenario(population=100_000, mcv1_coverage=0.85)
+        params = BiweeklyParams(num_ticks=52, seed=42, start_time="2000-01")
+        model = BiweeklyModel(scenario, params)
+        model.run()
+        ```
     """
 
     ScenarioType = TypeVar("ScenarioType")
@@ -339,13 +401,28 @@ class BaseLaserModel(ABC):
         self.instances = []
         self.phases = []
         for component in components:
-            instance = component(self, verbose=getattr(self.params, "verbose", False))
+            instance = self._instantiate_component(component)
             self.instances.append(instance)
             if "__call__" in dir(instance):
                 self.phases.append(instance)
 
         # Allow subclasses to perform additional component setup
         self._setup_components()
+
+    def _instantiate_component(self, component: type[BaseComponent]) -> BaseComponent:
+        """Instantiate a component and ensure it has a `name` attribute.
+
+        BaseComponent.__init__ defaults `name` to the class name, but
+        components that don't inherit from BaseComponent (or override __init__
+        without calling super) won't have it set. get_instance(str) compares
+        against `name`, so a missing attribute raises AttributeError
+        mid-comprehension the first time a string-form lookup runs. Set it
+        defensively here so any class works as a component.
+        """
+        instance = component(self)
+        if not hasattr(instance, "name"):
+            instance.name = instance.__class__.__name__
+        return instance
 
     def add_component(self, component: type[BaseComponent]) -> None:
         """
@@ -357,7 +434,7 @@ class BaseLaserModel(ABC):
             component: A component class to be initialized and integrated into the model.
         """
         self._components.append(component)
-        instance = component(self, verbose=getattr(self.params, "verbose", False))
+        instance = self._instantiate_component(component)
         self.instances.append(instance)
         if "__call__" in dir(instance):
             self.phases.append(instance)
@@ -371,7 +448,7 @@ class BaseLaserModel(ABC):
             component: A component class to be initialized and integrated into the model.
         """
         self._components.insert(0, component)
-        instance = component(self, verbose=getattr(self.params, "verbose", False))
+        instance = self._instantiate_component(component)
         self.instances.insert(0, instance)
         if "__call__" in dir(instance):
             self.phases.insert(0, instance)
@@ -411,6 +488,118 @@ class BaseLaserModel(ABC):
         if self.params.verbose:
             print(f"Completed the {self.name} model at {self._tfinish}…")
             self._print_timing_summary()
+
+    def write_results(self, path: str = "results.json") -> dict:
+        """Write a standard summary of the simulation to JSON.
+
+        Produces a single, model-variant-agnostic file with the quantities most
+        commonly asked for after a run: peak infectious, attack rate, and final
+        compartment counts — both globally and per patch when a per-patch
+        StateTracker is present. Intended to be the canonical output that
+        downstream tooling (validators, plotting, model comparison) reads
+        instead of parsing stdout.
+
+        Requires a `StateTracker` component to be attached. If you want
+        per-patch arrays in the output, add the tracker with
+        `aggregation_level=0` (or the depth of your ID hierarchy minus one).
+        Otherwise only global aggregates are produced.
+
+        Args:
+            path: Destination file. Defaults to ``"results.json"`` in cwd.
+
+        Returns:
+            The dict that was written (also handy for in-process inspection).
+
+        Schema (top-level keys):
+            model_type:   class name of the model (e.g. "ABMModel")
+            num_ticks:    int
+            num_patches:  int (patch count from the tracker; 1 if global only)
+            patch_ids:    list[str] (matches tracker.group_ids)
+            states:       list[str] (e.g. ["S","E","I","R"])
+            summary:
+                peak_infectious_global:     int
+                peak_day:                   int
+                attack_rate_global:         float
+                final_state_global:         dict[str, int]
+                attack_rate_per_patch:      list[float] | None
+                peak_infectious_per_patch:  list[int]   | None
+                final_state_per_patch:      dict[str, list[int]] | None
+        """
+        tracker = None
+        for instance in self.instances:
+            if getattr(instance, "name", None) == "StateTracker":
+                tracker = instance
+                break
+        if tracker is None:
+            raise RuntimeError(
+                "write_results() requires a StateTracker component. Add StateTracker() to your components list before model.run()."
+            )
+
+        arr = np.asarray(tracker.state_tracker)  # (num_states, num_ticks, num_groups)
+        _, num_ticks, num_groups = arr.shape
+        state_names = list(self.params.states)
+        state_idx = {s: i for i, s in enumerate(state_names)}
+        patch_ids = list(tracker.group_ids)
+        per_patch = patch_ids != ["all_patches"]
+
+        def _series(name):
+            return arr[state_idx[name]] if name in state_idx else None  # (num_ticks, num_groups)
+
+        S, E, I, R = (_series(s) for s in ("S", "E", "I", "R"))  # noqa: E741 — SEIR convention
+
+        if I is None:
+            raise RuntimeError(f"write_results() requires an 'I' state in model.params.states; got {state_names!r}")
+
+        # Global infectious time series (sum over patches/groups)
+        I_global = I.sum(axis=1)
+        peak_global = int(I_global.max())
+        peak_day = int(I_global.argmax())
+
+        # Initial population per patch (sum over states at tick 0). Used as the
+        # attack-rate denominator. Falls back to 1 to avoid div-by-zero on
+        # malformed inputs.
+        pop_per_patch = sum(
+            (x[0] for x in (S, E, I, R) if x is not None),
+            start=np.zeros(num_groups, dtype=arr.dtype),
+        )
+
+        if R is not None:
+            attack_global = float(R[-1].sum() / max(int(pop_per_patch.sum()), 1))
+            attack_per_patch = (R[-1] / np.maximum(pop_per_patch, 1)).astype(float).tolist()
+        else:
+            attack_global = None
+            attack_per_patch = None
+
+        peak_per_patch = I.max(axis=0).astype(int).tolist() if per_patch else None
+        final_per_patch = None
+        if per_patch:
+            final_per_patch = {name: x[-1].astype(int).tolist() for name, x in (("S", S), ("E", E), ("I", I), ("R", R)) if x is not None}
+
+        # Global final compartment counts — always produced, by summing the
+        # final tick across patches/groups. Available even when only a global
+        # StateTracker is attached (no per-patch breakdown required).
+        final_global = {name: int(x[-1].sum()) for name, x in (("S", S), ("E", E), ("I", I), ("R", R)) if x is not None}
+
+        out = {
+            "model_type": self.__class__.__name__,
+            "num_ticks": int(num_ticks),
+            "num_patches": len(patch_ids),
+            "patch_ids": patch_ids,
+            "states": state_names,
+            "summary": {
+                "peak_infectious_global": peak_global,
+                "peak_day": peak_day,
+                "attack_rate_global": attack_global,
+                "final_state_global": final_global,
+                "attack_rate_per_patch": attack_per_patch if per_patch else None,
+                "peak_infectious_per_patch": peak_per_patch,
+                "final_state_per_patch": final_per_patch,
+            },
+        }
+
+        with Path(path).open("w", encoding="utf-8") as f:
+            json.dump(out, f, indent=2, default=lambda o: o.tolist() if hasattr(o, "tolist") else str(o))
+        return out
 
     def time_elapsed(self, units: str = "days") -> int | float:
         """
@@ -648,24 +837,41 @@ class BaseComponent:
 
     Components follow a uniform interface with __call__(model, tick) method
     for execution during simulation loops.
+
+
+    **Example:**
+
+        ```python
+        from laser.measles.biweekly import BiweeklyModel, BiweeklyParams, components
+        from laser.measles import create_component
+
+        model.add_component(create_component(components.InfectionProcess, components.InfectionParams(beta=0.57)))
+        ```
     """
 
     ModelType = TypeVar("ModelType")
 
-    def __init__(self, model: BaseLaserModel, verbose: bool = False, params: None = None) -> None:  # TODO: add ParamsType
+    def __init__(self, model: BaseLaserModel, params: Any | None = None) -> None:  # TODO: add ParamsType
         """
         Initialize the component.
 
         Args:
             model: The model instance this component belongs to.
-            verbose: Whether to enable verbose output. Defaults to False.
         """
         self.model = model
-        self.verbose = verbose
         self.initialized = False
         self.params = params
         if not hasattr(self, "name"):
             self.name = self.__class__.__name__
+
+    @property
+    def verbose(self) -> bool:
+        # Single source of truth: model.params.verbose. Property (not stored attr)
+        # so toggling params.verbose at runtime is immediately visible to the component.
+        params = getattr(self.model, "params", None)
+        if params is None:
+            return False
+        return getattr(params, "verbose", False)
 
     def __str__(self) -> str:
         """
@@ -701,7 +907,7 @@ class BaseComponent:
         use_numba = getattr(self.model.params, "use_numba", True)
         return select_implementation(numpy_func, numba_func, use_numba)
 
-    def plot(self, fig: Figure | None = None):
+    def plot(self, fig: Figure | None = None) -> Iterator[None]:
         """
         Placeholder for plotting method.
 
@@ -730,10 +936,22 @@ class BasePhase(BaseComponent):
     Base class for all laser-measles phases.
 
     Phases are components that are called every tick and include a __call__ method.
+
+
+    **Example:**
+
+        ```python
+        from laser.measles.biweekly import components
+        from laser.measles import create_component
+
+        # Processes (BasePhase subclasses) execute in order each tick
+        model.add_component(create_component(components.VitalDynamicsProcess, components.VitalDynamicsParams()))
+        model.add_component(create_component(components.InfectionProcess, components.InfectionParams()))
+        ```
     """
 
     @abstractmethod
-    def __call__(self, model, tick: int) -> None:
+    def __call__(self, model: BaseLaserModel, tick: int) -> None:
         """
         Execute component logic for a given simulation tick.
 
@@ -753,6 +971,16 @@ class BaseScenario(ABC):
 
     Provides a wrapper around polars DataFrames with additional validation
     and convenience methods.
+
+
+    **Example:**
+
+        ```python
+        from laser.measles.scenarios.synthetic import single_patch_scenario
+
+        scenario = single_patch_scenario(population=100_000, mcv1_coverage=0.85)
+        # scenario is a Polars DataFrame with columns: id, pop, lat, lon, mcv1
+        ```
     """
 
     def __init__(self, df: pl.DataFrame):
@@ -764,7 +992,7 @@ class BaseScenario(ABC):
         """
         self._df = df
 
-    def __getattr__(self, attr):
+    def __getattr__(self, attr: str) -> Any:
         """
         Forward attribute access to the underlying DataFrame.
 
@@ -777,7 +1005,7 @@ class BaseScenario(ABC):
         # Forward attribute access to the underlying DataFrame
         return getattr(self._df, attr)
 
-    def __getitem__(self, key):
+    def __getitem__(self, key: Any) -> Any:
         """
         Forward item access to the underlying DataFrame.
 
@@ -789,7 +1017,7 @@ class BaseScenario(ABC):
         """
         return self._df[key]
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         """
         Return string representation of the scenario.
 
@@ -798,7 +1026,7 @@ class BaseScenario(ABC):
         """
         return repr(self._df)
 
-    def __len__(self):
+    def __len__(self) -> int:
         """
         Return the length of the underlying DataFrame.
 

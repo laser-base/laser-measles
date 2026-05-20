@@ -4,6 +4,7 @@ from typing import TypeVar
 
 import numpy as np
 from pydantic import BaseModel
+from pydantic import ConfigDict
 from pydantic import Field
 
 from laser.measles.base import BasePhase
@@ -13,7 +14,18 @@ ModelType = TypeVar("ModelType")
 
 
 class BaseVitalDynamicsParams(BaseModel):
-    """Parameters specific to vital dynamics."""
+    """Parameters specific to vital dynamics.
+
+    **Example:**
+
+        ```python
+        from laser.measles.biweekly.components.process_vital_dynamics import VitalDynamicsParams
+
+        params = VitalDynamicsParams()
+        ```
+    """
+
+    model_config = ConfigDict(extra="forbid")
 
     crude_birth_rate: float = Field(default=20.0, description="Annual crude birth rate per 1000 population", ge=0.0)
     crude_death_rate: float = Field(default=8.0, description="Annual crude death rate per 1000 population", ge=0.0)
@@ -52,8 +64,6 @@ class BaseVitalDynamicsProcess(BasePhase, ABC):
     ----------
     model : object
         The simulation model containing nodes, states, and parameters
-    verbose : bool, default=False
-        Whether to print verbose output during simulation
     params : VitalDynamicsParams | None, default=None
         Component-specific parameters. If None, will use default parameters
 
@@ -64,8 +74,8 @@ class BaseVitalDynamicsProcess(BasePhase, ABC):
       time before routine immunization significantly shifts population-level immunity
     """
 
-    def __init__(self, model, verbose: bool = False, params: BaseVitalDynamicsParams | None = None) -> None:
-        super().__init__(model, verbose)
+    def __init__(self, model, params: BaseVitalDynamicsParams | None = None) -> None:
+        super().__init__(model)
         if params is None:
             params = BaseVitalDynamicsParams()
         self.params = params

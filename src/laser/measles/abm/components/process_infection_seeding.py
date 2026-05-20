@@ -7,6 +7,7 @@ selects the largest patch by population for seeding.
 
 import numpy as np
 from pydantic import BaseModel
+from pydantic import ConfigDict
 from pydantic import Field
 from pydantic import field_validator
 
@@ -17,7 +18,18 @@ from laser.measles.base import BaseLaserModel
 
 
 class InfectionSeedingParams(BaseModel):
-    """Parameters for the infection seeding component."""
+    """Parameters for the infection seeding component.
+
+    **Example:**
+
+        ```python
+        from laser.measles.abm.components.process_infection_seeding import InfectionSeedingParams
+
+        params = InfectionSeedingParams()
+        ```
+    """
+
+    model_config = ConfigDict(extra="forbid")
 
     num_infections: int = Field(default=1, description="Default number of infections to seed", ge=1)
     target_patches: list[str] | None = Field(default=None, description="List of specific patch IDs to seed")
@@ -65,7 +77,6 @@ class InfectionSeedingProcess(BaseComponent):
 
     Args:
         model: The compartmental model instance.
-        verbose: Whether to print verbose output during initialization.
         params: Component-specific parameters. If None, uses default parameters.
 
     Example:
@@ -90,8 +101,8 @@ class InfectionSeedingProcess(BaseComponent):
             )
     """
 
-    def __init__(self, model: BaseLaserModel, verbose: bool = False, params: InfectionSeedingParams | None = None) -> None:
-        super().__init__(model, verbose)
+    def __init__(self, model: BaseLaserModel, params: InfectionSeedingParams | None = None) -> None:
+        super().__init__(model)
         self.params = params or InfectionSeedingParams()
         self._validate_params()
 

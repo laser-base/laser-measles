@@ -9,6 +9,7 @@ from datetime import timedelta
 import numpy as np
 import polars as pl
 from pydantic import BaseModel
+from pydantic import ConfigDict
 from pydantic import Field
 
 from laser.measles.base import BasePhase
@@ -17,9 +18,18 @@ from laser.measles.utils import cast_type
 
 
 class SIACalendarParams(BaseModel):
-    """Parameters specific to the SIA calendar component."""
+    """Parameters specific to the SIA calendar component.
 
-    model_config = {"arbitrary_types_allowed": True}
+    **Example:**
+
+        ```python
+        from laser.measles.compartmental.components.process_sia_calendar import SIACalendarParams
+
+        params = SIACalendarParams()
+        ```
+    """
+
+    model_config = ConfigDict(extra="forbid", arbitrary_types_allowed=True)
 
     sia_efficacy: float = Field(0.9, description="Fraction of susceptibles to vaccinate in SIA", ge=0.0, le=1.0)
     filter_fn: Callable[[str], bool] = Field(lambda x: True, description="Function to filter which nodes to include in aggregation")
@@ -43,8 +53,6 @@ class SIACalendarProcess(BasePhase):
     ----------
     model : object
         The simulation model containing nodes, states, and parameters
-    verbose : bool, default=False
-        Whether to print verbose output during simulation
     params : Optional[SIACalendarParams], default=None
         Component-specific parameters. If None, will use default parameters
 
@@ -55,10 +63,25 @@ class SIACalendarProcess(BasePhase):
     - SIAs are implemented when the model's current_date has passed the scheduled date
     - Since the model steps in 14-day increments, SIAs are implemented on the first step after their scheduled date
     - Each SIA is implemented exactly once
+
+
+    **Example:**
+
+        ```python
+        from laser.measles.scenarios.synthetic import single_patch_scenario
+        from laser.measles.compartmental import CompartmentalModel, CompartmentalParams
+        from laser.measles.compartmental import components
+        from laser.measles import create_component
+
+        scenario = single_patch_scenario(population=100_000, mcv1_coverage=0.85)
+        params = CompartmentalParams(num_ticks=365, seed=42, start_time="2000-01")
+        model = CompartmentalModel(scenario, params)
+        model.add_component(create_component(components.SIACalendarProcess, components.SIACalendarParams()))
+        ```
     """
 
-    def __init__(self, model: CompartmentalModel, verbose: bool = False, params: SIACalendarParams | None = None) -> None:
-        super().__init__(model, verbose)
+    def __init__(self, model: CompartmentalModel, params: SIACalendarParams | None = None) -> None:
+        super().__init__(model)
         if params is None:
             raise ValueError("SIACalendarParams must be provided")
         self.params = params
@@ -166,7 +189,7 @@ class SIACalendarProcess(BasePhase):
                         )
 
     def initialize(self, model: CompartmentalModel) -> None:
-        pass
+        """No-op; SIA calendar state is set up during construction."""
 
     def get_sia_schedule(self) -> pl.DataFrame:
         """

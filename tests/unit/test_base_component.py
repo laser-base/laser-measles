@@ -50,15 +50,6 @@ class TestBaseComponent:
         assert component.verbose is False
         assert component.initialized is False  # Should be False initially
 
-    def test_initialization_with_verbose(self):
-        """Test BaseComponent initialization with verbose=True."""
-        model = MockModel()
-        component = MockComponentWithoutDocstring(model, verbose=True)
-
-        assert component.model is model
-        assert component.verbose is True
-        assert component.initialized is False  # Should be False initially
-
     def test_call_method_exists(self):
         """Test that __call__ method exists and can be called."""
         model = MockModel()

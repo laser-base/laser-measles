@@ -4,6 +4,7 @@ Component defining the DiseaseProcess, which simulates the disease progression i
 
 import numpy as np
 from pydantic import BaseModel
+from pydantic import ConfigDict
 from pydantic import Field
 
 from laser.measles.abm.model import ABMModel
@@ -125,15 +126,18 @@ else:
 
 
 class DiseaseParams(BaseModel):
+    model_config = ConfigDict(extra="forbid")
     inf_mean: float = Field(default=8.0, description="Mean infectious period (days)")
     inf_sigma: float = Field(default=2.0, description="Shape of the infectious period (days)")
 
     @property
     def inf_shape(self) -> float:
+        """Gamma distribution shape parameter derived from ``inf_mean`` and ``inf_sigma``."""
         return (self.inf_mean / self.inf_sigma) ** 2
 
     @property
     def inf_scale(self) -> float:
+        """Gamma distribution scale parameter derived from ``inf_mean`` and ``inf_sigma``."""
         return self.inf_sigma**2 / self.inf_mean
 
 
@@ -143,8 +147,8 @@ class DiseaseProcess(BaseComponent):
     It is used to update the infectious timers and the exposed timers.
     """
 
-    def __init__(self, model, verbose: bool = False, params: DiseaseParams | None = None):
-        super().__init__(model, verbose)
+    def __init__(self, model, params: DiseaseParams | None = None):
+        super().__init__(model)
         self.params = params if params is not None else DiseaseParams()
 
     def __call__(self, model, tick: int) -> None:

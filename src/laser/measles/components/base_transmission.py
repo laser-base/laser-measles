@@ -9,13 +9,17 @@ from abc import abstractmethod
 
 import numpy as np
 from pydantic import BaseModel
+from pydantic import ConfigDict
 from pydantic import Field
 
+from ..base import BaseLaserModel
 from ..base import BasePhase
 
 
 class BaseTransmissionParams(BaseModel):
     """Common parameters for all transmission components."""
+
+    model_config = ConfigDict(extra="forbid", arbitrary_types_allowed=True)  # arbitrary_types_allowed for numpy arrays
 
     # Core transmission parameters
     beta: float = Field(default=0.1, description="Transmission rate parameter", gt=0.0)
@@ -33,27 +37,43 @@ class BaseTransmissionParams(BaseModel):
     # Model-specific parameters that may be overridden
     random_seed: int | None = Field(default=None, description="Random seed for stochastic processes")
 
-    class Config:
-        arbitrary_types_allowed = True  # Allow numpy arrays
-
 
 class BaseTransmission(BasePhase, ABC):
-    """Abstract base class for transmission components.
+    """Abstract base for transmission components.
 
-    This class defines the common interface that all transmission
-    components must implement, regardless of their underlying
-    mathematical approach (agent-based, compartmental, etc.).
+    Defines the shared interface for all transmission implementations
+    (agent-based, compartmental, biweekly).  Subclasses must implement
+    `__call__` to execute transmission dynamics each tick.  This component
+    belongs to the *per-timestep* stage and should appear in the component
+    list **after** any vital-dynamics component.
+
+    Provides helper methods for seasonality, spatial mixing, and effective
+    β calculation that subclasses can call from their `__call__`
+    implementations.
+
+    Args:
+        model: The simulation model this component is attached to.
+        params: Transmission parameters.
+            Uses [`BaseTransmissionParams`][laser.measles.components.base_transmission.BaseTransmissionParams]
+            defaults if ``None``.
+
+    **Example:**
+
+        ```python
+        # Transmission components are typically added via the model's component list:
+        from laser.measles.compartmental.components import InfectionProcess
+        model.add_component(InfectionProcess)
+        ```
     """
 
-    def __init__(self, model, verbose: bool = False, params: BaseTransmissionParams | None = None):
+    def __init__(self, model: BaseLaserModel, params: BaseTransmissionParams | None = None):
         """Initialize the transmission component.
 
         Args:
             model: The model instance this component belongs to
-            verbose: Whether to enable verbose logging
             params: Component parameters (uses defaults if None)
         """
-        super().__init__(model, verbose)
+        super().__init__(model)
         self.params = params if params is not None else BaseTransmissionParams()
 
         # Set random seed if specified
@@ -61,7 +81,7 @@ class BaseTransmission(BasePhase, ABC):
             np.random.seed(self.params.random_seed)
 
     @abstractmethod
-    def __call__(self, model, tick: int):
+    def __call__(self, model: BaseLaserModel, tick: int) -> None:
         """Execute transmission dynamics for one time step.
 
         This method must be implemented by each model type to define
@@ -72,7 +92,7 @@ class BaseTransmission(BasePhase, ABC):
             tick: Current time step
         """
 
-    def get_force_of_infection(self, model, tick: int) -> np.ndarray:
+    def get_force_of_infection(self, model: BaseLaserModel, tick: int) -> np.ndarray:
         """Calculate force of infection for each patch.
 
         This method provides a common interface for calculating

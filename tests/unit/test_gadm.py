@@ -2,6 +2,7 @@ import shutil
 from pathlib import Path
 
 import pytest
+import requests
 from appdirs import user_cache_dir
 
 from laser.measles.demographics import gadm
@@ -20,7 +21,10 @@ def test_clear_cache_dir():
 def test_download_gadm_cuba():
     # Download Cuba's shapefile
     cache_dir = user_cache_dir("laser.measles", "gadm_test")
-    gadm_shapefile = gadm.GADMShapefile.download("CUB", 0, directory=cache_dir)
+    try:
+        gadm_shapefile = gadm.GADMShapefile.download("CUB", 0, directory=cache_dir)
+    except requests.exceptions.RequestException as e:
+        pytest.skip(f"GADM source unreachable: {e}")
 
     # Verify the path exists and is a file
     assert Path(gadm_shapefile.shapefile).exists()

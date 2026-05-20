@@ -3,12 +3,14 @@ Component for tracking case surveillance
 """
 
 from collections.abc import Callable
+from collections.abc import Iterator
 
 import matplotlib.pyplot as plt
 import numpy as np
 import polars as pl
 from matplotlib.figure import Figure
 from pydantic import BaseModel
+from pydantic import ConfigDict
 from pydantic import Field
 
 from laser.measles.base import BaseLaserModel
@@ -24,7 +26,18 @@ class BaseCaseSurveillanceParams(BaseModel):
         filter_fn: Function to filter which nodes to include in aggregation.
         aggregate_cases: Whether to aggregate cases by geographic level.
         aggregation_level: Number of levels to use for aggregation (e.g., 2 for country:state:lga).
+
+
+    **Example:**
+
+        ```python
+        from laser.measles.biweekly.components.tracker_case_surveillance import CaseSurveillanceParams
+
+        params = CaseSurveillanceParams()
+        ```
     """
+
+    model_config = ConfigDict(extra="forbid")
 
     detection_rate: float = Field(default=0.1, description="Probability of detecting an infected case", ge=0.0, le=1.0)
     filter_fn: Callable[[str], bool] = Field(default=lambda x: True, description="Function to filter which nodes to include in aggregation")
@@ -45,12 +58,26 @@ class BaseCaseSurveillanceTracker(BasePhase):
 
     Args:
         model: The simulation model containing nodes, states, and parameters.
-        verbose: Whether to print verbose output during simulation. Defaults to False.
         params: Component-specific parameters. If None, will use default parameters.
+
+
+    **Example:**
+
+        ```python
+        from laser.measles.scenarios.synthetic import single_patch_scenario
+        from laser.measles.biweekly import BiweeklyModel, BiweeklyParams
+        from laser.measles.biweekly import components
+        from laser.measles import create_component
+
+        scenario = single_patch_scenario(population=100_000, mcv1_coverage=0.85)
+        params = BiweeklyParams(num_ticks=52, seed=42, start_time="2000-01")
+        model = BiweeklyModel(scenario, params)
+        model.add_component(create_component(components.CaseSurveillanceTracker, components.CaseSurveillanceParams()))
+        ```
     """
 
-    def __init__(self, model, verbose: bool = False, params: BaseCaseSurveillanceParams | None = None) -> None:
-        super().__init__(model, verbose)
+    def __init__(self, model: BaseLaserModel, params: BaseCaseSurveillanceParams | None = None) -> None:
+        super().__init__(model)
         self.params = params or BaseCaseSurveillanceParams()
         self._validate_params()
 
@@ -85,7 +112,7 @@ class BaseCaseSurveillanceTracker(BasePhase):
         if self.params.aggregation_level < -1:
             raise ValueError("aggregation_level must be at least -1")
 
-    def __call__(self, model, tick: int) -> None:
+    def __call__(self, model: BaseLaserModel, tick: int) -> None:
         """Process case surveillance for the current tick.
 
         Args:
@@ -131,9 +158,9 @@ class BaseCaseSurveillanceTracker(BasePhase):
         return pl.DataFrame(data)
 
     def initialize(self, model: BaseLaserModel) -> None:
-        pass
+        """No-op — surveillance tracking requires no additional setup."""
 
-    def plot(self, fig: Figure | None = None):
+    def plot(self, fig: Figure | None = None) -> Iterator[Figure]:
         """Create a heatmap visualization of log(cases+1) over time.
 
         Args:

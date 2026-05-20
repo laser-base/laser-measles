@@ -134,12 +134,37 @@ def concat(mkdocs_dir: str, notebooks_dir: str, output_file: str):
     base = Path(mkdocs_dir)
     nb_dir = Path(notebooks_dir)
 
-    # Main narrative pages
-    main_pages = [
-        base / "index.html",
-        base / "install" / "index.html",
-        base / "usage" / "index.html",
-    ]
+    # Main narrative pages — discovered by walking the rendered site.
+    #
+    # Why walk instead of hardcode: a previous version of this script kept a
+    # hardcoded list of pages (originally `[index.html, install/index.html,
+    # usage/index.html]` for the single-file canonical layout). When the fork
+    # split `usage.md` into a dozen files, the list was not updated; concat
+    # silently dropped ~30 % of the narrative content with only a quiet
+    # "skip (not found): usage/index.html" log line. The fix: derive the list
+    # from the rendered site itself, so any future doc reshuffle is picked up
+    # automatically. Adds a fail-loud floor so a half-built site can't slip
+    # through unnoticed.
+    EXCLUDE_DIRS = {
+        "assets",  # static (CSS/JS)
+        "images",  # static
+        "customization",  # build helpers
+        "search",  # search index
+        "reference",  # handled separately by get_reference_pages()
+        "tutorials",  # handled separately via executed notebooks
+        "concat_mkdocs",  # meta-doc about this script — not laser-measles content
+    }
+    EXPECTED_MIN_MAIN_PAGES = 5  # site is suspiciously empty below this
+
+    main_pages = sorted(p for p in base.rglob("index.html") if not any(part in EXCLUDE_DIRS for part in p.relative_to(base).parts))
+
+    # Fail loud if the rendered site looks broken.
+    if len(main_pages) < EXPECTED_MIN_MAIN_PAGES:
+        raise RuntimeError(
+            f"Only {len(main_pages)} main narrative pages found under {base} "
+            f"(expected at least {EXPECTED_MIN_MAIN_PAGES}). "
+            f"The rendered MkDocs site looks incomplete — did `mkdocs build` finish?"
+        )
 
     # Tutorial notebooks (executed), in logical order
     tutorial_names = [
@@ -169,8 +194,11 @@ def concat(mkdocs_dir: str, notebooks_dir: str, output_file: str):
     skipped = 0
 
     print(f"laser-measles version: {_LASER_MEASLES_VERSION}")
-    print("=== Main pages ===")
+    print(f"=== Main pages ({len(main_pages)} found by walking site) ===")
+    main_included = 0
     for path in main_pages:
+        # main_pages was built by walking the filesystem, so every entry exists.
+        # Defensive check kept in case a page is removed between walk and read.
         if not path.exists():
             print(f"  skip (not found): {path.relative_to(base)}")
             skipped += 1
@@ -180,11 +208,23 @@ def concat(mkdocs_dir: str, notebooks_dir: str, output_file: str):
             parts.append(f"\n\n---\n<!-- {path.relative_to(base)} -->\n\n{md}")
             print(f"  ok: {path.relative_to(base)}")
             included += 1
+            main_included += 1
         elif md:
             print(f"  skip (too short, {len(md)} chars): {path.relative_to(base)}")
             skipped += 1
+        else:
+            print(f"  skip (no content extracted): {path.relative_to(base)}")
+            skipped += 1
 
-    print("\n=== Tutorials (executed notebooks) ===")
+    if main_included < EXPECTED_MIN_MAIN_PAGES:
+        raise RuntimeError(
+            f"Only {main_included} main pages contributed content "
+            f"(expected at least {EXPECTED_MIN_MAIN_PAGES}). "
+            f"Site walk found {len(main_pages)} pages but most were empty/too-short."
+        )
+
+    print(f"\n=== Tutorials (executed notebooks) — looking in {nb_dir} ===")
+    tut_included = 0
     for name in tutorial_names:
         nb_path = nb_dir / f"{name}.ipynb"
         if not nb_path.exists():
@@ -196,11 +236,24 @@ def concat(mkdocs_dir: str, notebooks_dir: str, output_file: str):
             parts.append(f"\n\n---\n<!-- tutorials/{name} -->\n\n{md}")
             print(f"  ok: {name}.ipynb")
             included += 1
+            tut_included += 1
         elif md:
             print(f"  skip (too short, {len(md)} chars): {name}.ipynb")
             skipped += 1
+        else:
+            print(f"  skip (no content extracted): {name}.ipynb")
+            skipped += 1
 
-    print("\n=== Reference pages (excluding /base/) ===")
+    if tutorial_names and tut_included == 0:
+        raise RuntimeError(
+            f"Expected to include tutorial notebooks but found 0 in {nb_dir}. "
+            f"Did `make docs-executed-nbs` run? "
+            f"This script requires executed tutorial notebooks to be present "
+            f"for the expected tutorial names."
+        )
+
+    print(f"\n=== Reference pages ({len(ref_pages)} found, excluding /base/) ===")
+    ref_included = 0
     for path in ref_pages:
         rel = path.relative_to(base)
         md = extract_markdown(path)
@@ -208,15 +261,26 @@ def concat(mkdocs_dir: str, notebooks_dir: str, output_file: str):
             parts.append(f"\n\n---\n<!-- {rel} -->\n\n{md}")
             print(f"  ok: {rel}")
             included += 1
+            ref_included += 1
         elif md:
             print(f"  skip (too short, {len(md)} chars): {rel}")
             skipped += 1
         else:
             skipped += 1
 
+    if ref_pages and ref_included == 0:
+        raise RuntimeError(
+            f"Expected to include API reference pages but all {len(ref_pages)} under {base / 'reference'} produced no usable content."
+        )
+
     output = Path(output_file)
     output.write_text("\n".join(parts), encoding="utf-8")
     print(f"\nWrote {included} sections ({skipped} skipped) -> {output_file}")
+    print(
+        f"  main: {main_included}/{len(main_pages)}, "
+        f"tutorials: {tut_included}/{len(tutorial_names)}, "
+        f"reference: {ref_included}/{len(ref_pages)}"
+    )
     print(f"Output size: {output.stat().st_size / 1e6:.1f} MB")
 
 

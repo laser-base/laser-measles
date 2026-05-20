@@ -1,5 +1,6 @@
 import importlib
 
+import numpy as np
 import pytest
 
 import laser.measles as lm
@@ -57,6 +58,25 @@ def test_constant_pop_with_infection(measles_module):
     ]
     model.run()
     assert model.patches.states.sum() == scenario["pop"].sum()
+
+
+def test_abm_constant_pop_initial_patch_id_distribution():
+    """Given a multi-patch scenario, when ConstantPopProcess initializes the ABM
+    people frame, then patch_id assignment must match the per-patch population
+    counts from the scenario.
+
+    Failure of this assertion would indicate that the contiguous run-length
+    assignment of patch_id from scenario["pop"] has regressed (e.g. the
+    np.repeat-based initialization produces wrong counts per patch).
+    """
+    scenario = lm.scenarios.synthetic.two_patch_scenario(population=20_000)
+    model = lm.abm.Model(scenario, lm.abm.Params(num_ticks=0, verbose=VERBOSE, seed=SEED))
+    model.components = [lm.abm.components.ConstantPopProcess]
+    model.run()
+
+    pops = scenario["pop"].to_numpy()
+    counts = np.bincount(model.people.patch_id[: model.people.count], minlength=len(pops))
+    assert np.array_equal(counts[: len(pops)], pops), f"Per-patch agent counts {counts[: len(pops)]} do not match scenario pop {pops}"
 
 
 if __name__ == "__main__":
