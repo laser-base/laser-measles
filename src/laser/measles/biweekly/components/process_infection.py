@@ -94,6 +94,15 @@ class InfectionProcess(BaseInfectionProcess):
         self.params = params
         self.params.mixer.scenario = model.scenario
 
+    @property
+    def mixing_matrix(self) -> np.ndarray:
+        """The spatial mixing matrix in use. Shape ``(n_patches, n_patches)``.
+
+        Mirrors the same-named property on the ABM InfectionProcess so prompts
+        can use one accessor regardless of model variant.
+        """
+        return self.params.mixer.mixing_matrix
+
     def __call__(self, model: BaseLaserModel, tick: int) -> None:
         # state counts
         states = model.patches.states
