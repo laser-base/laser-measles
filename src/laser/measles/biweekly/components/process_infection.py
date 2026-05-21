@@ -70,7 +70,7 @@ class InfectionProcess(BaseInfectionProcess):
         self.params.mixer.scenario = model.scenario
 
     @property
-    def mixing_matrix(self):
+    def mixing_matrix(self) -> np.ndarray:
         """The spatial mixing matrix in use. Shape ``(n_patches, n_patches)``.
 
         Mirrors the same-named property on the ABM InfectionProcess so prompts
