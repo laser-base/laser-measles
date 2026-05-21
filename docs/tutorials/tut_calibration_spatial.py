@@ -104,10 +104,49 @@ from laser.measles.compartmental import components as cmp_components
 from laser.measles.components import create_component
 from laser.measles.mixing.gravity import GravityMixing, GravityParams
 
-# Path to cached artifacts from the original experiment.
-# (Resolved relative to this file's location so the tutorial works
-#  regardless of cwd when executed.)
-SANDBOX = Path(__file__).resolve().parents[2] / "sandbox" / "2026-04-23"
+# %% [markdown]
+# ### Cached artifacts
+#
+# Several cells below load pre-computed results from the original
+# experiment: the 20-seed reference dataset, identifiability sweeps, CMP
+# cold-start results, and ABM cascade calibration results. These are
+# bundled as a single ~2 MB tarball hosted on IDM's Artifactory.
+#
+# The next cell downloads + extracts on first run, then reuses the
+# extracted files on subsequent runs. `SANDBOX` points at the extraction
+# directory (`~/.cache/laser-measles/calibration_tutorial/`).
+#
+# **What's cached vs. what runs live**:
+#
+# - **Cached** (loaded from `SANDBOX/...`): the 20-seed reference (Section 7),
+#   identifiability sweep figures (Section 8), CMP cold-start result and
+#   diagnostics (Section 9), ABM cascade summaries and diagnostic figures
+#   (Section 10), validation and loss-curve figures (Sections 11–12).
+# - **Live** (run in this notebook): scenario construction (Section 3),
+#   the single-seed ABM sanity check at TRUE (Section 6, ~1 min), and a
+#   tiny M=3 ABM ensemble demo of one Stage-2 trial (Section 10, ~3 min).
+#   The Stage-1 CMP `optimize()` call is commented out for deterministic
+#   notebook builds — uncomment it to run ~3 min live.
+
+# %%
+import tarfile
+import urllib.request
+
+ARTIFACT_URL = "https://packages.idmod.org/artifactory/idm-data/LASER/laser_measles_calib_tutorial.tgz"
+SANDBOX = Path.home() / ".cache" / "laser-measles" / "calibration_tutorial"
+
+_canary = SANDBOX / "reference_v4" / "reference_meta.json"
+if not _canary.exists():
+    SANDBOX.mkdir(parents=True, exist_ok=True)
+    _tarball = SANDBOX / "_artifacts.tgz"
+    print(f"Downloading cached artifacts (~2 MB) -> {SANDBOX}")
+    urllib.request.urlretrieve(ARTIFACT_URL, _tarball)
+    with tarfile.open(_tarball) as tf:
+        tf.extractall(SANDBOX, filter="data")
+    _tarball.unlink()
+    print("Done.")
+else:
+    print(f"Cached artifacts already present at {SANDBOX}")
 
 # %% [markdown]
 # ## 2. The scenario factory (inlined)
