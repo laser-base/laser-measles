@@ -51,6 +51,8 @@ nav:
       - State arrays: tutorials/tut_state_arrays.ipynb
     - End-to-end tutorials:
       - Vaccination modeling approaches: tutorials/tut_vaccination.ipynb
+    - Calibration:
+      - Spatial multi-modal calibration: tutorials/tut_calibration_spatial.ipynb
   - User guide:
     - user-guide/index.md
     - Model types:

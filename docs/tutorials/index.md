@@ -38,6 +38,14 @@ These tutorials combine multiple features into realistic analysis workflows.
 
 - [Vaccination](tut_vaccination.py) — model supplementary immunization activities and evaluate campaign impact
 
+## Calibration
+
+Fitting model parameters to data. These tutorials assume you've already
+worked through a 1-node compartmental + Optuna example (parameter
+sweeps, loss design, basic Optuna usage).
+
+- [Spatial multi-modal calibration](tut_calibration_spatial.py) — progressive CMP→ABM cascade on a synthetic three-cluster chain. Expensive stages load from cached artifacts; cheap stages run live (~5 min for the CMP cold-start cell).
+
 ## Next steps
 
 After completing the tutorials, explore these resources:
