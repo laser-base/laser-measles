@@ -36,12 +36,12 @@ class BaseFadeOutTracker(BasePhase):
         model: The simulation model instance.
     """
 
-    def __init__(self, model) -> None:
+    def __init__(self, model: BaseLaserModel) -> None:
         super().__init__(model)
         self.fade_out_tracker = np.zeros(model.params.num_ticks)
 
-    def __call__(self, model, tick: int) -> None:
+    def __call__(self, model: BaseLaserModel, tick: int) -> None:
         self.fade_out_tracker[tick] = np.sum(model.patches.states.I == 0)  # number of nodes with 0 in I state
 
     def initialize(self, model: BaseLaserModel) -> None:
-        pass
+        """No-op — fade-out tracking requires no additional setup."""

@@ -1,7 +1,7 @@
 site_name: laser-measles
-site_url: https://InstituteforDiseaseModeling.github.io/laser-measles
-repo_name: InstituteforDiseaseModeling/laser-measles
-repo_url: https://github.com/InstituteforDiseaseModeling/laser-measles
+site_url: https://laser.idmod.org/laser-measles
+repo_name: laser-base/laser-measles
+repo_url: https://github.com/laser-base/laser-measles
 theme:
   name: material
   custom_dir: docs/customization/overrides
@@ -31,30 +31,47 @@ theme:
       accent: light blue
 
 nav:
-  - Home: index.md
+  - Welcome to laser-measles: index.md
   - What's new: whatsnew.md
   - Installation: install.md
-  - Usage: usage.md
-  - Snapshotting: snapshotting.md
-  - Results output: results.md
   - Tutorials:
     - tutorials/index.md
-    - Quick start: tutorials/tut_quickstart_hello_world.ipynb
+    - "Quick start: Hello world": tutorials/tut_quickstart_hello_world.ipynb
     - Beginning tutorials:
-      - Basic model: tutorials/tut_basic_model.ipynb
+      - Create and run models: tutorials/tut_basic_model.ipynb
       - Model structure: tutorials/tut_model_structure.ipynb
-      - ABM introduction: tutorials/tut_abm_intro.ipynb
-      - Scenarios: tutorials/tut_scenarios.ipynb
+      - ABM model introduction: tutorials/tut_abm_intro.ipynb
+      - Create model scenarios: tutorials/tut_scenarios.ipynb
     - Feature tutorials:
-      - Random numbers: tutorials/tut_random_numbers.ipynb
-      - Create a component: tutorials/tut_creating_component.ipynb
-      - ABM vital dynamics: tutorials/tut_abm_vital_dynamics.ipynb
-      - Spatial mixing: tutorials/tut_spatial_mixing.ipynb
-      - Pydantic component parameters: tutorials/tut_pydantic_component_parameters.ipynb
+      - Random numbers and reproducibility: tutorials/tut_random_numbers.ipynb
+      - Create custom components: tutorials/tut_creating_component.ipynb
+      - Vital dynamics: tutorials/tut_abm_vital_dynamics.ipynb
+      - Spatial mixing models: tutorials/tut_spatial_mixing.ipynb
+      - Parameter validation: tutorials/tut_pydantic_component_parameters.ipynb
       - State arrays: tutorials/tut_state_arrays.ipynb
     - End-to-end tutorials:
-      - Vaccination: tutorials/tut_vaccination.ipynb
+      - Vaccination modeling approaches: tutorials/tut_vaccination.ipynb
+  - User guide:
+    - user-guide/index.md
+    - Model types:
+      - user-guide/model-types/index.md
+      - How to choose a model type: user-guide/model-types/choosing-a-model.md
+      - Spatial mixing: user-guide/model-types/spatial-mixing.md
+      - How to configure spatial mixing: user-guide/model-types/configuring-spatial-mixing.md
+      - Demographics: user-guide/model-types/demographics.md
+    - Components:
+      - user-guide/components/index.md
+      - How to create a custom component: user-guide/components/custom-component.md
+      - Worked examples: user-guide/components/worked-examples.md
+    - Snapshots:
+      - user-guide/snapshotting/index.md
+      - How to snapshot a compartmental model: user-guide/snapshotting/how-to-snapshot-compartmental.md
+      - How to snapshot an ABM: user-guide/snapshotting/how-to-snapshot-abm.md
+    - Standard results output: user-guide/results.md
+    - Troubleshooting: user-guide/troubleshooting.md
   - API reference: reference/
+  - Contributing: contributing.md
+  - Code of conduct: code-of-conduct.md
   - Authors: authors.md
 
 # icons, semantic markup, emojis
@@ -71,8 +88,6 @@ markdown_extensions:
   - pymdownx.arithmatex: # Latex processing for math equations
       generic: true
   - pymdownx.snippets: # insert content from other files
-      auto_append:
-        - docs/includes/glossary.md # definitions for glossary entries
   - abbr # term/abbreviation hover descriptions
   - pymdownx.blocks.details: # allows nesting of collapsible code
   - pymdownx.highlight: # syntax highlighting for code blocks
@@ -100,6 +115,7 @@ plugins:
       execute: false
       allow_errors: true # set to true to continue executing cells even if one fails
       include_source: true
+      ignore: ["*.md"] # skip .md scanning to avoid jupytext→pandoc warnings on mkdocstrings autoref pages
   - gen-files:
       scripts:
         - docs/customization/gen-files.py
@@ -122,7 +138,7 @@ plugins:
       glob:
         - customization/gen-files.py # exclude file generation script
         - includes/glossary.md # exclude glossary include file
-copyright: Copyright &copy; 2025 Gates Foundation. All rights reserved.
+copyright: Copyright &copy; 2026 Gates Foundation. All rights reserved.
 
 extra:
   generator: false
@@ -133,7 +149,7 @@ extra:
       href: "https://www.gatesfoundation.org/Terms-of-Use"
   social:
     - icon: fontawesome/brands/github
-      link: https://github.com/InstituteforDiseaseModeling/laser-measles
+      link: https://github.com/laser-base/laser-measles
     - icon: fontawesome/regular/envelope
       link: mailto:idm@gatesfoundation.org
     - icon: octicons/globe-24
