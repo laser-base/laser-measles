@@ -1092,6 +1092,48 @@ Image(SANDBOX / "v4_calibration_validation.png")
 #   load-bearing result, achieved **without TRUE leakage**.
 
 # %% [markdown]
+# ### Optional: reproduce the validation live (~10 min, opt-in)
+#
+# The cached figure above was produced by running a **50-seed** ABM
+# ensemble at the calibrated `(β, k, c)` (variant F's best from cascade
+# Stage 2). The cell below reruns that comparison live with a smaller
+# **10-seed** ensemble — enough seeds to resolve `std(AR_C)`, but half
+# the canonical 20-seed reference's count. It's gated behind
+# `RUN_VALIDATION = False` because at ~1 minute per ABM run, M=10 is
+# **about 10 minutes of compute**. Flip the flag below to run it.
+#
+# The output is a side-by-side comparison of the 6 calibration-target
+# summary statistics — calibrated ensemble vs reference, with each
+# deviation expressed in units of the loss-function scale (so values
+# near 0 mean agreement within the loss's noise floor).
+
+# %%
+RUN_VALIDATION = False  # flip to True to run a 10-seed ABM ensemble at the calibrated params (~10 min)
+
+if RUN_VALIDATION:
+    cal = cascade_summary["F  (20×M=60, cumulative)"]["best_params"]
+    val_seeds = list(range(1000, 1010))  # 10 fresh seeds, distinct from the reference's
+    print(f"Running 10-seed validation at calibrated params (β={cal['beta']:.4f}, k={cal['k']:.5f}, c={cal['c']:.3f})...")
+    print(f"  expected runtime ~{len(val_seeds)} minutes on a 16-core machine")
+
+    val_stats = run_abm_ensemble(beta=cal["beta"], k=cal["k"], c=cal["c"], seeds=val_seeds)
+    val_loss = compute_abm_loss(val_stats)
+
+    print()
+    print(f"{'statistic':14s}  {'calibrated':>10s}  {'reference':>10s}  {'deviation':>10s}")
+    print("-" * 52)
+    for key, ref_val in REF.items():
+        cal_val = val_stats[key]
+        dev = (cal_val - ref_val) / SCALES[key]
+        print(f"{key:14s}  {cal_val:>10.3f}  {ref_val:>10.3f}  {dev:>+10.2f}")
+    print(f"\nLoss at calibrated params (M=10): {val_loss:.3f}")
+    print(f"  (For comparison, variant F best at M=20: {cascade_summary['F  (20×M=60, cumulative)']['best_loss_at_M20']:.3f})")
+else:
+    print("RUN_VALIDATION is False — skipping live validation.")
+    print("Flip the flag above to run a 10-seed ABM ensemble at the calibrated")
+    print("parameters (~10 min on a 16-core machine).")
+
+# %% [markdown]
 # ## 12. What the cascade did *not* fully recover
 #
 # For an honest write-up, residual bias matters:
