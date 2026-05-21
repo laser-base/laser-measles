@@ -128,10 +128,11 @@ optuna.logging.set_verbosity(optuna.logging.WARNING)  # quiet TPE chatter
 #   diagnostics (Section 9), ABM cascade summaries and diagnostic figures
 #   (Section 10), validation and loss-curve figures (Sections 11–12).
 # - **Live** (run in this notebook): scenario construction (Section 3),
-#   the single-seed ABM sanity check at TRUE (Section 6, ~1 min), and a
-#   tiny M=3 ABM ensemble demo of one Stage-2 trial (Section 10, ~3 min).
-#   The Stage-1 CMP `optimize()` call is commented out for deterministic
-#   notebook builds — uncomment it to run ~3 min live.
+#   the single-seed ABM sanity check at TRUE (Section 6, ~1 min), the
+#   **Stage 1 CMP cold-start calibration** (Section 9, ~3 min — 30 Optuna
+#   trials), and a tiny M=3 ABM ensemble demo of one Stage-2 trial
+#   (Section 10, ~3 min). Downstream Stage-2 cells use the **cached**
+#   canonical Stage-1 result for deterministic comparisons.
 
 # %%
 import tarfile
@@ -742,7 +743,10 @@ def build_cmp_model(beta: float, k: float, c: float = 1.5) -> CompartmentalModel
         target_patches=seed_patches,
         infections_per_patch=N_SEED_INF,
     )
-    sia_d = tick_to_date(SIA_TICK)
+    # CMP's SIACalendarProcess does a `str.strptime(..., "%Y-%m-%d")` on the
+    # date column at construction, so it requires String dates (unlike ABM,
+    # which keeps them as date objects). Pass ISO strings here.
+    sia_d = tick_to_date(SIA_TICK).isoformat()
     bf_sia = cmp_components.SIACalendarParams(
         sia_efficacy=TRUE["eps_far"],
         aggregation_level=2,
@@ -760,8 +764,10 @@ def build_cmp_model(beta: float, k: float, c: float = 1.5) -> CompartmentalModel
         group_column="id",
     )
 
+    # CMP doesn't expose a NoBirthsProcess — it doesn't need any vital-dynamics
+    # component when births/deaths are off; the SEIR loop in InfectionProcess
+    # updates the state arrays directly. (ABM does require NoBirthsProcess.)
     model.components = [
-        cmp_components.NoBirthsProcess,
         create_component(cmp_components.InfectionSeedingProcess, seed_params),
         create_component(cmp_components.InfectionProcess, inf_params),
         create_component(cmp_components.SIACalendarProcess, bf_sia),
@@ -807,9 +813,10 @@ def compute_cmp_loss(st: np.ndarray) -> float:
 # %% [markdown]
 # ### Run the CMP study
 #
-# 30 trials (~3 min total). The original `calibrate_cmp_v4_coldstart.py`
-# ran 100 trials and plateaued around trial 31 — we use 30 here for
-# notebook runtime. **No warm-start at TRUE.**
+# 30 trials live, ~3 min total. The original
+# `calibrate_cmp_v4_coldstart.py` ran 100 trials and plateaued around
+# trial 31 — 30 here is enough to land in the same basin while keeping
+# notebook runtime reasonable. **No warm-start at TRUE.**
 
 # %%
 def cmp_objective(trial: optuna.Trial) -> float:
@@ -823,17 +830,49 @@ def cmp_objective(trial: optuna.Trial) -> float:
 
 sampler = optuna.samplers.TPESampler(seed=20260423)
 cmp_study = optuna.create_study(direction="minimize", sampler=sampler)
-# Skip the live optimization to keep notebook output deterministic for docs build;
-# uncomment to actually run (~3 min). The cached result is used below either way.
-# cmp_study.optimize(cmp_objective, n_trials=30, show_progress_bar=False)
+cmp_study.optimize(cmp_objective, n_trials=30, show_progress_bar=False)
+
+live_best = cmp_study.best_params
+live_loss = cmp_study.best_value
+print("Live 30-trial CMP cold-start:")
+print(f"  beta = {live_best['beta']:.4f}  (× TRUE = {live_best['beta'] / TRUE['beta']:.2f})")
+print(f"  k    = {live_best['k']:.4f}  (× TRUE = {live_best['k'] / TRUE['k']:.2f})")
+print(f"  loss = {live_loss:.4f}")
+print(f"  trials = {len(cmp_study.trials)}")
 
 # %% [markdown]
-# We load the **cached** cold-start result from the original
-# 100-trial run. The result is `beta = 0.5294 (1.06× TRUE)`, `k =
-# 0.0259 (2.59× TRUE — biased high)`. **The k bias is by design** —
-# CMP cannot match the ABM ensemble peak timing at the TRUE k. The
-# `k`-inflation is the deterministic-vs-stochastic structural
-# mismatch we diagnosed in Stage 0.
+# Quick convergence view — running-best loss vs trial number. TPE should
+# settle into the basin within the first ~10 trials and then refine.
+
+# %%
+trial_values = np.array([t.value for t in cmp_study.trials if t.value is not None])
+running_best = np.minimum.accumulate(trial_values)
+
+fig, ax = plt.subplots(figsize=(7, 3.5))
+ax.plot(trial_values, "o-", color="#90A4AE", alpha=0.7, label="trial loss")
+ax.plot(running_best, "-", color="#D32F2F", lw=1.8, label="running best")
+ax.set_xlabel("trial #")
+ax.set_ylabel("loss (log scale)")
+ax.set_yscale("log")
+ax.set_title("Stage 1 CMP cold-start convergence (30 trials, live)")
+ax.legend(frameon=False)
+ax.grid(alpha=0.3)
+plt.tight_layout()
+plt.show()
+
+# %% [markdown]
+# ### Canonical cached result
+#
+# The live 30-trial run above lands in the right basin but uses a fresh
+# TPE seed and fewer trials than the original sweep. For the rest of the
+# tutorial, we load the **canonical** result from the original 100-trial
+# run as `cmp_result` and use it for all downstream Stage-2 comparisons,
+# so the rest of the notebook stays deterministic across reruns. That
+# canonical best is `beta = 0.5294 (1.06× TRUE)`, `k = 0.0259 (2.59× TRUE
+# — biased high)`. **The k bias is by design** — CMP cannot match the
+# ABM ensemble peak timing at the TRUE k. The `k`-inflation is the
+# deterministic-vs-stochastic structural mismatch we diagnosed in
+# Stage 0.
 
 # %%
 with (SANDBOX / "calibrate_cmp_v4_coldstart_result.json").open() as f:
