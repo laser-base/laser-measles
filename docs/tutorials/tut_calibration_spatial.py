@@ -87,22 +87,27 @@
 
 # %%
 import json
-from datetime import date, timedelta
+from datetime import date
+from datetime import timedelta
 from pathlib import Path
 
 import matplotlib.pyplot as plt
 import numpy as np
-import polars as pl
-
 import optuna
-optuna.logging.set_verbosity(optuna.logging.WARNING)  # quiet TPE chatter
+import polars as pl
+from laser.core.migration import gravity as gravity_fn
 
-from laser.measles.abm import ABMModel, ABMParams
+from laser.measles.abm import ABMModel
+from laser.measles.abm import ABMParams
 from laser.measles.abm import components as abm_components
-from laser.measles.compartmental import CompartmentalModel, CompartmentalParams
+from laser.measles.compartmental import CompartmentalModel
+from laser.measles.compartmental import CompartmentalParams
 from laser.measles.compartmental import components as cmp_components
 from laser.measles.components import create_component
-from laser.measles.mixing.gravity import GravityMixing, GravityParams
+from laser.measles.mixing.gravity import GravityMixing
+from laser.measles.mixing.gravity import GravityParams
+
+optuna.logging.set_verbosity(optuna.logging.WARNING)  # quiet TPE chatter
 
 # %% [markdown]
 # ### Cached artifacts
@@ -140,7 +145,7 @@ if not _canary.exists():
     SANDBOX.mkdir(parents=True, exist_ok=True)
     _tarball = SANDBOX / "_artifacts.tgz"
     print(f"Downloading cached artifacts (~2 MB) -> {SANDBOX}")
-    urllib.request.urlretrieve(ARTIFACT_URL, _tarball)
+    urllib.request.urlretrieve(ARTIFACT_URL, _tarball)  # noqa: S310 - URL is hard-coded above
     with tarfile.open(_tarball) as tf:
         tf.extractall(SANDBOX, filter="data")
     _tarball.unlink()
@@ -223,22 +228,23 @@ def three_cluster_chain_scenario(
 
     n = n_nodes_per_cluster
     n_near = max(1, int(n * b_near_fraction))
-    n_far = n - n_near
 
     def _scatter(prefix, c_lat, c_lon, count):
         lats = c_lat + rng.normal(0.0, spread_deg_lat, count)
         lons = c_lon + rng.normal(0.0, spread_deg_lon, count)
         out = []
-        for i, (lat, lon) in enumerate(zip(lats, lons)):
+        for i, (lat, lon) in enumerate(zip(lats, lons, strict=False)):
             dist = np.hypot(lat - c_lat, lon - c_lon)
             pop = int(rng.integers(30_000, 150_000) * (0.3 + 0.7 * np.exp(-dist / (spread_deg_lat * 0.5))))
-            out.append({
-                "id":   f"{prefix}:node_{i + 1}",
-                "pop":  pop,
-                "lat":  float(lat),
-                "lon":  float(lon),
-                "mcv1": float(rng.uniform(*mcv1_coverage_range)),
-            })
+            out.append(
+                {
+                    "id": f"{prefix}:node_{i + 1}",
+                    "pop": pop,
+                    "lat": float(lat),
+                    "lon": float(lon),
+                    "mcv1": float(rng.uniform(*mcv1_coverage_range)),
+                }
+            )
         return out
 
     rows: list[dict] = []
@@ -249,7 +255,7 @@ def three_cluster_chain_scenario(
     b_lats = b_center[0] + rng.normal(0.0, spread_deg_lat, n)
     b_lons = b_center[1] + rng.normal(0.0, spread_deg_lon, n)
     b_pops, b_mcv1s = [], []
-    for lat, lon in zip(b_lats, b_lons):
+    for lat, lon in zip(b_lats, b_lons, strict=False):
         dist = np.hypot(lat - b_center[0], lon - b_center[1])
         b_pops.append(int(rng.integers(30_000, 150_000) * (0.3 + 0.7 * np.exp(-dist / (spread_deg_lat * 0.5)))))
         b_mcv1s.append(float(rng.uniform(*mcv1_coverage_range)))
@@ -257,16 +263,22 @@ def three_cluster_chain_scenario(
     dist_to_c = np.hypot(b_lats - c_center[0], b_lons - c_center[1])
     order = np.argsort(dist_to_c)
     near_idx = order[:n_near]
-    far_idx  = order[n_near:]
+    far_idx = order[n_near:]
 
     for rank, i in enumerate(far_idx):
-        rows.append({"id": f"cluster_b:far:node_{rank + 1}",
-                     "pop": b_pops[i], "lat": float(b_lats[i]), "lon": float(b_lons[i]),
-                     "mcv1": b_mcv1s[i]})
+        rows.append(
+            {"id": f"cluster_b:far:node_{rank + 1}", "pop": b_pops[i], "lat": float(b_lats[i]), "lon": float(b_lons[i]), "mcv1": b_mcv1s[i]}
+        )
     for rank, i in enumerate(near_idx):
-        rows.append({"id": f"cluster_b:near:node_{rank + 1}",
-                     "pop": b_pops[i], "lat": float(b_lats[i]), "lon": float(b_lons[i]),
-                     "mcv1": b_mcv1s[i]})
+        rows.append(
+            {
+                "id": f"cluster_b:near:node_{rank + 1}",
+                "pop": b_pops[i],
+                "lat": float(b_lats[i]),
+                "lon": float(b_lons[i]),
+                "mcv1": b_mcv1s[i],
+            }
+        )
 
     rows.extend(_scatter("cluster_c", *c_center, n))
     return pl.DataFrame(rows)
@@ -303,19 +315,21 @@ scenario = three_cluster_chain_scenario(
     ab_separation_km=400.0,
     bc_separation_km=200.0,
 )
-ids   = scenario["id"].to_list()
-pops  = scenario["pop"].to_numpy().astype(np.int64)
-lats  = scenario["lat"].to_numpy()
-lons  = scenario["lon"].to_numpy()
+ids = scenario["id"].to_list()
+pops = scenario["pop"].to_numpy().astype(np.int64)
+lats = scenario["lat"].to_numpy()
+lons = scenario["lon"].to_numpy()
+
 
 # Cluster index arrays
 def cluster_idx(prefix):
     return np.array([i for i, x in enumerate(ids) if x.startswith(prefix)], dtype=int)
 
-a_idx  = cluster_idx("cluster_a")
+
+a_idx = cluster_idx("cluster_a")
 bf_idx = cluster_idx("cluster_b:far")
 bn_idx = cluster_idx("cluster_b:near")
-c_idx  = cluster_idx("cluster_c")
+c_idx = cluster_idx("cluster_c")
 
 print(f"{'cluster':12s} {'patches':>8s} {'population':>14s}")
 for name, idx in (("A", a_idx), ("B_far", bf_idx), ("B_near", bn_idx), ("C", c_idx)):
@@ -326,7 +340,7 @@ print(f"{'TOTAL':12s} {len(ids):8d} {int(pops.sum()):>14,d}")
 # We'll seed the outbreak in the three largest A patches (top-3 by population).
 
 # %%
-a_pop_order  = np.argsort(-pops[a_idx])[:3]
+a_pop_order = np.argsort(-pops[a_idx])[:3]
 seed_patches = [ids[a_idx[i]] for i in a_pop_order]
 print("Seed patches:", seed_patches)
 
@@ -339,8 +353,7 @@ print("Seed patches:", seed_patches)
 fig, ax = plt.subplots(figsize=(8, 4.5))
 cluster_colors = {"A": "#2196F3", "B_far": "#FF9800", "B_near": "#FF5722", "C": "#4CAF50"}
 for name, idx in (("A", a_idx), ("B_far", bf_idx), ("B_near", bn_idx), ("C", c_idx)):
-    ax.scatter(lons[idx], lats[idx], s=pops[idx] / 500, c=cluster_colors[name],
-               alpha=0.7, edgecolors="k", linewidths=0.3, label=name)
+    ax.scatter(lons[idx], lats[idx], s=pops[idx] / 500, c=cluster_colors[name], alpha=0.7, edgecolors="k", linewidths=0.3, label=name)
 ax.set_xlabel("Longitude")
 ax.set_ylabel("Latitude")
 ax.set_title("Three-cluster chain layout (marker size ∝ population)")
@@ -377,25 +390,23 @@ class ChainMixing(GravityMixing):
 
     def __init__(self, a_idx, bf_idx, bn_idx, c_idx, scenario=None, params=None):
         super().__init__(scenario=scenario, params=params)
-        self._a_idx  = np.asarray(a_idx,  dtype=int)
+        self._a_idx = np.asarray(a_idx, dtype=int)
         self._bf_idx = np.asarray(bf_idx, dtype=int)
         self._bn_idx = np.asarray(bn_idx, dtype=int)
-        self._c_idx  = np.asarray(c_idx,  dtype=int)
+        self._c_idx = np.asarray(c_idx, dtype=int)
 
     def get_migration_matrix(self) -> np.ndarray:
-        from laser.core.migration import gravity as gravity_fn
         pop = self.scenario["pop"].to_numpy()
         distances = self.get_distances()
-        mat = gravity_fn(pop, distances, k=1.0,
-                         a=self.params.a - 1, b=self.params.b, c=self.params.c)
+        mat = gravity_fn(pop, distances, k=1.0, a=self.params.a - 1, b=self.params.b, c=self.params.c)
         np.fill_diagonal(mat, 0.0)
         # zero forbidden routes BEFORE normalization
-        mat[np.ix_(self._a_idx,  self._c_idx)]  = 0.0
-        mat[np.ix_(self._c_idx,  self._a_idx)]  = 0.0
-        mat[np.ix_(self._a_idx,  self._bn_idx)] = 0.0
-        mat[np.ix_(self._bn_idx, self._a_idx)]  = 0.0
-        mat[np.ix_(self._bf_idx, self._c_idx)]  = 0.0
-        mat[np.ix_(self._c_idx,  self._bf_idx)] = 0.0
+        mat[np.ix_(self._a_idx, self._c_idx)] = 0.0
+        mat[np.ix_(self._c_idx, self._a_idx)] = 0.0
+        mat[np.ix_(self._a_idx, self._bn_idx)] = 0.0
+        mat[np.ix_(self._bn_idx, self._a_idx)] = 0.0
+        mat[np.ix_(self._bf_idx, self._c_idx)] = 0.0
+        mat[np.ix_(self._c_idx, self._bf_idx)] = 0.0
         # row-normalize so per-row trip share is k
         row_sums = mat.sum(axis=1)
         nrm = np.where(row_sums > 0, self.params.k / row_sums, 0.0)
@@ -431,11 +442,11 @@ class ChainMixing(GravityMixing):
 # only if it actually gets seeded.
 
 # %%
-TRUE = dict(beta=0.5, k=0.01, c=1.5, eps_far=0.85, eps_near=0.50)
+TRUE = {"beta": 0.5, "k": 0.01, "c": 1.5, "eps_far": 0.85, "eps_near": 0.50}
 
-N_TICKS    = 1095        # 3 years
-N_SEED_INF = 5           # initial infections per seed patch
-SIA_TICK   = 10          # day-10 SIA campaign
+N_TICKS = 1095  # 3 years
+N_SEED_INF = 5  # initial infections per seed patch
+SIA_TICK = 10  # day-10 SIA campaign
 START_TIME = "2000-01"
 START_DATE = date(2000, 1, 1)
 S_IDX, E_IDX, I_IDX, R_IDX = 0, 1, 2, 3  # ABM state indices
@@ -464,40 +475,48 @@ def tick_to_date(tick: int) -> date:
 
 # %%
 def build_abm_model(beta: float, k: float, c: float, seed: int) -> ABMModel:
-    params = ABMParams(num_ticks=N_TICKS, seed=seed, start_time=START_TIME,
-                       show_progress=False)
+    params = ABMParams(num_ticks=N_TICKS, seed=seed, start_time=START_TIME, show_progress=False)
     model = ABMModel(scenario=scenario, params=params)
 
     # Mixing geometry
     chain_mixer = ChainMixing(
-        a_idx=a_idx.tolist(), bf_idx=bf_idx.tolist(),
-        bn_idx=bn_idx.tolist(), c_idx=c_idx.tolist(),
+        a_idx=a_idx.tolist(),
+        bf_idx=bf_idx.tolist(),
+        bn_idx=bn_idx.tolist(),
+        c_idx=c_idx.tolist(),
         params=GravityParams(k=k, c=c),
     )
 
     # Infection — note mixer= goes straight on InfectionParams
     inf_params = abm_components.InfectionParams(
-        beta=beta, seasonality=0.0, mixer=chain_mixer,
+        beta=beta,
+        seasonality=0.0,
+        mixer=chain_mixer,
     )
 
     # Seeding
     seeding_params = abm_components.InfectionSeedingParams(
-        target_patches=seed_patches, infections_per_patch=N_SEED_INF,
+        target_patches=seed_patches,
+        infections_per_patch=N_SEED_INF,
     )
 
     # SIA campaigns — one per B subcluster
     sia_d = tick_to_date(SIA_TICK)
     bf_sia = abm_components.SIACalendarParams(
-        sia_efficacy=TRUE["eps_far"], aggregation_level=2,
+        sia_efficacy=TRUE["eps_far"],
+        aggregation_level=2,
         filter_fn=lambda x: x.startswith("cluster_b:far"),
         sia_schedule=pl.DataFrame({"id": ["cluster_b:far"], "date": [sia_d]}),
-        date_column="date", group_column="id",
+        date_column="date",
+        group_column="id",
     )
     bn_sia = abm_components.SIACalendarParams(
-        sia_efficacy=TRUE["eps_near"], aggregation_level=2,
+        sia_efficacy=TRUE["eps_near"],
+        aggregation_level=2,
         filter_fn=lambda x: x.startswith("cluster_b:near"),
         sia_schedule=pl.DataFrame({"id": ["cluster_b:near"], "date": [sia_d]}),
-        date_column="date", group_column="id",
+        date_column="date",
+        group_column="id",
     )
 
     model.components = [
@@ -539,7 +558,7 @@ for name, idx in (("A", a_idx), ("B_far", bf_idx), ("B_near", bn_idx), ("C", c_i
     ax.plot(I_t, label=name, color=cluster_colors[name], lw=1.6)
 ax.set_xlabel("Tick (days)")
 ax.set_ylabel("Infectious agents")
-ax.set_title(f"Single-seed ABM at TRUE (seed=42) — does C invade?")
+ax.set_title("Single-seed ABM at TRUE (seed=42) — does C invade?")
 ax.legend(frameon=False)
 ax.grid(alpha=0.3)
 plt.tight_layout()
@@ -567,9 +586,9 @@ plt.show()
 
 # %%
 REF_DIR = SANDBOX / "reference_v4"
-ref_I = np.load(REF_DIR / "I_by_patch.npy")   # (n_seeds, n_ticks, n_patches)
+ref_I = np.load(REF_DIR / "I_by_patch.npy")  # (n_seeds, n_ticks, n_patches)
 ref_R = np.load(REF_DIR / "R_by_patch.npy")
-with open(REF_DIR / "reference_meta.json") as f:
+with (REF_DIR / "reference_meta.json").open() as f:
     ref_meta = json.load(f)
 
 print(f"Reference: {ref_I.shape[0]} seeds × {ref_I.shape[1]} ticks × {ref_I.shape[2]} patches")
@@ -611,19 +630,18 @@ print(f"  std peak_A                                   : {T['peak_A']['std']:.1f
 # peaks near 0 and near 1.
 
 # %%
-N_A  = pops[a_idx].sum()
+N_A = pops[a_idx].sum()
 N_BF = pops[bf_idx].sum()
 N_BN = pops[bn_idx].sum()
-N_C  = pops[c_idx].sum()
+N_C = pops[c_idx].sum()
 
-AR_C_per_seed = ref_R[:, -1, c_idx].sum(axis=1) / N_C   # (n_seeds,)
+AR_C_per_seed = ref_R[:, -1, c_idx].sum(axis=1) / N_C  # (n_seeds,)
 print(f"AR_C per seed: {np.round(AR_C_per_seed, 2)}")
 print(f"  → mean = {AR_C_per_seed.mean():.3f}  (unphysical — it's the mean of a bimodal)")
 print(f"  → std  = {AR_C_per_seed.std(ddof=1):.3f}  (the bimodality fingerprint)")
 
 fig, ax = plt.subplots(figsize=(7, 3.5))
-ax.hist(AR_C_per_seed, bins=np.linspace(0, 1, 21),
-        color="#4CAF50", edgecolor="k", alpha=0.85)
+ax.hist(AR_C_per_seed, bins=np.linspace(0, 1, 21), color="#4CAF50", edgecolor="k", alpha=0.85)
 ax.set_xlabel("Final AR_C  (R_C(T) / N_C)")
 ax.set_ylabel("Number of seeds (out of 20)")
 ax.set_title("Bimodal C-invasion across reference seeds")
@@ -652,7 +670,7 @@ plt.show()
 # sweep takes ~5–10 minutes.
 
 # %%
-from IPython.display import Image  # noqa: E402
+from IPython.display import Image
 
 # CMP sweep — note c's flatness (bottom row)
 Image(SANDBOX / "cmp_identifiability_v4.png")
@@ -704,34 +722,42 @@ Image(SANDBOX / "abm_identifiability_v4_2d.png")
 
 # %%
 def build_cmp_model(beta: float, k: float, c: float = 1.5) -> CompartmentalModel:
-    params = CompartmentalParams(num_ticks=N_TICKS, seed=42, start_time=START_TIME,
-                                 show_progress=False)
+    params = CompartmentalParams(num_ticks=N_TICKS, seed=42, start_time=START_TIME, show_progress=False)
     model = CompartmentalModel(scenario=scenario, params=params)
 
     chain_mixer = ChainMixing(
-        a_idx=a_idx.tolist(), bf_idx=bf_idx.tolist(),
-        bn_idx=bn_idx.tolist(), c_idx=c_idx.tolist(),
+        a_idx=a_idx.tolist(),
+        bf_idx=bf_idx.tolist(),
+        bn_idx=bn_idx.tolist(),
+        c_idx=c_idx.tolist(),
         params=GravityParams(k=k, c=c),
     )
 
     inf_params = cmp_components.InfectionParams(
-        beta=beta, seasonality=0.0, mixer=chain_mixer,
+        beta=beta,
+        seasonality=0.0,
+        mixer=chain_mixer,
     )
     seed_params = cmp_components.InfectionSeedingParams(
-        target_patches=seed_patches, infections_per_patch=N_SEED_INF,
+        target_patches=seed_patches,
+        infections_per_patch=N_SEED_INF,
     )
     sia_d = tick_to_date(SIA_TICK)
     bf_sia = cmp_components.SIACalendarParams(
-        sia_efficacy=TRUE["eps_far"], aggregation_level=2,
+        sia_efficacy=TRUE["eps_far"],
+        aggregation_level=2,
         filter_fn=lambda x: x.startswith("cluster_b:far"),
         sia_schedule=pl.DataFrame({"id": ["cluster_b:far"], "date": [sia_d]}),
-        date_column="date", group_column="id",
+        date_column="date",
+        group_column="id",
     )
     bn_sia = cmp_components.SIACalendarParams(
-        sia_efficacy=TRUE["eps_near"], aggregation_level=2,
+        sia_efficacy=TRUE["eps_near"],
+        aggregation_level=2,
         filter_fn=lambda x: x.startswith("cluster_b:near"),
         sia_schedule=pl.DataFrame({"id": ["cluster_b:near"], "date": [sia_d]}),
-        date_column="date", group_column="id",
+        date_column="date",
+        group_column="id",
     )
 
     model.components = [
@@ -756,24 +782,25 @@ def build_cmp_model(beta: float, k: float, c: float = 1.5) -> CompartmentalModel
 # the reference R_A(t)/N_A curve at landmark thresholds).
 
 # %%
-REF_AR_A_MEAN    = T["AR_A"]["mean"]
-REF_PEAK_A_MEAN  = T["peak_A"]["mean"]
+REF_AR_A_MEAN = T["AR_A"]["mean"]
+REF_PEAK_A_MEAN = T["peak_A"]["mean"]
 # R_A(t)/N_A reference trajectory (ensemble mean across 20 seeds)
-ref_RA_per_N_A = ref_R[:, :, a_idx].sum(axis=2).mean(axis=0) / N_A   # (n_ticks,)
+ref_RA_per_N_A = ref_R[:, :, a_idx].sum(axis=2).mean(axis=0) / N_A  # (n_ticks,)
+
 
 def compute_cmp_loss(st: np.ndarray) -> float:
-    R_A_t = st[R_IDX, :, a_idx].sum(axis=0) / N_A        # (n_ticks,)
+    R_A_t = st[R_IDX, :, a_idx].sum(axis=0) / N_A  # (n_ticks,)
     I_A_t = st[I_IDX, :, a_idx].sum(axis=0)
     AR_A_final = R_A_t[-1]
-    peak_A     = int(np.argmax(I_A_t))
+    peak_A = int(np.argmax(I_A_t))
     # landmark crossings of R_A(t)/N_A at 0.1, 0.3, 0.5, 0.7, 0.9
     landmark_loss = 0.0
     for lvl in (0.1, 0.3, 0.5, 0.7, 0.9):
         ref_t = np.searchsorted(ref_RA_per_N_A, lvl)
-        mod_t = np.searchsorted(R_A_t,           lvl)
+        mod_t = np.searchsorted(R_A_t, lvl)
         landmark_loss += ((mod_t - ref_t) / 30.0) ** 2
-    ar_loss   = ((AR_A_final - REF_AR_A_MEAN) / 0.01) ** 2
-    peak_loss = ((peak_A     - REF_PEAK_A_MEAN) / 5.0) ** 2
+    ar_loss = ((AR_A_final - REF_AR_A_MEAN) / 0.01) ** 2
+    peak_loss = ((peak_A - REF_PEAK_A_MEAN) / 5.0) ** 2
     return landmark_loss + ar_loss + peak_loss
 
 
@@ -787,7 +814,7 @@ def compute_cmp_loss(st: np.ndarray) -> float:
 # %%
 def cmp_objective(trial: optuna.Trial) -> float:
     beta = trial.suggest_float("beta", 0.1, 1.5)
-    k    = trial.suggest_float("k", 1e-4, 0.1, log=True)
+    k = trial.suggest_float("k", 1e-4, 0.1, log=True)
     # c held at 1.5 (Stage 0 said it's unidentifiable in CMP)
     model = build_cmp_model(beta=beta, k=k, c=1.5)
     st = run_and_extract(model)
@@ -809,13 +836,11 @@ cmp_study = optuna.create_study(direction="minimize", sampler=sampler)
 # mismatch we diagnosed in Stage 0.
 
 # %%
-with open(SANDBOX / "calibrate_cmp_v4_coldstart_result.json") as f:
+with (SANDBOX / "calibrate_cmp_v4_coldstart_result.json").open() as f:
     cmp_result = json.load(f)
 
-print(f"Stage 1 best: beta = {cmp_result['best_params']['beta']:.4f}  "
-      f"(× TRUE = {cmp_result['best_params']['beta']/TRUE['beta']:.2f})")
-print(f"             k    = {cmp_result['best_params']['k']:.4f}  "
-      f"(× TRUE = {cmp_result['best_params']['k']/TRUE['k']:.2f})")
+print(f"Stage 1 best: beta = {cmp_result['best_params']['beta']:.4f}  (× TRUE = {cmp_result['best_params']['beta'] / TRUE['beta']:.2f})")
+print(f"             k    = {cmp_result['best_params']['k']:.4f}  (× TRUE = {cmp_result['best_params']['k'] / TRUE['k']:.2f})")
 print(f"             loss = {cmp_result['best_loss']:.4f}")
 print(f"             trials = {cmp_result.get('n_trials', '?')}")
 
@@ -846,14 +871,15 @@ def load_cascade_summary(name: str) -> dict:
     path = SANDBOX / f"calibrate_abm_v4_cascade_{name}_result.json"
     if not path.exists():
         return None
-    with open(path) as f:
+    with path.open() as f:
         return json.load(f)
+
 
 # The four cascade variants
 cascade_summary = {
     "original (24×M=12)": load_cascade_summary("") or load_cascade_summary("default"),
-    "A  (60×M=12)":       load_cascade_summary("A"),
-    "B  (24×M=20)":       load_cascade_summary("B"),
+    "A  (60×M=12)": load_cascade_summary("A"),
+    "B  (24×M=20)": load_cascade_summary("B"),
     "F  (20×M=60, cumulative)": load_cascade_summary("F"),
 }
 
@@ -928,72 +954,69 @@ Image(SANDBOX / "calibrate_abm_v4_cascade_F_diagnostics.png")
 
 # %%
 REF = {
-    "c_inv_frac":   T["c_inv_frac"]["mean"],
-    "mean_AR_A":    T["AR_A"]["mean"],
-    "mean_AR_BN":   T["AR_B_near"]["mean"],
-    "std_AR_C":     T["AR_C"]["std"],
-    "mean_peak_A":  T["peak_A"]["mean"],
-    "std_peak_A":   T["peak_A"]["std"],
+    "c_inv_frac": T["c_inv_frac"]["mean"],
+    "mean_AR_A": T["AR_A"]["mean"],
+    "mean_AR_BN": T["AR_B_near"]["mean"],
+    "std_AR_C": T["AR_C"]["std"],
+    "mean_peak_A": T["peak_A"]["mean"],
+    "std_peak_A": T["peak_A"]["std"],
 }
 SCALES = {
-    "c_inv_frac":   0.15,   # binomial-noise-aware
-    "mean_AR_A":    0.005,
-    "mean_AR_BN":   0.05,
-    "std_AR_C":     0.08,
-    "mean_peak_A":  3.0,
-    "std_peak_A":   1.5,
+    "c_inv_frac": 0.15,  # binomial-noise-aware
+    "mean_AR_A": 0.005,
+    "mean_AR_BN": 0.05,
+    "std_AR_C": 0.08,
+    "mean_peak_A": 3.0,
+    "std_peak_A": 1.5,
 }
+
 
 def run_abm_ensemble(beta: float, k: float, c: float, seeds: list[int]) -> dict:
     AR_A, AR_BN, AR_C, peak_A, invaded_C = [], [], [], [], []
     for s in seeds:
         st = run_and_extract(build_abm_model(beta, k, c, s))
-        R_A_T  = st[R_IDX, -1, a_idx ].sum()
+        R_A_T = st[R_IDX, -1, a_idx].sum()
         R_BN_T = st[R_IDX, -1, bn_idx].sum()
-        R_C_T  = st[R_IDX, -1, c_idx ].sum()
-        I_A_t  = st[I_IDX, :, a_idx].sum(axis=0)
-        I_C_t  = st[I_IDX, :, c_idx].sum(axis=0)
-        R_C_t  = st[R_IDX, :, c_idx].sum(axis=0)
-        AR_A.append(R_A_T  / N_A)
+        R_C_T = st[R_IDX, -1, c_idx].sum()
+        I_A_t = st[I_IDX, :, a_idx].sum(axis=0)
+        I_C_t = st[I_IDX, :, c_idx].sum(axis=0)
+        R_C_t = st[R_IDX, :, c_idx].sum(axis=0)
+        AR_A.append(R_A_T / N_A)
         AR_BN.append(R_BN_T / N_BN)
-        AR_C.append(R_C_T  / N_C)
+        AR_C.append(R_C_T / N_C)
         peak_A.append(int(np.argmax(I_A_t)) if I_A_t.max() > 0 else N_TICKS)
         invaded_C.append(bool((I_C_t > 0).any() or (R_C_t > 0).any()))
     return {
-        "c_inv_frac":  float(np.mean(invaded_C)),
-        "mean_AR_A":   float(np.mean(AR_A)),
-        "mean_AR_BN":  float(np.mean(AR_BN)),
-        "std_AR_C":    float(np.std(AR_C, ddof=1)) if len(AR_C) > 1 else 0.0,
+        "c_inv_frac": float(np.mean(invaded_C)),
+        "mean_AR_A": float(np.mean(AR_A)),
+        "mean_AR_BN": float(np.mean(AR_BN)),
+        "std_AR_C": float(np.std(AR_C, ddof=1)) if len(AR_C) > 1 else 0.0,
         "mean_peak_A": float(np.mean(peak_A)),
-        "std_peak_A":  float(np.std(peak_A, ddof=1)) if len(peak_A) > 1 else 0.0,
+        "std_peak_A": float(np.std(peak_A, ddof=1)) if len(peak_A) > 1 else 0.0,
     }
 
 
 def compute_abm_loss(stats: dict) -> float:
-    return sum(
-        ((stats[key] - REF[key]) / SCALES[key]) ** 2
-        for key in REF
-    )
+    return sum(((stats[key] - REF[key]) / SCALES[key]) ** 2 for key in REF)
 
 
 # %%
 # Demo: one "trial" at TRUE, M=3
 demo_stats = run_abm_ensemble(
-    beta=TRUE["beta"], k=TRUE["k"], c=TRUE["c"],
+    beta=TRUE["beta"],
+    k=TRUE["k"],
+    c=TRUE["c"],
     seeds=[42, 43, 44],
 )
 demo_loss = compute_abm_loss(demo_stats)
 
 print("Per-trial summary statistics at TRUE (M=3 seeds):")
-for key in REF:
-    print(f"  {key:14s}: model = {demo_stats[key]:.3f}   "
-          f"ref = {REF[key]:.3f}   "
-          f"(scale {SCALES[key]})")
+for key, ref_val in REF.items():
+    print(f"  {key:14s}: model = {demo_stats[key]:.3f}   ref = {ref_val:.3f}   (scale {SCALES[key]})")
 print(f"\nLoss at TRUE, M=3: {demo_loss:.3f}")
-print(f"  → For comparison, Stage 2 variant F best loss at M=20 = "
-      f"{cascade_summary['F  (20×M=60, cumulative)']['best_loss_at_M20']:.3f}")
-print(f"  → Single-seed noise dominates at M=3 — this is why a calibration")
-print(f"     trial needs M=20+ for the loss to actually mean something.")
+print(f"  → For comparison, Stage 2 variant F best loss at M=20 = {cascade_summary['F  (20×M=60, cumulative)']['best_loss_at_M20']:.3f}")
+print("  → Single-seed noise dominates at M=3 — this is why a calibration")
+print("     trial needs M=20+ for the loss to actually mean something.")
 
 # %% [markdown]
 # **Note** how the M=3 loss at *exactly TRUE* is not small. That's the
