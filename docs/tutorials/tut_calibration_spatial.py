@@ -121,6 +121,13 @@ optuna.logging.set_verbosity(optuna.logging.WARNING)  # quiet TPE chatter
 # extracted files on subsequent runs. `SANDBOX` points at the extraction
 # directory (`~/.cache/laser-measles/calibration_tutorial/`).
 #
+# The artifacts are a **hard requirement** — there is no fallback that
+# skips the cached cells. If the auto-fetch fails (network down, server
+# unreachable, tarball corrupt, bundle structure changed), the cell
+# raises `RuntimeError` with explicit step-by-step manual-recovery
+# instructions. The intent is that the failure is loud and actionable,
+# not silent.
+#
 # **What's cached vs. what runs live**:
 #
 # - **Cached** (loaded from `SANDBOX/...`): the 20-seed reference (Section 7),
@@ -136,20 +143,58 @@ optuna.logging.set_verbosity(optuna.logging.WARNING)  # quiet TPE chatter
 
 # %%
 import tarfile
+import urllib.error
 import urllib.request
 
 ARTIFACT_URL = "https://packages.idmod.org/artifactory/idm-data/LASER/laser_measles_calib_tutorial.tgz"
 SANDBOX = Path.home() / ".cache" / "laser-measles" / "calibration_tutorial"
 
 _canary = SANDBOX / "reference_v4" / "reference_meta.json"
+
+
+def _artifact_recovery_message() -> str:
+    """Manual-fix instructions printed when auto-fetch fails. No silent fallback."""
+    return (
+        "\n\nThese cached artifacts are a hard requirement — the tutorial cannot proceed "
+        "without them. Auto-fetch failed; to recover manually:\n\n"
+        f"    rm -rf {SANDBOX}\n"
+        f"    mkdir -p {SANDBOX}\n"
+        f"    curl -fL {ARTIFACT_URL} -o /tmp/artifacts.tgz\n"
+        f"    tar -xzf /tmp/artifacts.tgz -C {SANDBOX}\n\n"
+        "Then rerun this cell. If the URL itself is unreachable, contact the tutorial "
+        "maintainers — the artifact bundle may have moved."
+    )
+
+
 if not _canary.exists():
     SANDBOX.mkdir(parents=True, exist_ok=True)
     _tarball = SANDBOX / "_artifacts.tgz"
     print(f"Downloading cached artifacts (~2 MB) -> {SANDBOX}")
-    urllib.request.urlretrieve(ARTIFACT_URL, _tarball)  # noqa: S310 - URL is hard-coded above
-    with tarfile.open(_tarball) as tf:
-        tf.extractall(SANDBOX, filter="data")
+    try:
+        urllib.request.urlretrieve(ARTIFACT_URL, _tarball)  # noqa: S310 - URL is hard-coded above
+    except (urllib.error.URLError, OSError) as exc:
+        raise RuntimeError(
+            f"Could not download tutorial artifacts from {ARTIFACT_URL}.\n"
+            f"  Underlying error: {type(exc).__name__}: {exc}" + _artifact_recovery_message()
+        ) from exc
+
+    try:
+        with tarfile.open(_tarball) as tf:
+            tf.extractall(SANDBOX, filter="data")
+    except (tarfile.TarError, OSError) as exc:
+        raise RuntimeError(
+            f"Downloaded tarball at {_tarball} is corrupt or unreadable.\n"
+            f"  Underlying error: {type(exc).__name__}: {exc}" + _artifact_recovery_message()
+        ) from exc
+
     _tarball.unlink()
+
+    if not _canary.exists():
+        raise RuntimeError(
+            f"Extraction succeeded but expected canary file {_canary} is missing. "
+            f"The artifact bundle may have changed structure." + _artifact_recovery_message()
+        )
+
     print("Done.")
 else:
     print(f"Cached artifacts already present at {SANDBOX}")
