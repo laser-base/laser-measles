@@ -4,10 +4,12 @@ import numpy as np
 import polars as pl
 from pydantic import BaseModel
 from pydantic import Field
+from pydantic import model_validator
 
 from laser.measles.base import BaseLaserModel
 from laser.measles.base import BasePhase
 from laser.measles.utils import cast_type
+from laser.measles.utils import coerce_utf8_date_column
 
 
 class SIACalendarParams(BaseModel):
@@ -30,6 +32,16 @@ class SIACalendarParams(BaseModel):
     sia_schedule: pl.DataFrame = Field(description="DataFrame containing SIA schedule information")
     date_column: str = Field("date", description="Name of the column containing SIA dates")
     group_column: str = Field("id", description="Name of the column containing group identifiers")
+
+    @model_validator(mode="after")
+    def _coerce_sia_schedule_date_column(self) -> "SIACalendarParams":
+        """Silently cast a Utf8 date column on ``sia_schedule`` to ``Datetime``
+        so the per-tick filter in ``SIACalendarProcess.__call__`` doesn't
+        blow up on string-typed user input. Shared logic lives in
+        ``coerce_utf8_date_column``; see laser-measles #215.
+        """
+        self.sia_schedule = coerce_utf8_date_column(self.sia_schedule, self.date_column)
+        return self
 
 
 class SIACalendarProcess(BasePhase):
