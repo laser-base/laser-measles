@@ -27,10 +27,35 @@ jobs:
           name: python-package-distributions
           path: dist/
 
+  docs-deploy:
+    name: Build & deploy docs (executes notebooks)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - name: Configure Git Credentials
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: echo "cache_id=$(date --utc '+%V')" >> $GITHUB_ENV
+      - uses: actions/cache@v4
+        with:
+          key: mkdocs-material-${{ env.cache_id }}
+          path: .cache
+          restore-keys: |
+            mkdocs-material-
+      - run: pip install ".[docs,examples]"
+      - run: python docs/tutorials/convert_tutorials.py
+      - run: mkdocs gh-deploy --force --config-file mkdocs.ci.yml
+
   github-release:
     name: >-
       Sign Python 🐍 distribution 📦 with Sigstore and make GitHub Release
-    needs: build
+    needs: [build, docs-deploy]
     runs-on: ubuntu-latest
     environment:
       name: restricted # remove if v* tag protection is enabled with GitHub App as sole bypass
