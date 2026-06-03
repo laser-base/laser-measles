@@ -11,10 +11,12 @@ import polars as pl
 from pydantic import BaseModel
 from pydantic import ConfigDict
 from pydantic import Field
+from pydantic import model_validator
 
 from laser.measles.base import BasePhase
 from laser.measles.compartmental.model import CompartmentalModel
 from laser.measles.utils import cast_type
+from laser.measles.utils import coerce_utf8_date_column
 
 
 class SIACalendarParams(BaseModel):
@@ -37,6 +39,16 @@ class SIACalendarParams(BaseModel):
     sia_schedule: pl.DataFrame = Field(description="DataFrame containing SIA schedule information")
     date_column: str = Field("date", description="Name of the column containing SIA dates")
     group_column: str = Field("id", description="Name of the column containing group identifiers")
+
+    @model_validator(mode="after")
+    def _coerce_sia_schedule_date_column(self) -> "SIACalendarParams":
+        """Silently cast a Utf8 date column on ``sia_schedule`` to ``Datetime``
+        so the per-tick filter in ``SIACalendarProcess.__call__`` doesn't
+        blow up on string-typed user input. Shared logic lives in
+        ``coerce_utf8_date_column``; see laser-measles #215.
+        """
+        self.sia_schedule = coerce_utf8_date_column(self.sia_schedule, self.date_column)
+        return self
 
 
 class SIACalendarProcess(BasePhase):
@@ -107,8 +119,14 @@ class SIACalendarProcess(BasePhase):
         # Store a copy of the original schedule for get_sia_schedule method
         self._original_schedule = self.params.sia_schedule.clone()
 
-        # Convert string dates in SIA schedule to datetime objects for comparison
-        self._convert_schedule_dates()
+        # Empty-schedule type repair: an empty DataFrame whose `date` column
+        # was never written keeps whatever dtype the user gave it (often
+        # `Null`). The SIACalendarParams.@model_validator only fires on
+        # `Utf8` → `Datetime`, so empty-but-not-Utf8 schedules still need
+        # a tiny cast here so the filter works.
+        if len(self.params.sia_schedule) == 0 and self.params.date_column in self.params.sia_schedule.columns:
+            if self.params.sia_schedule.schema[self.params.date_column] != pl.Datetime:
+                self.params.sia_schedule = self.params.sia_schedule.with_columns(pl.col(self.params.date_column).cast(pl.Datetime))
 
         if self.verbose:
             print(f"SIACalendar initialized with {len(self.node_mapping)} groups")
@@ -122,19 +140,6 @@ class SIACalendarProcess(BasePhase):
         required_columns = [self.params.group_column, self.params.date_column]
         if not all(col in self.params.sia_schedule.columns for col in required_columns):
             raise ValueError(f"sia_schedule must contain columns: {required_columns}")
-
-    def _convert_schedule_dates(self) -> None:
-        """Convert string dates in SIA schedule to datetime objects for comparison."""
-        if len(self.params.sia_schedule) == 0:
-            # For empty DataFrames, ensure the date column has the correct type
-            if self.params.date_column in self.params.sia_schedule.columns:
-                self.params.sia_schedule = self.params.sia_schedule.with_columns(pl.col(self.params.date_column).cast(pl.Datetime))
-            return
-
-        # Convert string dates to datetime objects
-        self.params.sia_schedule = self.params.sia_schedule.with_columns(
-            pl.col(self.params.date_column).str.strptime(pl.Datetime, "%Y-%m-%d")
-        )
 
     def _tick_to_date(self, tick: int) -> datetime:
         """Convert tick number to datetime."""
