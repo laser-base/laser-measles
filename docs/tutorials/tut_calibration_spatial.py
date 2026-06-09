@@ -212,7 +212,7 @@ import urllib.request
 ARTIFACT_URL = "https://packages.idmod.org/artifactory/idm-data/LASER/laser_measles_calib_tutorial.tgz"
 SANDBOX = Path.home() / ".cache" / "laser-measles" / "calibration_tutorial"
 
-_canary = SANDBOX / "reference_v4" / "reference_meta.json"
+_canary = SANDBOX / "reference" / "reference_meta.json"
 
 
 def _artifact_recovery_message() -> str:
@@ -577,10 +577,10 @@ def tick_to_date(tick: int) -> date:
 # Stage 2 calibration trials). Three notes worth attention:
 #
 # - We pass `mixer=chain_mixer` into `InfectionParams`. This is the
-#   modern API; older code (including the original sandbox scripts)
-#   used a monkey-patch on `transmission.params.mixer` because the
-#   `mixer=` kwarg wasn't accepted on the ABM `InfectionParams` at the
-#   time. With the kwarg now supported, you don't need the patch.
+#   modern API; older laser-measles code used a monkey-patch on
+#   `transmission.params.mixer` because the `mixer=` kwarg wasn't
+#   accepted on the ABM `InfectionParams` at the time. With the kwarg
+#   now supported, you don't need the patch.
 # - `aggregation_level=2` on the `StateTracker` matches the 3-level
 #   hierarchical IDs and gives us one tracker row per patch.
 # - `NoBirthsProcess` is required — without a vital-dynamics component
@@ -701,7 +701,7 @@ plt.show()
 # and metadata instead.
 
 # %%
-REF_DIR = SANDBOX / "reference_v4"
+REF_DIR = SANDBOX / "reference"
 ref_I = np.load(REF_DIR / "I_by_patch.npy")  # (n_seeds, n_ticks, n_patches)
 ref_R = np.load(REF_DIR / "R_by_patch.npy")
 with (REF_DIR / "reference_meta.json").open() as f:
@@ -796,7 +796,7 @@ plt.show()
 from IPython.display import Image
 
 # CMP sweep — note c's flatness (bottom row)
-Image(SANDBOX / "cmp_identifiability_v4.png")
+Image(SANDBOX / "cmp_identifiability.png")
 
 # %% [markdown]
 # **Reading the CMP identifiability figure above:**
@@ -827,7 +827,7 @@ Image(SANDBOX / "cmp_identifiability_v4.png")
 # ABM 2D sweep — four (β, k) landscapes at c=c_true, each showing one
 # calibration statistic with its reference iso-contour. The TRUE point
 # sits where all three statistic iso-contours pass close to one another.
-Image(SANDBOX / "abm_identifiability_v4_2d.png")
+Image(SANDBOX / "abm_identifiability_2d.png")
 
 # %% [markdown]
 # **Reading the ABM identifiability figure above:** Four horizontal
@@ -1045,7 +1045,7 @@ plt.show()
 # Stage 0.
 
 # %%
-with (SANDBOX / "calibrate_cmp_v4_coldstart_result.json").open() as f:
+with (SANDBOX / "cmp_coldstart_result.json").open() as f:
     cmp_result = json.load(f)
 
 print(f"Stage 1 best: beta = {cmp_result['best_params']['beta']:.4f}  (× TRUE = {cmp_result['best_params']['beta'] / TRUE['beta']:.2f})")
@@ -1060,7 +1060,7 @@ print(f"             trials = {cmp_result.get('n_trials', '?')}")
 # Stage 2 with.
 
 # %%
-Image(SANDBOX / "calibrate_cmp_v4_coldstart_diagnostics.png")
+Image(SANDBOX / "cmp_coldstart_diagnostics.png")
 
 # %% [markdown]
 # ## 10. Stage 2 — stochastic refinement (and the M-vs-trials lesson)
@@ -1078,7 +1078,7 @@ Image(SANDBOX / "calibrate_cmp_v4_coldstart_diagnostics.png")
 # %%
 # Load cached trial summaries for all four variants
 def load_cascade_summary(name: str) -> dict:
-    path = SANDBOX / f"calibrate_abm_v4_cascade_{name}_result.json"
+    path = SANDBOX / f"abm_cascade_{name}_result.json"
     if not path.exists():
         return None
     with path.open() as f:
@@ -1116,7 +1116,7 @@ cascade_summary = {
 # whichever happy-accident set of simulations produced an artificially low loss.
 
 # %%
-Image(SANDBOX / "v4_cascade_compare.png")
+Image(SANDBOX / "cascade_compare.png")
 
 # %% [markdown]
 # **Lesson, internalize this:** When per-trial loss measurement is
@@ -1148,7 +1148,7 @@ Image(SANDBOX / "v4_cascade_compare.png")
 # time they re-run an experiment.
 
 # %%
-Image(SANDBOX / "calibrate_abm_v4_cascade_F_diagnostics.png")
+Image(SANDBOX / "abm_cascade_F_diagnostics.png")
 
 # %% [markdown]
 # ### Demonstrating the Stage 2 ABM evaluation API
@@ -1246,7 +1246,7 @@ print("     trial needs M=20+ for the loss to actually mean something.")
 # compared to the 20-simulation reference):
 
 # %%
-Image(SANDBOX / "v4_calibration_validation.png")
+Image(SANDBOX / "calibration_validation.png")
 
 # %% [markdown]
 # **Validation summary (variant F's best at β=0.4963, k=0.00910, c=1.087):**
@@ -1329,7 +1329,7 @@ else:
 # β within ~5%, k within ~10%, c within ~25%.**
 
 # %%
-Image(SANDBOX / "v4_loss_curves.png")
+Image(SANDBOX / "loss_curves.png")
 
 # %% [markdown]
 # ## 13. Lessons to carry forward
