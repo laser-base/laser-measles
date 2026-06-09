@@ -74,26 +74,28 @@
 # **About 5 minutes end-to-end on an M4 Max with 36 GB RAM** with `RUN_VALIDATION =
 # True`; roughly 2–3 minutes with it off. That's longer than the other
 # tutorials in this directory (which all aim for under one minute), but
-# a faithful calibration walkthrough can't be done in 60 seconds. The
-# expensive stages (Stage 2 ABM cascade, 20-simulation reference generation)
-# use **cached results from the original experiment** — we show what
-# those stages produced and explain the lessons, but we don't re-run the
-# 3+ hours of compute they took. The cheaper stages (scenario building,
-# single ABM ensembles, the Stage 1 CMP calibration, and an optional
-# Stage 2 validation) run live, and benefit from numba's JIT cache once
-# the first ABM call has compiled.
+# a faithful calibration walkthrough can't be done in 60 seconds.
 #
-# ## Where this scenario came from
+# ## Stages that run live vs. stages that don't
 #
-# The reference dataset, identifiability sweeps, calibration runs, and
-# diagnostic figures used here come from a research project that ran the
-# full cascade end-to-end before condensing it into this tutorial. The
-# tutorial reproduces the cheap stages live and loads the expensive
-# stages from a cached artifact bundle (see Section 1 below). The full
-# methodology write-up — including detailed honest-precision claims and
-# a discussion of what the cascade *did not* recover — is the wiki page
-# *Synthetic-Spatial-Multi-Modal-Calibration-for-Documentation*. This
-# tutorial is the practitioner-facing companion to that write-up.
+# Some stages of the cascade are too expensive to run inside a notebook:
+#
+# - **20-simulation reference generation** at TRUE parameters — ~10
+#   minutes of compute on a 16-core machine.
+# - **Stage 2 ABM cascade** (the full multi-variant calibration loop
+#   that pins down β, k, c) — ~3 hours.
+# - **Per-stage diagnostic sweeps** (identifiability scans over each
+#   parameter) — ~5–10 minutes each.
+#
+# For those stages we use pre-computed results bundled in an artifact
+# tarball that the next cell auto-downloads (~2 MB, anonymous). The
+# tutorial loads those results, shows what they look like, and explains
+# the lessons.
+#
+# The cheaper stages — scenario building, single ABM ensembles, the
+# Stage 1 CMP calibration, and an optional Stage 2 validation — run
+# live in the notebook. They benefit from numba's JIT cache once the
+# first ABM call has compiled.
 #
 # ## The scenario at a glance
 #
@@ -171,10 +173,11 @@ optuna.logging.set_verbosity(optuna.logging.WARNING)  # quiet TPE chatter
 # %% [markdown]
 # ### Cached artifacts
 #
-# Several cells below load pre-computed results from the original
-# experiment: the 20-simulation reference dataset, identifiability sweeps, CMP
-# cold-start results, and ABM cascade calibration results. These are
-# bundled as a single ~2 MB tarball hosted on IDM's Artifactory.
+# Several cells below load pre-computed results for stages too expensive
+# to run live: the 20-simulation reference dataset, identifiability
+# sweeps, CMP cold-start convergence diagnostics, and ABM cascade
+# calibration results. These are bundled as a single ~2 MB tarball
+# hosted on IDM's Artifactory.
 #
 # The next cell downloads + extracts on first run, then reuses the
 # extracted files on subsequent runs. `SANDBOX` points at the extraction
@@ -691,7 +694,7 @@ plt.show()
 # calibration target; we need an **ensemble**.
 
 # %% [markdown]
-# ## 7. The synthetic reference (cached)
+# ## 7. The synthetic reference
 #
 # The reference dataset is **20 independent ABM simulations** at TRUE
 # parameters for 1095 ticks (each with a distinct RNG seed), saved as
@@ -1031,18 +1034,18 @@ plt.tight_layout()
 plt.show()
 
 # %% [markdown]
-# ### Canonical cached result
+# ### Loading the full-precision Stage 1 result
 #
 # The live 30-trial run above lands in the right basin but uses a fresh
-# TPE seed and fewer trials than the original sweep. For the rest of the
-# tutorial, we load the **canonical** result from the original 100-trial
-# run as `cmp_result` and use it for all downstream Stage-2 comparisons,
-# so the rest of the notebook stays deterministic across reruns. That
-# canonical best is `beta = 0.5294 (1.06× TRUE)`, `k = 0.0259 (2.59× TRUE
-# — biased high)`. **The k bias is by design** — CMP cannot match the
-# ABM ensemble peak timing at the TRUE k. The `k`-inflation is the
-# deterministic-vs-stochastic structural mismatch we diagnosed in
-# Stage 0.
+# TPE seed and fewer trials than a fully-converged sweep would. For the
+# rest of the tutorial we load a **pre-computed 100-trial Stage 1
+# result** as `cmp_result` and use it for all downstream Stage-2
+# comparisons, so the rest of the notebook stays deterministic across
+# reruns. The 100-trial best is `beta = 0.5294 (1.06× TRUE)`,
+# `k = 0.0259 (2.59× TRUE — biased high)`. **The k bias is by design** —
+# CMP cannot match the ABM ensemble peak timing at the TRUE k. The
+# `k`-inflation is the deterministic-vs-stochastic structural mismatch
+# we diagnosed in Stage 0.
 
 # %%
 with (SANDBOX / "cmp_coldstart_result.json").open() as f:
@@ -1071,9 +1074,9 @@ Image(SANDBOX / "cmp_coldstart_diagnostics.png")
 # that includes the bimodality term `std(AR_C)`.
 #
 # The interesting question is **how to spend a fixed compute budget**:
-# more trials at lower M, or fewer trials at higher M? We ran four
-# variants on the original experiment, all warm-started from CMP cold-
-# best at the same total-compute scale, and got a stark result:
+# more trials at lower M, or fewer trials at higher M? Four cascade
+# variants were run at the same total-compute scale, all warm-started
+# from the CMP cold-best, with the result table below:
 
 # %%
 # Load cached trial summaries for all four variants
@@ -1266,13 +1269,14 @@ Image(SANDBOX / "calibration_validation.png")
 # %% [markdown]
 # ### Optional: reproduce the validation live (~1–2 min, opt-in)
 #
-# The cached figure above was produced by running a **50-simulation** ABM
-# ensemble at the calibrated `(β, k, c)` (variant F's best from cascade
-# Stage 2). The cell below reruns that comparison live with a smaller
-# **10-simulation** ensemble — enough simulations to resolve `std(AR_C)`, but half
-# the canonical 20-simulation reference's count. It's gated behind
-# `RUN_VALIDATION = False` because it adds ~1–2 minutes to the notebook
-# runtime on an M4 Max with 36 GB RAM. Flip the flag below to run it.
+# The cached figure above shows a **50-simulation** ABM ensemble at the
+# calibrated `(β, k, c)` (variant F's best from cascade Stage 2)
+# compared against the 20-simulation reference. The cell below reruns
+# that comparison live with a smaller **10-simulation** ensemble —
+# enough simulations to resolve `std(AR_C)`, but half the 20-simulation
+# reference's count. It's gated behind `RUN_VALIDATION = False` because
+# it adds ~1–2 minutes to the notebook runtime on an M4 Max with
+# 36 GB RAM. Flip the flag below to run it.
 #
 # The output is a side-by-side comparison of the 6 calibration-target
 # summary statistics — calibrated ensemble vs reference, with each
@@ -1372,11 +1376,11 @@ Image(SANDBOX / "loss_curves.png")
 # %% [markdown]
 # ## 14. Where to go from here
 #
-# - **The full methodology write-up** with all honest-precision claims
-#   and discussion is the wiki page
-#   *Synthetic-Spatial-Multi-Modal-Calibration-for-Documentation*. It
-#   walks through the same cascade end-to-end, including the dead-end
-#   variants that this tutorial leaves out.
+# - **Deeper methodology background.** The wiki page
+#   *Synthetic-Spatial-Multi-Modal-Calibration-for-Documentation*
+#   covers honest-precision claims, dead-end cascade variants, and
+#   additional methodological detail that this tutorial doesn't expand
+#   on.
 # - **A natural extension** for pushing `c` recovery: add a per-patch
 #   spatial loss term — e.g. `sum((arrival_tick_p_model -
 #   arrival_tick_p_ref)^2)` for patches invaded in ≥50% of simulations. `c`
