@@ -71,7 +71,7 @@
 #
 # ## Runtime
 #
-# **About 5 minutes end-to-end on a modern Mac** with `RUN_VALIDATION =
+# **About 5 minutes end-to-end on an M4 Max with 36 GB RAM** with `RUN_VALIDATION =
 # True`; roughly 2–3 minutes with it off. That's longer than the other
 # tutorials in this directory (which all aim for under one minute), but
 # a faithful calibration walkthrough can't be done in 60 seconds. The
@@ -94,6 +94,47 @@
 # a discussion of what the cascade *did not* recover — is the wiki page
 # *Synthetic-Spatial-Multi-Modal-Calibration-for-Documentation*. This
 # tutorial is the practitioner-facing companion to that write-up.
+#
+# ## The scenario at a glance
+#
+# **What's being simulated.** A 3-year measles outbreak across 45
+# patches organized into a chain of clusters:
+# A (15 patches, ~626K population) → B_far (8 patches, ~262K) →
+# B_near (7 patches, ~226K) → C (15 patches, ~489K).
+# Transmission can only happen along the chain (custom `ChainMixing`
+# mixer, defined in Section 4). The outbreak is seeded in the three
+# largest A patches at day 0.
+#
+# **The interventions.** Two single-day SIA campaigns on day 10:
+#
+# - **B_far campaign, efficacy ε=0.85** — drives B_far's effective R₀ to
+#   ~0.6, creating a stochastic bottleneck. Sometimes B_far gets wiped
+#   out before seeding B_near; sometimes it doesn't.
+# - **B_near campaign, efficacy ε=0.50** — leaves B_near supercritical
+#   (R₀_eff ~ 2.0), *if* B_far manages to seed it.
+#
+# **The hidden TRUE parameters** we're trying to recover:
+#
+# - `β = 0.5`  — per-patch transmission rate
+# - `k = 0.01` — gravity mixing scale
+# - `c = 1.5`  — gravity distance exponent
+#
+# SIA efficacies are held fixed (see Section 5 for the rationale).
+#
+# **The calibration target — what we compare model output against.**
+# Not a trajectory, not a curve, but **six summary statistics** computed
+# across the 20 independent ABM simulations at TRUE:
+#
+# - `c_inv_frac` — fraction of simulations where C gets invaded (~0.45)
+# - `mean_AR_A`, `mean_AR_BN` — mean attack rates in clusters A and B_near
+# - **`std_AR_C` ≈ 0.50** — the *bimodality fingerprint*. Across the 20
+#   simulations, cluster C's attack rate is either ~0 (never invaded)
+#   or ~1 (full epidemic), with roughly equal weight. A deterministic
+#   model cannot reproduce this number.
+# - `mean_peak_A`, `std_peak_A` — outbreak peak timing in cluster A
+#
+# Section 7 defines these six precisely. Section 8 sweeps each parameter
+# to show which ones the loss function can resolve.
 
 # %% [markdown]
 # ## 1. Setup
@@ -152,7 +193,7 @@ optuna.logging.set_verbosity(optuna.logging.WARNING)  # quiet TPE chatter
 #   identifiability sweep figures (Section 8), CMP cold-start result and
 #   diagnostics (Section 9), ABM cascade summaries and diagnostic figures
 #   (Section 10), validation and loss-curve figures (Sections 11–12).
-# - **Live** (run in this notebook, runtimes for a modern Mac): scenario
+# - **Live** (run in this notebook, runtimes for an M4 Max with 36 GB RAM): scenario
 #   construction (Section 3, ~seconds), the single-simulation ABM sanity
 #   check at TRUE (Section 6, ~30 s; the first ABM call also pays a
 #   one-time numba JIT compile of ~30–60 s), the **Stage 1 CMP cold-
@@ -606,7 +647,7 @@ def build_abm_model(beta: float, k: float, c: float, seed: int) -> ABMModel:
 
 
 # %% [markdown]
-# Let's sanity-check it: one simulation, dynamics at TRUE. On a modern Mac
+# Let's sanity-check it: one simulation, dynamics at TRUE. On an M4 Max with 36 GB RAM
 # the model run itself is ~5–10 s, but this first call also incurs a
 # one-time numba JIT compile of ~30–60 s; subsequent ABM calls in this
 # notebook are at warm-cache speed. We extract the per-patch time series
@@ -726,6 +767,12 @@ plt.show()
 # %% [markdown]
 # ## 8. Stage 0 — identifiability sweeps before any calibration
 #
+# > The loss function is a weighted sum of squared deviations from the
+# > six summary statistics described above (and in Section 7). See
+# > Section 9 (`compute_cmp_loss`) and Section 10 (`compute_abm_loss`)
+# > for the full definitions. The sweeps below just call this loss at
+# > each grid point and plot it alongside the underlying statistics.
+#
 # Before launching any optimizer, sweep each parameter against the loss
 # function and the summary statistics. This catches two classes of
 # problem **before** you waste budget on calibration:
@@ -751,10 +798,38 @@ from IPython.display import Image
 # CMP sweep — note c's flatness (bottom row)
 Image(SANDBOX / "cmp_identifiability_v4.png")
 
+# %% [markdown]
+# **Reading the CMP identifiability figure above:**
+#
+# - **Rows** sweep each free parameter: β (top), k (middle), c (bottom).
+# - **Column 1 (loss vs param)** — total CMP loss as the parameter
+#   varies; vertical green dashed line marks TRUE. A clean minimum at
+#   TRUE means the parameter is identifiable.
+# - **Column 2 (attack rates vs param)** — final attack rate in each
+#   cluster (`rA` = R_A/N_A, `rBF` = R_B_far/N_B_far, `rBN`, `rC`) as
+#   the parameter varies. Horizontal dotted lines mark reference values
+#   from the 20-simulation ABM ensemble.
+# - **Column 3 (peak timing vs param)** — tick of the cluster-A
+#   epidemic peak.
+# - **Column 4 (2D heatmap)** — 2D loss surface in (β, k) at c=c_true.
+#
+# Notice especially how `c` (bottom row, column 1) has a nearly flat
+# loss curve — CMP's deterministic dynamics through ChainMixing can't
+# distinguish between c values across [0.5, 3.0]. That's the "c is
+# unidentifiable in CMP" finding the next markdown cell calls out.
+
 # %%
 # ABM 2D sweep — the (β, k) loss landscape at c=c_true.
 # Notice the three target-ridge contours intersecting at the TRUE point.
 Image(SANDBOX / "abm_identifiability_v4_2d.png")
+
+# %% [markdown]
+# **Reading the ABM identifiability figure above:** This is a 2D loss
+# heatmap over (β, k) at the TRUE value of c. The three colored
+# contours are the **target ridges** — points in (β, k) space where the
+# model exactly matches one of the calibration target statistics. They
+# intersect near the TRUE point (white star). The intersection is what
+# the Stage 2 optimizer is trying to find.
 
 # %% [markdown]
 # **Two findings shape every stage that follows:**
@@ -777,7 +852,7 @@ Image(SANDBOX / "abm_identifiability_v4_2d.png")
 #
 # Strategy: use a CompartmentalModel (deterministic SEIR, daily ticks)
 # with the same ChainMixing geometry to find a useful (β, k) basin
-# cheaply (~30–60 s for 30 Optuna trials on a modern Mac). The CMP
+# cheaply (~30–60 s for 30 Optuna trials on an M4 Max with 36 GB RAM). The CMP
 # can't reproduce the bimodality (it's deterministic), but it can match
 # the **timing** and **A-cluster attack rate** — which is enough to
 # land in the right neighborhood.
@@ -889,7 +964,7 @@ def compute_cmp_loss(st: np.ndarray) -> float:
 # %% [markdown]
 # ### Run the CMP study
 #
-# 30 trials live, ~30–60 s total on a modern Mac. The original research
+# 30 trials live, ~30–60 s total on an M4 Max with 36 GB RAM. The original research
 # run did 100 trials and plateaued around trial 31 — 30 here is enough
 # to land in the same basin while keeping
 # notebook runtime reasonable. **No warm-start at TRUE.**
@@ -960,7 +1035,7 @@ print(f"             loss = {cmp_result['best_loss']:.4f}")
 print(f"             trials = {cmp_result.get('n_trials', '?')}")
 
 # %% [markdown]
-# Stage 1 cost: under a minute of live compute on a modern Mac. That
+# Stage 1 cost: under a minute of live compute on an M4 Max with 36 GB RAM. That
 # cheapness is the whole reason it's the first stage. Its role isn't
 # to recover TRUE — it's to deliver a *useful prior* point to seed
 # Stage 2 with.
@@ -1064,7 +1139,7 @@ Image(SANDBOX / "calibrate_abm_v4_cascade_F_diagnostics.png")
 # would call inside `objective(trial)`: build the model at a (β, k, c),
 # run an M-simulation ensemble, compute summary stats, score.
 #
-# Tutorial scale: M=3 simulations at TRUE, ~30 s on a modern Mac. **This is
+# Tutorial scale: M=3 simulations at TRUE, ~30 s on an M4 Max with 36 GB RAM. **This is
 # not a calibration trial — it's a demonstration of what one trial does
 # internally.**
 
@@ -1178,7 +1253,7 @@ Image(SANDBOX / "v4_calibration_validation.png")
 # **10-simulation** ensemble — enough simulations to resolve `std(AR_C)`, but half
 # the canonical 20-simulation reference's count. It's gated behind
 # `RUN_VALIDATION = False` because it adds ~1–2 minutes to the notebook
-# runtime on a modern Mac. Flip the flag below to run it.
+# runtime on an M4 Max with 36 GB RAM. Flip the flag below to run it.
 #
 # The output is a side-by-side comparison of the 6 calibration-target
 # summary statistics — calibrated ensemble vs reference, with each
@@ -1192,7 +1267,7 @@ if RUN_VALIDATION:
     cal = cascade_summary["F  (20×M=60, cumulative)"]["best_params"]
     val_seeds = list(range(1000, 1010))  # 10 fresh RNG seeds (one per simulation), distinct from the reference's
     print(f"Running 10-simulation validation at calibrated params (β={cal['beta']:.4f}, k={cal['k']:.5f}, c={cal['c']:.3f})...")
-    print("  expected runtime ~1–2 minutes on a modern Mac")
+    print("  expected runtime ~1–2 minutes on an M4 Max with 36 GB RAM")
 
     val_stats = run_abm_ensemble(beta=cal["beta"], k=cal["k"], c=cal["c"], seeds=val_seeds)
     val_loss = compute_abm_loss(val_stats)
@@ -1209,7 +1284,7 @@ if RUN_VALIDATION:
 else:
     print("RUN_VALIDATION is False — skipping live validation.")
     print("Flip the flag above to run a 10-simulation ABM ensemble at the calibrated")
-    print("parameters (~1–2 min on a modern Mac).")
+    print("parameters (~1–2 min on an M4 Max with 36 GB RAM).")
 
 # %% [markdown]
 # ## 12. What the cascade did *not* fully recover
