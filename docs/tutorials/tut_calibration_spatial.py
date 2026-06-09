@@ -805,13 +805,18 @@ Image(SANDBOX / "cmp_identifiability_v4.png")
 # - **Column 1 (loss vs param)** — total CMP loss as the parameter
 #   varies; vertical green dashed line marks TRUE. A clean minimum at
 #   TRUE means the parameter is identifiable.
-# - **Column 2 (attack rates vs param)** — final attack rate in each
-#   cluster (`rA` = R_A/N_A, `rBF` = R_B_far/N_B_far, `rBN`, `rC`) as
-#   the parameter varies. Horizontal dotted lines mark reference values
-#   from the 20-simulation ABM ensemble.
+# - **Column 2 (AR vs param)** — final attack rate in each cluster as
+#   the parameter varies. The four colored lines are
+#   `AR_A = R_A(T)/N_A`, `AR_BF = R_B_far(T)/N_B_far`, `AR_BN`, `AR_C`.
+#   Horizontal dotted lines mark reference values from the 20-simulation
+#   ABM ensemble.
 # - **Column 3 (peak timing vs param)** — tick of the cluster-A
 #   epidemic peak.
-# - **Column 4 (2D heatmap)** — 2D loss surface in (β, k) at c=c_true.
+# - **Column 4 (2D heatmaps over (β, k) at c=c_true)** — three different
+#   2D surfaces stacked vertically. Top row: overall `log(loss)`.
+#   Middle row: `AR_BF` with its red iso-contour at the reference value
+#   0.85. Bottom row: `peak_A` with its cyan iso-contour at the
+#   reference value 97. The TRUE point is marked in each panel.
 #
 # Notice especially how `c` (bottom row, column 1) has a nearly flat
 # loss curve — CMP's deterministic dynamics through ChainMixing can't
@@ -819,17 +824,31 @@ Image(SANDBOX / "cmp_identifiability_v4.png")
 # unidentifiable in CMP" finding the next markdown cell calls out.
 
 # %%
-# ABM 2D sweep — the (β, k) loss landscape at c=c_true.
-# Notice the three target-ridge contours intersecting at the TRUE point.
+# ABM 2D sweep — four (β, k) landscapes at c=c_true, each showing one
+# calibration statistic with its reference iso-contour. The TRUE point
+# sits where all three statistic iso-contours pass close to one another.
 Image(SANDBOX / "abm_identifiability_v4_2d.png")
 
 # %% [markdown]
-# **Reading the ABM identifiability figure above:** This is a 2D loss
-# heatmap over (β, k) at the TRUE value of c. The three colored
-# contours are the **target ridges** — points in (β, k) space where the
-# model exactly matches one of the calibration target statistics. They
-# intersect near the TRUE point (white star). The intersection is what
-# the Stage 2 optimizer is trying to find.
+# **Reading the ABM identifiability figure above:** Four horizontal
+# panels, each a 2D heatmap over (β, k) at c=c_true, all marked with
+# the TRUE point (red star).
+#
+# - **Panel 1**: overall `log10(loss)` on the β × k grid — note the
+#   basin near TRUE.
+# - **Panel 2**: `c_inv_frac` (fraction of simulations invading C),
+#   with the red iso-contour at ref=0.45. Points along that contour
+#   match the reference invasion frequency exactly.
+# - **Panel 3**: `mean peak_A`, with the cyan iso-contour at ref=97.
+# - **Panel 4**: `mean AR_A`, with the red iso-contour at ref=0.98.
+#
+# Read this figure for **target-ridge intersections**: each statistic's
+# iso-contour traces a 1D ridge in (β, k) space where the model matches
+# that statistic. The point where multiple ridges intersect (visible
+# here because they all pass near the TRUE star) is what the Stage 2
+# optimizer is trying to find. If two ridges crossed far from each
+# other, that would mean the statistics weren't jointly constraining
+# enough — and you'd need additional summary statistics in the loss.
 
 # %% [markdown]
 # **Two findings shape every stage that follows:**
