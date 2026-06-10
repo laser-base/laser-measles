@@ -506,10 +506,8 @@ plt.show()
 # your geography.
 #
 # > If you want to see the chain mixer in isolation — its matrix
-# > structure, the chain network laid out geographically, the
-# > population flow over time, and a regression check confirming
-# > this design is behaviorally identical to a subclass-based
-# > implementation — see the optional
+# > structure, the chain network laid out geographically, and the
+# > population flow over time — see the optional
 # > [Chain mixing visualizer](tut_chain_mixing.ipynb) companion
 # > notebook. It runs in ~30 s, has no model on top, and is the
 # > standalone reference for this mixer.
@@ -1444,5 +1442,4 @@ Image(SANDBOX / "loss_curves.png")
 #   OOP contract* — see `chain_migration_matrix` and
 #   `_PrecomputedMixer` in Section 4. The
 #   [Chain mixing visualizer](tut_chain_mixing.ipynb) companion
-#   notebook walks through the same pattern with visualizations
-#   and a regression check.
+#   notebook walks through the same pattern with visualizations.

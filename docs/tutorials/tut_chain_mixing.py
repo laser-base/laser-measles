@@ -40,39 +40,29 @@
 #
 # - A small synthetic chain scenario (4 clusters, 20 patches), small
 #   enough to visualize the migration matrix cleanly.
-# - Two equivalent implementations of the chain mixer side by side:
-#   the **function-first** design used by the calibration tutorial
-#   (`chain_migration_matrix`), and an alternative **class-based**
-#   design kept here for regression comparison.
+# - The `chain_migration_matrix` function used by the calibration
+#   tutorial, inlined here so the notebook is self-contained.
 # - Four visualizations: the allowed/forbidden mask, the migration
 #   matrix heatmap, the chain as a geographic graph, and a population-
 #   flow simulation that shows the chain wave from A → B → C.
 # - Property checks (rows sum to k, forbidden routes are zero, both
 #   directions are present for adjacent clusters).
-# - A regression check that proves the two implementations produce
-#   numerically equal matrices on the calibration tutorial's
-#   scenario shape.
 # - Generality demos: chains of 3 and 6 clusters using the same
 #   function.
 
 # %% [markdown]
 # ## 1. Setup
 #
-# Standard scientific Python plus two utility imports from laser-core
-# (great-circle distance + gravity kernel) so we can run both
-# implementations side-by-side.
+# Standard scientific Python plus the great-circle distance helper
+# from laser-core.
 
 # %%
 import matplotlib.pyplot as plt
 import numpy as np
 import polars as pl
 from laser.core.migration import distance
-from laser.core.migration import gravity as gravity_fn
 from matplotlib.colors import LogNorm
 from matplotlib.patches import Rectangle
-
-from laser.measles.mixing.gravity import GravityMixing
-from laser.measles.mixing.gravity import GravityParams
 
 # Reproducibility
 RNG = np.random.default_rng(seed=20260610)
@@ -166,23 +156,14 @@ plt.tight_layout()
 plt.show()
 
 # %% [markdown]
-# ## 3. Two implementations of the chain mixer
+# ## 3. The `chain_migration_matrix` function
 #
-# The calibration tutorial uses **Implementation A** below (the
-# function). **Implementation B** (a `GravityMixing` subclass with
-# explicit forbidden-route masking) is kept here as a regression
-# reference — two independent paths to the same matrix is the
-# evidence that the function-first design is implementing what we
-# think it is.
-
-# %% [markdown]
-# ### Implementation A — `chain_migration_matrix` (function)
-#
-# This is the implementation used by the calibration tutorial.
-# Inherits nothing. Takes the scenario + cluster groupings + `k` + `c`
-# explicitly. Generalizes to N clusters because the topology comes
-# from the `cluster_indices` argument, not hard-coded indices. Returns
-# a row-stochastic migration matrix where each nonzero row sums to `k`.
+# This is the function used by the calibration tutorial, inlined here
+# so the notebook is self-contained. Takes the scenario + cluster
+# groupings + `k` + `c` explicitly. Generalizes to N clusters because
+# the topology comes from the `cluster_indices` argument, not
+# hard-coded indices. Returns a row-stochastic migration matrix where
+# each nonzero row sums to `k`.
 
 # %%
 def chain_migration_matrix(
@@ -234,48 +215,6 @@ def chain_migration_matrix(
     row_sums = weight.sum(axis=1)
     scale = np.where(row_sums > 0, k / row_sums, 0.0)
     return weight * scale[:, None]
-
-
-# %% [markdown]
-# ### Implementation B — `ChainMixing(GravityMixing)` (class, regression reference only)
-#
-# Hard-coded to 4 clusters via 4 constructor args, doesn't generalize
-# beyond the calibration tutorial's scenario shape. Kept here only so
-# Section 8 can run a regression check against Implementation A on the
-# same scenario — two independent paths to the same matrix is the
-# evidence the function-first design works. The calibration tutorial
-# does **not** use this class; it uses `chain_migration_matrix` above.
-
-# %%
-class ChainMixing(GravityMixing):
-    """Gravity mixing with forbidden cross-cluster shortcuts zeroed.
-
-    Forbidden paths in the 4-cluster chain (A, B_far, B_near, C):
-        A ↔ C, A ↔ B_near, B_far ↔ C.
-    """
-
-    def __init__(self, a_idx, bf_idx, bn_idx, c_idx, scenario=None, params=None):
-        super().__init__(scenario=scenario, params=params)
-        self._a_idx = np.asarray(a_idx, dtype=int)
-        self._bf_idx = np.asarray(bf_idx, dtype=int)
-        self._bn_idx = np.asarray(bn_idx, dtype=int)
-        self._c_idx = np.asarray(c_idx, dtype=int)
-
-    def get_migration_matrix(self) -> np.ndarray:
-        pop = self.scenario["pop"].to_numpy()
-        distances = self.get_distances()
-        mat = gravity_fn(pop, distances, k=1.0, a=self.params.a - 1, b=self.params.b, c=self.params.c)
-        np.fill_diagonal(mat, 0.0)
-        mat[np.ix_(self._a_idx, self._c_idx)] = 0.0
-        mat[np.ix_(self._c_idx, self._a_idx)] = 0.0
-        mat[np.ix_(self._a_idx, self._bn_idx)] = 0.0
-        mat[np.ix_(self._bn_idx, self._a_idx)] = 0.0
-        mat[np.ix_(self._bf_idx, self._c_idx)] = 0.0
-        mat[np.ix_(self._c_idx, self._bf_idx)] = 0.0
-        row_sums = mat.sum(axis=1)
-        nrm = np.where(row_sums > 0, self.params.k / row_sums, 0.0)
-        mat *= nrm[:, np.newaxis]
-        return mat
 
 
 # %% [markdown]
@@ -557,66 +496,7 @@ assert missing_pairs == 0
 print(f"✓ Check 4 passed: all {N_CLUSTERS - 1} adjacent cluster pairs have positive flow in both directions.")
 
 # %% [markdown]
-# ## 8. Regression check — function vs. class
-#
-# Implementations A and B are independent paths to the same matrix.
-# We build both with the same scenario and parameters, compute the
-# diff, visualize it, and assert it's below float epsilon. If this
-# check ever fails, one of the two implementations has drifted from
-# the topology+gravity+row-normalize contract and needs investigating.
-
-# %%
-# Build the class-based mixer (note its 4-arg constructor — hard-coded)
-chain_mixer_class = ChainMixing(
-    a_idx=cluster_indices[0],
-    bf_idx=cluster_indices[1],
-    bn_idx=cluster_indices[2],
-    c_idx=cluster_indices[3],
-    scenario=scenario,
-    params=GravityParams(k=K, c=C),
-)
-M_class = chain_mixer_class.get_migration_matrix()
-
-diff = M_function - M_class
-max_abs_diff = float(np.abs(diff).max())
-
-fig, axes = plt.subplots(1, 3, figsize=(15, 4.5))
-
-for ax, mat, title in [
-    (axes[0], M_function, "Function-first"),
-    (axes[1], M_class, "Class-based"),
-]:
-    img = ax.imshow(
-        np.where(mat > 0, mat, np.nan),
-        cmap="viridis",
-        norm=LogNorm(vmin=max(mat[mat > 0].min(), 1e-8), vmax=mat.max()),
-        aspect="equal",
-    )
-    _annotate_cluster_boundaries(ax, cluster_indices)
-    ax.set_title(title)
-    plt.colorbar(img, ax=ax, fraction=0.046, pad=0.04)
-
-# Diff with symmetric color scale
-diff_scale = max(np.abs(diff).max(), 1e-30)
-img = axes[2].imshow(diff, cmap="RdBu_r", vmin=-diff_scale, vmax=diff_scale, aspect="equal")
-_annotate_cluster_boundaries(axes[2], cluster_indices)
-axes[2].set_title(f"Difference (function - class)\nmax |Δ| = {max_abs_diff:.2e}")
-plt.colorbar(img, ax=axes[2], fraction=0.046, pad=0.04)
-
-plt.tight_layout()
-plt.show()
-
-print(f"max |M_function - M_class|: {max_abs_diff:.4e}")
-assert max_abs_diff < 1e-12, (
-    f"function and class differ by more than float epsilon: {max_abs_diff:.4e}. Refactor is not behaviorally equivalent."
-)
-print("✓ Regression passed: function-first and class-based mixers agree to float epsilon.")
-print("  The two implementations produce numerically identical migration matrices on")
-print("  the calibration tutorial's scenario shape. The function-first design used by")
-print("  the calibration tutorial is behaviorally equivalent to the class-based one.")
-
-# %% [markdown]
-# ## 9. Generality — chain of 3 clusters
+# ## 8. Generality — chain of 3 clusters
 #
 # The function-first design takes the cluster grouping as an argument
 # rather than hard-coding it. Same scenario factory, `n_clusters=3`:
@@ -648,7 +528,7 @@ assert M_3[np.ix_(cluster_indices_3[2], cluster_indices_3[0])].max() == 0
 print("✓ 3-cluster chain: row sums = k, c0↔c2 routes are zero.")
 
 # %% [markdown]
-# ## 10. Generality — chain of 6 clusters
+# ## 9. Generality — chain of 6 clusters
 #
 # Same recipe with more clusters. The block structure scales naturally;
 # the function code is unchanged.
@@ -682,7 +562,7 @@ assert violations == 0
 print(f"✓ 6-cluster chain: all {6 * 6 - 6 - 2 * 5} forbidden pairs are zero.")
 
 # %% [markdown]
-# ## 11. Population flow over time
+# ## 10. Population flow over time
 #
 # The mixer is a *migration matrix*: at each tick, every patch sends
 # fraction `k` of its population to its allowed neighbors, weighted by
@@ -697,7 +577,7 @@ print(f"✓ 6-cluster chain: all {6 * 6 - 6 - 2 * 5} forbidden pairs are zero.")
 
 # %%
 # Re-use the 4-cluster scenario for this demo
-n_ticks = 200
+n_ticks = 6000
 M = M_function.copy()
 N = scenario["pop"].to_numpy().astype(np.float64)
 
@@ -756,11 +636,11 @@ plt.show()
 # ## Where this connects back to the calibration tutorial
 #
 # - The [calibration tutorial's](tut_calibration_spatial.ipynb) §4
-#   defines `chain_migration_matrix` — the same Implementation A
-#   shown here in Section 3. That tutorial focuses on the calibration
-#   mechanics; this notebook focuses on the mixer.
+#   defines the same `chain_migration_matrix` function inlined in
+#   Section 3 of this notebook. That tutorial focuses on the
+#   calibration mechanics; this notebook focuses on the mixer.
 # - The "stochastic bottleneck" the calibration tutorial talks about
-#   in §5 is exactly the structure visualized here in Section 11. The
+#   in §5 is exactly the structure visualized here in Section 10. The
 #   chain ordering means a single subcritical cluster (B_far under its
 #   SIA) can break the chain stochastically — sometimes the wave makes
 #   it through, sometimes it doesn't.
@@ -770,8 +650,3 @@ plt.show()
 #   otherwise control. With only short-range, adjacent-cluster
 #   coupling allowed, `c` is essentially cosmetic — a structural
 #   consequence of the scenario design, not a model finding.
-# - The regression check in Section 8 of *this* notebook is the
-#   ongoing evidence that the function-first design used by the
-#   calibration tutorial is behaviorally equivalent to a fully
-#   independent class-based implementation. If either drifts, this
-#   notebook will catch it.
