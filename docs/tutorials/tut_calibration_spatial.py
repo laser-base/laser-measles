@@ -36,7 +36,7 @@
 # in real spatial-ABM calibration work and that no toy single-population
 # fit will surface:
 #
-# - **Custom mixing geometry** (`ChainMixing` — a `GravityMixing` subclass)
+# - **Custom mixing geometry** (a chain mixer that allows only adjacent-cluster coupling)
 # - **Multi-level SIA campaigns** filtered by cluster
 # - **Bimodal stochastic invasion** (only a stochastic model can fit it)
 # - **Cross-model bias** — the deterministic CMP at TRUE parameters peaks
@@ -103,7 +103,7 @@
 # patches organized into a chain of clusters:
 # A (15 patches, ~626K population) → B_far (8 patches, ~262K) →
 # B_near (7 patches, ~226K) → C (15 patches, ~489K).
-# Transmission can only happen along the chain (custom `ChainMixing`
+# Transmission can only happen along the chain (custom chain
 # mixer, defined in Section 4). The outbreak is seeded in the three
 # largest A patches at day 0.
 #
@@ -143,8 +143,8 @@
 #
 # Standard imports. The only laser-measles-specific imports are the
 # scenario factory, the ABM model + components, the compartmental model
-# (used for Stage 1), and `GravityMixing` (which `ChainMixing` will
-# subclass).
+# (used for Stage 1), and `BaseMixing` (which we'll wrap a custom
+# pre-computed migration matrix in for Section 4).
 
 # %%
 import json
@@ -156,7 +156,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import optuna
 import polars as pl
-from laser.core.migration import gravity as gravity_fn
+from laser.core.migration import distance
 
 from laser.measles.abm import ABMModel
 from laser.measles.abm import ABMParams
@@ -165,8 +165,7 @@ from laser.measles.compartmental import CompartmentalModel
 from laser.measles.compartmental import CompartmentalParams
 from laser.measles.compartmental import components as cmp_components
 from laser.measles.components import create_component
-from laser.measles.mixing.gravity import GravityMixing
-from laser.measles.mixing.gravity import GravityParams
+from laser.measles.mixing.base import BaseMixing
 
 optuna.logging.set_verbosity(optuna.logging.WARNING)  # quiet TPE chatter
 
@@ -475,7 +474,7 @@ plt.tight_layout()
 plt.show()
 
 # %% [markdown]
-# ## 4. Custom mixing geometry: `ChainMixing`
+# ## 4. Custom mixing geometry: a chain mixer
 #
 # A plain `GravityMixing` would let cluster A talk to cluster C
 # **directly** via long-range gravity terms — short-circuiting the chain.
@@ -483,55 +482,100 @@ plt.show()
 # (think mountain ranges or political borders) that force all A→C
 # transport through B.
 #
-# `ChainMixing` is a small `GravityMixing` subclass that **zeros forbidden
-# routes** (A↔C, A↔B_near, B_far↔C) in the migration matrix **before**
-# normalization, so the remaining routes still carry the full per-row
-# trip share `k`.
+# Instead, we compute a custom migration matrix that **allows only
+# adjacent-cluster coupling** (and within-cluster mixing). Within
+# allowed routes we still use a gravity kernel
+# (`pop_j / d_{ij}^c`); forbidden routes are exactly zero. We then
+# row-normalize so each patch sends fraction `k` of its population
+# per tick.
 #
-# This is also a useful pattern to internalize: when stock mixing models
-# don't fit your geography, you usually subclass `GravityMixing` (or
-# another `BaseMixing` subclass) and override `get_migration_matrix`.
+# Two pieces:
+#
+# 1. **`chain_migration_matrix`** is a pure function that takes a
+#    scenario, the cluster groupings (in chain order), and the
+#    parameters `k` and `c`, and returns the migration matrix
+#    directly — no class, no inheritance, no semantic borrowing. It
+#    generalizes to any number of clusters.
+# 2. **`_PrecomputedMixer`** is a 4-line `BaseMixing` adapter that
+#    just exposes a pre-computed matrix to laser-measles's
+#    transmission component. The OOP exists only to satisfy the
+#    component machinery; the modeling logic is in the function.
+#
+# This pattern — function for the logic, minimal adapter for the
+# OOP contract — is a good one to copy when stock mixers don't fit
+# your geography.
 #
 # > If you want to see the chain mixer in isolation — its matrix
 # > structure, the chain network laid out geographically, the
-# > population flow over time, and a regression check against a
-# > generalized N-cluster reimplementation — see the optional
+# > population flow over time, and a regression check confirming
+# > this design is behaviorally identical to a subclass-based
+# > implementation — see the optional
 # > [Chain mixing visualizer](tut_chain_mixing.ipynb) companion
 # > notebook. It runs in ~30 s, has no model on top, and is the
 # > standalone reference for this mixer.
 
 # %%
-class ChainMixing(GravityMixing):
-    """Gravity mixing with forbidden cross-cluster shortcuts zeroed.
+def chain_migration_matrix(
+    scenario: pl.DataFrame,
+    cluster_indices: list[np.ndarray],
+    k: float,
+    c: float = 1.5,
+) -> np.ndarray:
+    """Build a row-stochastic migration matrix with chain topology.
 
-    Enforces the strict A → B_far → B_near → C transmission chain.
-    Forbidden paths: A↔C, A↔B_near, B_far↔C.
+    Migration is allowed only within a cluster and between **adjacent**
+    clusters in ``cluster_indices`` (interpreted as a linear chain).
+    Allowed-route weights come from a population-and-distance gravity
+    kernel ``pop_j / d_{ij}**c``; each row is normalized so each patch
+    sends fraction ``k`` of its population per tick.
     """
+    pop = scenario["pop"].to_numpy()
+    lat = scenario["lat"].to_numpy()
+    lon = scenario["lon"].to_numpy()
+    n = len(pop)
 
-    def __init__(self, a_idx, bf_idx, bn_idx, c_idx, scenario=None, params=None):
-        super().__init__(scenario=scenario, params=params)
-        self._a_idx = np.asarray(a_idx, dtype=int)
-        self._bf_idx = np.asarray(bf_idx, dtype=int)
-        self._bn_idx = np.asarray(bn_idx, dtype=int)
-        self._c_idx = np.asarray(c_idx, dtype=int)
+    # cluster-of-each-patch lookup
+    cluster_of = np.full(n, -1, dtype=int)
+    for ci, idx in enumerate(cluster_indices):
+        cluster_of[idx] = ci
+
+    # allowed routes: same cluster or adjacent cluster, no self-loops
+    diff = np.abs(cluster_of[:, None] - cluster_of[None, :])
+    allowed = (diff <= 1) & (cluster_of[:, None] >= 0) & (cluster_of[None, :] >= 0)
+    np.fill_diagonal(allowed, False)
+
+    # great-circle distances + gravity weights on allowed routes only
+    distances = distance(lat, lon, lat, lon)
+    with np.errstate(divide="ignore", invalid="ignore"):
+        weight = np.where(allowed, pop[None, :] / distances**c, 0.0)
+    weight = np.nan_to_num(weight, nan=0.0, posinf=0.0)
+
+    # row-normalize: each nonzero row sums to k
+    row_sums = weight.sum(axis=1)
+    scale = np.where(row_sums > 0, k / row_sums, 0.0)
+    return weight * scale[:, None]
+
+
+class _PrecomputedMixer(BaseMixing):
+    """Minimal BaseMixing adapter exposing a pre-computed migration matrix."""
+
+    def __init__(self, matrix: np.ndarray, scenario: pl.DataFrame | None = None):
+        super().__init__(scenario=scenario, params=None)
+        self._matrix = matrix
 
     def get_migration_matrix(self) -> np.ndarray:
-        pop = self.scenario["pop"].to_numpy()
-        distances = self.get_distances()
-        mat = gravity_fn(pop, distances, k=1.0, a=self.params.a - 1, b=self.params.b, c=self.params.c)
-        np.fill_diagonal(mat, 0.0)
-        # zero forbidden routes BEFORE normalization
-        mat[np.ix_(self._a_idx, self._c_idx)] = 0.0
-        mat[np.ix_(self._c_idx, self._a_idx)] = 0.0
-        mat[np.ix_(self._a_idx, self._bn_idx)] = 0.0
-        mat[np.ix_(self._bn_idx, self._a_idx)] = 0.0
-        mat[np.ix_(self._bf_idx, self._c_idx)] = 0.0
-        mat[np.ix_(self._c_idx, self._bf_idx)] = 0.0
-        # row-normalize so per-row trip share is k
-        row_sums = mat.sum(axis=1)
-        nrm = np.where(row_sums > 0, self.params.k / row_sums, 0.0)
-        mat *= nrm[:, np.newaxis]
-        return mat
+        return self._matrix
+
+
+def make_chain_mixer(
+    scenario: pl.DataFrame,
+    cluster_indices: list[np.ndarray],
+    k: float,
+    c: float = 1.5,
+) -> BaseMixing:
+    """Build a BaseMixing-compatible chain mixer."""
+    mat = chain_migration_matrix(scenario, cluster_indices, k, c)
+    return _PrecomputedMixer(mat, scenario=scenario)
 
 
 # %% [markdown]
@@ -603,12 +647,11 @@ def build_abm_model(beta: float, k: float, c: float, seed: int) -> ABMModel:
     model = ABMModel(scenario=scenario, params=params)
 
     # Mixing geometry
-    chain_mixer = ChainMixing(
-        a_idx=a_idx.tolist(),
-        bf_idx=bf_idx.tolist(),
-        bn_idx=bn_idx.tolist(),
-        c_idx=c_idx.tolist(),
-        params=GravityParams(k=k, c=c),
+    chain_mixer = make_chain_mixer(
+        scenario,
+        [a_idx, bf_idx, bn_idx, c_idx],
+        k=k,
+        c=c,
     )
 
     # Infection — note mixer= goes straight on InfectionParams
@@ -791,7 +834,7 @@ plt.show()
 #
 # 1. **Unidentifiable parameters** — those that don't move the loss
 #    enough across their plausible range. (`c` turns out to be one such
-#    in CMP here: ChainMixing has already zeroed the long-distance
+#    in CMP here: the chain mixer has already zeroed the long-distance
 #    routes that `c` would control.)
 # 2. **Structural cross-model bias** — e.g. CMP at TRUE peaks 17 ticks
 #    *later* than the ABM ensemble mean. CMP cannot match the ABM
@@ -831,7 +874,7 @@ Image(SANDBOX / "cmp_identifiability.png")
 #   reference value 97. The TRUE point is marked in each panel.
 #
 # Notice especially how `c` (bottom row, column 1) has a nearly flat
-# loss curve — CMP's deterministic dynamics through ChainMixing can't
+# loss curve — CMP's deterministic dynamics through the chain mixer can't
 # distinguish between c values across [0.5, 3.0]. That's the "c is
 # unidentifiable in CMP" finding the next markdown cell calls out.
 
@@ -866,7 +909,7 @@ Image(SANDBOX / "abm_identifiability_2d.png")
 # **Two findings shape every stage that follows:**
 #
 # 1. **`c` is essentially unidentifiable in CMP** — loss varies <30%
-#    across c ∈ [0.5, 3.0] because ChainMixing has already collapsed
+#    across c ∈ [0.5, 3.0] because the chain mixer has already collapsed
 #    the long-distance routes that `c` would otherwise control.
 #    **Decision: hold `c = 1.5` throughout Stage 1.**
 #
@@ -882,7 +925,7 @@ Image(SANDBOX / "abm_identifiability_2d.png")
 # ## 9. Stage 1 — cheap deterministic prior (CMP cold-start)
 #
 # Strategy: use a CompartmentalModel (deterministic SEIR, daily ticks)
-# with the same ChainMixing geometry to find a useful (β, k) basin
+# with the same chain mixer to find a useful (β, k) basin
 # cheaply (~30–60 s for 30 Optuna trials on an M4 Max with 36 GB RAM). The CMP
 # can't reproduce the bimodality (it's deterministic), but it can match
 # the **timing** and **A-cluster attack rate** — which is enough to
@@ -898,7 +941,7 @@ Image(SANDBOX / "abm_identifiability_2d.png")
 # %% [markdown]
 # ### Build the CMP equivalent
 #
-# Same scenario, same ChainMixing, same SIA campaigns — but
+# Same scenario, same chain mixer, same SIA campaigns — but
 # CompartmentalModel instead of ABMModel. The biggest practical
 # difference: CMP uses `mixer=` on `InfectionParams` natively, no
 # adapter or monkey-patch needed.
@@ -908,12 +951,11 @@ def build_cmp_model(beta: float, k: float, c: float = 1.5) -> CompartmentalModel
     params = CompartmentalParams(num_ticks=N_TICKS, seed=42, start_time=START_TIME, show_progress=False)
     model = CompartmentalModel(scenario=scenario, params=params)
 
-    chain_mixer = ChainMixing(
-        a_idx=a_idx.tolist(),
-        bf_idx=bf_idx.tolist(),
-        bn_idx=bn_idx.tolist(),
-        c_idx=c_idx.tolist(),
-        params=GravityParams(k=k, c=c),
+    chain_mixer = make_chain_mixer(
+        scenario,
+        [a_idx, bf_idx, bn_idx, c_idx],
+        k=k,
+        c=c,
     )
 
     inf_params = cmp_components.InfectionParams(
@@ -1396,7 +1438,11 @@ Image(SANDBOX / "loss_curves.png")
 #   controls *which* patches in B_far the chain reaches first; that
 #   signal washes out in cluster-aggregate summary statistics.
 # - **Other custom mixing patterns** are worth studying when stock
-#   gravity/radiation models don't fit your geography. The
-#   `ChainMixing` class here is one example; subclassing
-#   `BaseMixing` (or `GravityMixing`) and overriding
-#   `get_migration_matrix` is the general pattern.
+#   gravity/radiation models don't fit your geography. The chain
+#   mixer here is one example. The transferable pattern is
+#   *function-for-the-logic + minimal `BaseMixing` adapter for the
+#   OOP contract* — see `chain_migration_matrix` and
+#   `_PrecomputedMixer` in Section 4. The
+#   [Chain mixing visualizer](tut_chain_mixing.ipynb) companion
+#   notebook walks through the same pattern with visualizations
+#   and a regression check.

@@ -14,7 +14,7 @@
 # ---
 
 # %% [markdown]
-# # Visualizing ChainMixing — a companion to the spatial calibration tutorial
+# # Visualizing the chain mixer — a companion to the spatial calibration tutorial
 #
 # The [spatial calibration tutorial](tut_calibration_spatial.ipynb) uses a
 # custom mixer with chain topology: cluster A talks to B_far, B_far to
@@ -24,15 +24,14 @@
 #
 # **When you'd want this notebook**
 #
-# - You're reading the calibration tutorial and the `ChainMixing`
-#   class in Section 4 is opaque — you want to see what the
-#   matrix actually looks like and how the chain topology plays out
-#   geographically. Open this notebook, run it (under 30 seconds), come
-#   back to the main tutorial.
+# - You're reading the calibration tutorial and the chain-mixer code
+#   in Section 4 is opaque — you want to see what the matrix
+#   actually looks like and how the chain topology plays out
+#   geographically. Open this notebook, run it (under 30 seconds),
+#   come back to the main tutorial.
 # - You're considering reusing the chain-mixer pattern in your own
-#   scenario and want a clean reference implementation that's
-#   generalized to N clusters and doesn't carry the calibration
-#   tutorial's specific 4-cluster hard-coding.
+#   scenario and want a clean reference implementation that
+#   generalizes to N clusters.
 # - You want to see a worked example of a custom mixer that's
 #   testable in isolation (no model, no calibration, just matrix math
 #   + plots).
@@ -41,19 +40,18 @@
 #
 # - A small synthetic chain scenario (4 clusters, 20 patches), small
 #   enough to visualize the migration matrix cleanly.
-# - Two implementations of the chain mixer side-by-side: a function
-#   (the "right" design — see the discussion in the calibration
-#   tutorial's [red-team comments](https://github.com/laser-base/laser-measles))
-#   and the `ChainMixing(GravityMixing)` class currently used by the
-#   calibration tutorial.
+# - Two equivalent implementations of the chain mixer side by side:
+#   the **function-first** design used by the calibration tutorial
+#   (`chain_migration_matrix`), and an alternative **class-based**
+#   design kept here for regression comparison.
 # - Four visualizations: the allowed/forbidden mask, the migration
 #   matrix heatmap, the chain as a geographic graph, and a population-
 #   flow simulation that shows the chain wave from A → B → C.
 # - Property checks (rows sum to k, forbidden routes are zero, both
 #   directions are present for adjacent clusters).
-# - A regression check that proves the function-first and class
-#   implementations produce numerically equal matrices on the
-#   calibration tutorial's scenario.
+# - A regression check that proves the two implementations produce
+#   numerically equal matrices on the calibration tutorial's
+#   scenario shape.
 # - Generality demos: chains of 3 and 6 clusters using the same
 #   function.
 
@@ -170,25 +168,30 @@ plt.show()
 # %% [markdown]
 # ## 3. Two implementations of the chain mixer
 #
-# We define both implementations inline so the notebook is self-
-# contained and the regression check can run end-to-end.
+# The calibration tutorial uses **Implementation A** below (the
+# function). **Implementation B** (a `GravityMixing` subclass with
+# explicit forbidden-route masking) is kept here as a regression
+# reference — two independent paths to the same matrix is the
+# evidence that the function-first design is implementing what we
+# think it is.
 
 # %% [markdown]
-# ### Implementation A — `chain_constrained_migration_matrix` (function)
+# ### Implementation A — `chain_migration_matrix` (function)
 #
+# This is the implementation used by the calibration tutorial.
 # Inherits nothing. Takes the scenario + cluster groupings + `k` + `c`
 # explicitly. Generalizes to N clusters because the topology comes
 # from the `cluster_indices` argument, not hard-coded indices. Returns
 # a row-stochastic migration matrix where each nonzero row sums to `k`.
 
 # %%
-def chain_constrained_migration_matrix(
+def chain_migration_matrix(
     scenario: pl.DataFrame,
     cluster_indices: list[np.ndarray],
     k: float,
     c: float = 1.5,
 ) -> np.ndarray:
-    """Build a chain-constrained row-stochastic migration matrix.
+    """Build a row-stochastic migration matrix with chain topology.
 
     Migration is allowed only within a cluster and between **adjacent**
     clusters in ``cluster_indices`` (interpreted as a linear chain).
@@ -234,13 +237,14 @@ def chain_constrained_migration_matrix(
 
 
 # %% [markdown]
-# ### Implementation B — `ChainMixing(GravityMixing)` (the class currently used by the calibration tutorial)
+# ### Implementation B — `ChainMixing(GravityMixing)` (class, regression reference only)
 #
-# Hard-coded to 4 clusters via 4 constructor args. Keeps the
-# `GravityMixing` parent (which we use here purely for the
-# `get_distances()` helper and the abstract-method contract). For this
-# notebook the only thing that matters is that it produces a matrix
-# we can compare to the function's output.
+# Hard-coded to 4 clusters via 4 constructor args, doesn't generalize
+# beyond the calibration tutorial's scenario shape. Kept here only so
+# Section 8 can run a regression check against Implementation A on the
+# same scenario — two independent paths to the same matrix is the
+# evidence the function-first design works. The calibration tutorial
+# does **not** use this class; it uses `chain_migration_matrix` above.
 
 # %%
 class ChainMixing(GravityMixing):
@@ -358,7 +362,7 @@ plt.show()
 # by population and inverse distance.
 
 # %%
-M_function = chain_constrained_migration_matrix(scenario, cluster_indices, k=K, c=C)
+M_function = chain_migration_matrix(scenario, cluster_indices, k=K, c=C)
 
 fig, ax = plt.subplots(figsize=(6.5, 5.5))
 # log-scale to make the wide dynamic range readable
@@ -555,13 +559,11 @@ print(f"✓ Check 4 passed: all {N_CLUSTERS - 1} adjacent cluster pairs have pos
 # %% [markdown]
 # ## 8. Regression check — function vs. class
 #
-# The calibration tutorial currently uses `ChainMixing` (the class).
-# A switch to the function-first design is only safe if the two
-# produce numerically equivalent matrices on the calibration tutorial's
-# scenario.
-#
-# Build both with the same scenario and parameters; compute the diff;
-# visualize it; assert it's below float epsilon.
+# Implementations A and B are independent paths to the same matrix.
+# We build both with the same scenario and parameters, compute the
+# diff, visualize it, and assert it's below float epsilon. If this
+# check ever fails, one of the two implementations has drifted from
+# the topology+gravity+row-normalize contract and needs investigating.
 
 # %%
 # Build the class-based mixer (note its 4-arg constructor — hard-coded)
@@ -610,7 +612,8 @@ assert max_abs_diff < 1e-12, (
 )
 print("✓ Regression passed: function-first and class-based mixers agree to float epsilon.")
 print("  The two implementations produce numerically identical migration matrices on")
-print("  the calibration tutorial's scenario shape. Refactor is safe to swap in.")
+print("  the calibration tutorial's scenario shape. The function-first design used by")
+print("  the calibration tutorial is behaviorally equivalent to the class-based one.")
 
 # %% [markdown]
 # ## 9. Generality — chain of 3 clusters
@@ -620,7 +623,7 @@ print("  the calibration tutorial's scenario shape. Refactor is safe to swap in.
 
 # %%
 scenario_3, cluster_indices_3 = build_chain_scenario(n_clusters=3, rng=np.random.default_rng(101))
-M_3 = chain_constrained_migration_matrix(scenario_3, cluster_indices_3, k=K, c=C)
+M_3 = chain_migration_matrix(scenario_3, cluster_indices_3, k=K, c=C)
 
 fig, ax = plt.subplots(figsize=(5.5, 5))
 img = ax.imshow(
@@ -652,7 +655,7 @@ print("✓ 3-cluster chain: row sums = k, c0↔c2 routes are zero.")
 
 # %%
 scenario_6, cluster_indices_6 = build_chain_scenario(n_clusters=6, n_patches_per_cluster=4, rng=np.random.default_rng(202))
-M_6 = chain_constrained_migration_matrix(scenario_6, cluster_indices_6, k=K, c=C)
+M_6 = chain_migration_matrix(scenario_6, cluster_indices_6, k=K, c=C)
 
 fig, ax = plt.subplots(figsize=(6.5, 6))
 img = ax.imshow(
@@ -753,9 +756,9 @@ plt.show()
 # ## Where this connects back to the calibration tutorial
 #
 # - The [calibration tutorial's](tut_calibration_spatial.ipynb) §4
-#   defines the same `ChainMixing` class shown here in Section 3-B.
-#   That tutorial focuses on the calibration mechanics; this notebook
-#   focuses on the mixer.
+#   defines `chain_migration_matrix` — the same Implementation A
+#   shown here in Section 3. That tutorial focuses on the calibration
+#   mechanics; this notebook focuses on the mixer.
 # - The "stochastic bottleneck" the calibration tutorial talks about
 #   in §5 is exactly the structure visualized here in Section 11. The
 #   chain ordering means a single subcritical cluster (B_far under its
@@ -763,12 +766,12 @@ plt.show()
 #   it through, sometimes it doesn't.
 # - The chain topology is *why* the parameter `c` (gravity distance
 #   exponent) is hard to identify in the calibration tutorial's §8:
-#   the mask zeros all the long-distance routes that `c` would
+#   the topology zeros all the long-distance routes that `c` would
 #   otherwise control. With only short-range, adjacent-cluster
 #   coupling allowed, `c` is essentially cosmetic — a structural
 #   consequence of the scenario design, not a model finding.
 # - The regression check in Section 8 of *this* notebook is the
-#   evidence that a refactor of `ChainMixing` to the function-first
-#   design (or any other equivalent reimplementation) is safe — both
-#   produce numerically identical migration matrices on the
-#   calibration tutorial's scenario shape.
+#   ongoing evidence that the function-first design used by the
+#   calibration tutorial is behaviorally equivalent to a fully
+#   independent class-based implementation. If either drifts, this
+#   notebook will catch it.
