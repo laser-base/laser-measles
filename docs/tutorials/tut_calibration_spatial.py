@@ -683,10 +683,11 @@ plt.tight_layout()
 plt.show()
 
 # %% [markdown]
-# **Stochastic invasion in action.** Whether you see a C wave depends on
-# the seed — the design point is that **B_far is subcritical** thanks to
-# its SIA, so chain transmission to B_near (and onwards to C) only
-# happens sometimes. Running this with a different seed will produce a
+# **Stochastic invasion in action.** Whether you see a C wave depends
+# on the particular stochastic realization — the design point is that
+# **B_far is subcritical** thanks to its SIA, so chain transmission to
+# B_near (and onwards to C) only happens sometimes. Re-running the
+# simulation under a different RNG seed integer will produce a
 # different outcome.
 #
 # This *simulation-to-simulation variability* is what motivates the entire
