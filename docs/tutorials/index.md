@@ -45,6 +45,7 @@ worked through a 1-node compartmental + Optuna example (parameter
 sweeps, loss design, basic Optuna usage).
 
 - [Spatial multi-modal calibration](tut_calibration_spatial.py) — progressive CMP→ABM cascade on a synthetic three-cluster chain. Expensive stages load from cached artifacts; cheap stages run live (~5 min for the CMP cold-start cell).
+- [Chain mixing visualizer (optional)](tut_chain_mixing.py) — standalone companion to the spatial calibration tutorial. Visualizes the chain-mixer matrix, network, and population flow; validates a function-first reimplementation against the calibration tutorial's class via a numerical regression check. Self-contained, ~30 s to run.
 
 ## Next steps
 

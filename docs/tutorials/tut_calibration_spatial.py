@@ -491,6 +491,14 @@ plt.show()
 # This is also a useful pattern to internalize: when stock mixing models
 # don't fit your geography, you usually subclass `GravityMixing` (or
 # another `BaseMixing` subclass) and override `get_migration_matrix`.
+#
+# > If you want to see the chain mixer in isolation — its matrix
+# > structure, the chain network laid out geographically, the
+# > population flow over time, and a regression check against a
+# > generalized N-cluster reimplementation — see the optional
+# > [Chain mixing visualizer](tut_chain_mixing.ipynb) companion
+# > notebook. It runs in ~30 s, has no model on top, and is the
+# > standalone reference for this mixer.
 
 # %%
 class ChainMixing(GravityMixing):

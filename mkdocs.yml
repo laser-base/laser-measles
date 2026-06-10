@@ -53,6 +53,7 @@ nav:
       - Vaccination modeling approaches: tutorials/tut_vaccination.ipynb
     - Calibration:
       - Spatial multi-modal calibration: tutorials/tut_calibration_spatial.ipynb
+      - Chain mixing visualizer (optional): tutorials/tut_chain_mixing.ipynb
   - User guide:
     - user-guide/index.md
     - Model types:
