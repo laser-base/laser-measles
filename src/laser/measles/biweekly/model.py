@@ -39,16 +39,14 @@ class BiweeklyModel(BaseLaserModel):
         name (str): Display name for log messages.  Defaults to
             ``"biweekly"``.
 
-    **Example:**
+    Examples:
 
-        ```python
         from laser.measles.biweekly import BiweeklyModel, BiweeklyParams
 
         params = BiweeklyParams(num_ticks=26, seed=42, start_time="2000-01")
         model = BiweeklyModel(scenario=df, params=params)
         model.components = [InfectionSeedingProcess, InfectionProcess]
         model.run()
-        ```
     """
 
     patches: PatchLaserFrame
@@ -75,12 +73,10 @@ class BiweeklyModel(BaseLaserModel):
         Updates the model for the next tick.
 
         Args:
-
             model: The model containing the patches and their populations.
             tick (int): The current time step or tick.
 
         Returns:
-
             None
         """
         return

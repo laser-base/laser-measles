@@ -14,13 +14,11 @@ class StoufferParams(BaseModel):
         include_home: Whether to include home in the migration matrix
         k: Scale parameter (avg trip probability)
 
-    **Example:**
+    Examples:
 
-        ```python
         from laser.measles.mixing.stouffer import StoufferParams
 
         params = StoufferParams(k=0.02, include_home=True, a=1.0, b=1.0)
-        ```
     """
 
     include_home: bool = Field(default=True, description="Whether to include home in the migration matrix")
@@ -44,9 +42,8 @@ class StoufferMixing(BaseMixing):
             [`StoufferParams`][laser.measles.mixing.stouffer.StoufferParams]
             defaults if ``None``.
 
-    **Example:**
+    Examples:
 
-        ```python
         from laser.measles.mixing.stouffer import StoufferMixing, StoufferParams
         from laser.measles.compartmental import components
         from laser.measles import create_component
@@ -54,9 +51,8 @@ class StoufferMixing(BaseMixing):
         mixer = StoufferMixing(params=StoufferParams(k=0.01))
         infection_params = components.InfectionParams(beta=0.8, mixer=mixer)
         model.add_component(create_component(components.InfectionProcess, infection_params))
-        ```
 
-    The ``include_home`` model parameter is configured via :class:`StoufferParams`.
+    The ``include_home`` model parameter is configured via [`StoufferParams`][laser.measles.mixing.stouffer.StoufferParams].
     """
 
     def __init__(self, scenario: pl.DataFrame | None = None, params: StoufferParams | None = None):

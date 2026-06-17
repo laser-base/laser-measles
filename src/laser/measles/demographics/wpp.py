@@ -29,7 +29,8 @@ class WPP:
         age_vec (np.ndarray): Age vector in days, representing age bins.
         pyramid_spline: Interpolating spline for population pyramid data.
 
-    Example:
+    Examples:
+
         >>> wpp = WPP("USA")
         >>> pyramid_2020 = wpp.get_population_pyramid(2020)
         >>> print(f"Population pyramid shape: {pyramid_2020.shape}")
@@ -79,7 +80,8 @@ class WPP:
             AssertionError: If the requested year is outside the available
                 data range (before first year or after last year).
 
-        Example:
+        Examples:
+
             >>> wpp = WPP("USA")
             >>> pyramid_2020 = wpp.get_population_pyramid(2020)
             >>> print(f"Age groups: {len(pyramid_2020)}")

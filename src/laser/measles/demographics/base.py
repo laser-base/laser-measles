@@ -16,17 +16,14 @@ class DemographicsGeneratorProtocol(Protocol):
     See [`RasterPatchGenerator`][laser.measles.demographics.raster_patch.RasterPatchGenerator]
     for the primary implementation.
 
+    Examples:
 
-    **Example:**
-
-        ```python
         from laser.measles.demographics.raster_patch import RasterPatchGenerator, RasterPatchParams
         from laser.measles.demographics.gadm import GADMShapefile
 
         shapefile = GADMShapefile("NGA")
         generator = RasterPatchGenerator(shapefile, RasterPatchParams(admin_level=2))
         scenario = generator.generate_demographics()
-        ```
     """
 
     def generate_population(self) -> pl.DataFrame:
@@ -45,14 +42,12 @@ class DemographicsGeneratorProtocol(Protocol):
 class ShapefileProtocol(Protocol):
     """Protocol for shapefile readers used by the demographics pipeline.
 
-    **Example:**
+    Examples:
 
-        ```python
         from laser.measles.demographics.gadm import GADMShapefile
 
         shapefile = GADMShapefile("NGA")  # Nigeria
         df = shapefile.get_dataframe()
-        ```
     """
 
     def add_dotname(self) -> None:
@@ -73,15 +68,12 @@ class BaseShapefile(BaseModel):
     Attributes:
         shapefile: Path to a ``.shp`` file.
 
+    Examples:
 
-    **Example:**
-
-        ```python
         from laser.measles.demographics.gadm import GADMShapefile
 
         shapefile = GADMShapefile("NGA")
         df = shapefile.get_dataframe()
-        ```
     """
 
     shapefile: Path

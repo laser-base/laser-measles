@@ -6,22 +6,19 @@ from laser.measles.components.base_infection_seeding import BaseInfectionSeeding
 class InfectionSeedingParams(BaseInfectionSeedingParams):
     """Parameters for infection seeding (inherits all fields from base).
 
-    **Example:**
+    Examples:
 
-        ```python
         from laser.measles.compartmental.components.process_infection_seeding import InfectionSeedingParams
 
         params = InfectionSeedingParams()
-        ```
     """
 
 
 class InfectionSeedingProcess(BaseInfectionSeedingProcess):
     """Process infection seeding.
 
-    **Example:**
+    Examples:
 
-        ```python
         from laser.measles.scenarios.synthetic import single_patch_scenario
         from laser.measles.compartmental import CompartmentalModel, CompartmentalParams
         from laser.measles.compartmental import components
@@ -31,7 +28,6 @@ class InfectionSeedingProcess(BaseInfectionSeedingProcess):
         params = CompartmentalParams(num_ticks=365, seed=42, start_time="2000-01")
         model = CompartmentalModel(scenario, params)
         model.add_component(create_component(components.InfectionSeedingProcess, components.InfectionSeedingParams()))
-        ```
     """
 
     def _seed_infections_in_patch(self, model: BaseLaserModel, patch_idx: int, num_infections: int) -> int:

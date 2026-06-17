@@ -23,11 +23,9 @@ class CompartmentalParams(BaseModelParams):
             Default: ``"2000-01"``.
         verbose: Print detailed logging.  Default: ``False``.
 
-    **Example:**
+    Examples:
 
-        ```python
         params = CompartmentalParams(num_ticks=365, seed=42, start_time="2000-01")
-        ```
     """
 
     @property

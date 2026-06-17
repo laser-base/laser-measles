@@ -19,14 +19,14 @@ class InfectionParams(BaseInfectionParams):
     """Parameters for the compartmental SEIR infection process.
 
     Spatial mixing is configured via the ``mixer`` parameter. Any
-    :class:`~laser.measles.mixing.base.BaseMixing` subclass is accepted
-    (e.g. :class:`~laser.measles.mixing.gravity.GravityMixing`,
-    :class:`~laser.measles.mixing.radiation.RadiationMixing`).
+    [`BaseMixing`][laser.measles.mixing.base.BaseMixing] subclass is accepted
+    (e.g. [`GravityMixing`][laser.measles.mixing.gravity.GravityMixing],
+    [`RadiationMixing`][laser.measles.mixing.radiation.RadiationMixing]).
     The model sets the patch scenario on the mixer automatically at
     initialisation, so passing ``scenario=`` to the mixer at construction
     is not required.
 
-    Example::
+    Examples:
 
         from laser.measles.mixing.gravity import GravityMixing, GravityParams
 
@@ -107,22 +107,17 @@ class InfectionProcess(BaseInfectionProcess):
 
     3. Update population states for all compartments
 
-    Parameters
-    ----------
-    model : object
-        The simulation model containing population states and parameters
-    params : InfectionParams | None, default=None
-        Component-specific parameters. If None, will use default parameters
+    Args:
+        model (object): The simulation model containing population states and parameters
+        params (InfectionParams | None, default=None): Component-specific parameters. If None, will use default parameters
 
-    Notes
-    -----
-    The infection process uses daily rates and seasonal transmission that varies
-    sinusoidally over time with a period of 365 days.
+    Notes:
+        The infection process uses daily rates and seasonal transmission that varies
+        sinusoidally over time with a period of 365 days.
 
 
-    **Example:**
+    Examples:
 
-        ```python
         from laser.measles.scenarios.synthetic import single_patch_scenario
         from laser.measles.compartmental import CompartmentalModel, CompartmentalParams
         from laser.measles.compartmental import components
@@ -132,7 +127,6 @@ class InfectionProcess(BaseInfectionProcess):
         params = CompartmentalParams(num_ticks=365, seed=42, start_time="2000-01")
         model = CompartmentalModel(scenario, params)
         model.add_component(create_component(components.InfectionProcess, components.InfectionParams(beta=0.8)))
-        ```
     """
 
     def __init__(self, model: BaseLaserModel, params: InfectionParams | None = None) -> None:

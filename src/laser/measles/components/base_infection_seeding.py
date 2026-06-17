@@ -19,13 +19,11 @@ from laser.measles.utils import cast_type
 class BaseInfectionSeedingParams(BaseModel):
     """Parameters for the infection seeding component.
 
-    **Example:**
+    Examples:
 
-        ```python
         from laser.measles.biweekly.components.process_infection_seeding import InfectionSeedingParams
 
         params = InfectionSeedingParams()
-        ```
     """
 
     model_config = ConfigDict(extra="forbid")
@@ -91,16 +89,13 @@ class BaseInfectionSeedingProcess(BaseComponent):
     The seeding occurs during the initialize() phase, after equilibrium states are set
     but before the simulation begins.
 
-    Parameters
-    ----------
-    model : BaseLaserModel
-        The compartmental model instance
-    params : Optional[InfectionSeedingParams], default=None
-        Component-specific parameters. If None, will use default parameters
+    Args:
+        model (BaseLaserModel): The compartmental model instance
+        params (Optional[InfectionSeedingParams], default=None): Component-specific parameters. If None, will use default parameters
 
-    Examples
-    --------
-    # Seed 1 infection in largest patch (default)
+    Examples:
+
+        # Seed 1 infection in largest patch (default)
     seeding_params = InfectionSeedingParams()
 
     # Seed 5 infections in largest patch

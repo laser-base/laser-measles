@@ -16,13 +16,11 @@ from laser.measles.utils import coerce_utf8_date_column
 class SIACalendarParams(BaseModel):
     """Parameters specific to the SIA calendar component.
 
-    **Example:**
+    Examples:
 
-        ```python
         from laser.measles.abm.components.process_sia_calendar import SIACalendarParams
 
         params = SIACalendarParams()
-        ```
     """
 
     model_config = ConfigDict(extra="forbid", arbitrary_types_allowed=True)
@@ -55,26 +53,21 @@ class SIACalendarProcess(BasePhase):
     3. Uses the model's current_date to determine when to implement SIAs
     4. Applies vaccination with configurable efficacy rate to individual agents
 
-    Parameters
-    ----------
-    model : ABMModel
-        The ABM simulation model containing agents, patches, and parameters
-    params : Optional[SIACalendarParams], default=None
-        Component-specific parameters. If None, will use default parameters
+    Args:
+        model (ABMModel): The ABM simulation model containing agents, patches, and parameters
+        params (Optional[SIACalendarParams], default=None): Component-specific parameters. If None, will use default parameters
 
-    Notes
-    -----
-    - SIA efficacy determines the fraction of susceptibles that get vaccinated
-    - Individual agents are randomly selected for vaccination based on efficacy
-    - SIAs are implemented when the model's current_date has passed the scheduled date
-    - Vaccination moves agents from susceptible (S=0) to recovered (R=3) state
-    - Both individual agent states and patch-level state aggregations are updated
-    - Each SIA is implemented exactly once
+    Notes:
+        - SIA efficacy determines the fraction of susceptibles that get vaccinated
+        - Individual agents are randomly selected for vaccination based on efficacy
+        - SIAs are implemented when the model's current_date has passed the scheduled date
+        - Vaccination moves agents from susceptible (S=0) to recovered (R=3) state
+        - Both individual agent states and patch-level state aggregations are updated
+        - Each SIA is implemented exactly once
 
 
-    **Example:**
+    Examples:
 
-        ```python
         from laser.measles.scenarios.synthetic import single_patch_scenario
         from laser.measles.abm import ABMModel, ABMParams
         from laser.measles.abm import components
@@ -84,7 +77,6 @@ class SIACalendarProcess(BasePhase):
         params = ABMParams(num_ticks=365, seed=42, start_time="2000-01")
         model = ABMModel(scenario, params)
         model.add_component(create_component(components.SIACalendarProcess, components.SIACalendarParams()))
-        ```
     """
 
     def __init__(self, model: ABMModel, params: SIACalendarParams | None = None) -> None:
@@ -203,11 +195,9 @@ class SIACalendarProcess(BasePhase):
         """
         Get the SIA schedule.
 
-        Returns
-        -------
-        pl.DataFrame
-            DataFrame with columns:
-            - {group_column}: Group identifier
-            - {date_column}: Scheduled date for SIA
+        Returns:
+            pl.DataFrame: DataFrame with columns:
+                - {group_column}: Group identifier
+                - {date_column}: Scheduled date for SIA
         """
         return self.params.sia_schedule

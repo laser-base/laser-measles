@@ -33,12 +33,10 @@ class GADMShapefile(AdminShapefile):
     [`download`][laser.measles.demographics.gadm.GADMShapefile.download] to
     fetch a country's boundaries, or construct directly from a local file.
 
-    **Example:**
+    Examples:
 
-        ```python
         gadm = GADMShapefile.download("NGA", admin_level=2, directory="./data")
         df = gadm.get_dataframe()
-        ```
     """
 
     @model_validator(mode="after")

@@ -55,9 +55,8 @@ def get_diffusion_matrix(df: pl.DataFrame, scale: float, func: Callable, f_kwarg
         Row-stochastic diffusion matrix of shape ``(N, N)`` where ``N`` is
             the number of patches.
 
-    **Example:**
+    Examples:
 
-        ```python
         from laser.measles.migration import get_diffusion_matrix, pairwise_haversine
         from laser.core.migration import gravity
 
@@ -69,7 +68,6 @@ def get_diffusion_matrix(df: pl.DataFrame, scale: float, func: Callable, f_kwarg
             f_kwargs=dict(populations=scenario["pop"].to_numpy(),
                           distances=distances, k=1.0, a=1.0, b=1.0, c=2.0),
         )
-        ```
     """
     if len(df) == 1:
         return np.ones((1, 1))

@@ -16,13 +16,11 @@ class InitializeEquilibriumStatesParams(BaseInitializeEquilibriumStatesParams):
     Parameters for the InitializeEquilibriumStatesProcess.
 
 
-    **Example:**
+    Examples:
 
-        ```python
         from laser.measles.abm.components.process_initialize_equilibrium_states import InitializeEquilibriumStatesParams
 
         params = InitializeEquilibriumStatesParams()
-        ```
     """
 
 
@@ -34,9 +32,8 @@ class InitializeEquilibriumStatesProcess(BaseInitializeEquilibriumStatesProcess)
     and individual agent initialization consistent with those counts.
 
 
-    **Example:**
+    Examples:
 
-        ```python
         from laser.measles.scenarios.synthetic import single_patch_scenario
         from laser.measles.abm import ABMModel, ABMParams
         from laser.measles.abm import components
@@ -46,7 +43,6 @@ class InitializeEquilibriumStatesProcess(BaseInitializeEquilibriumStatesProcess)
         params = ABMParams(num_ticks=365, seed=42, start_time="2000-01")
         model = ABMModel(scenario, params)
         model.add_component(create_component(components.InitializeEquilibriumStatesProcess, components.InitializeEquilibriumStatesParams()))
-        ```
     """
 
     def _initialize(self, model: ABMModel) -> None:

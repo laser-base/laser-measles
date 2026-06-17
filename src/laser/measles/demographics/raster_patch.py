@@ -40,14 +40,11 @@ class RasterPatchParams(BaseModel):
         mcv1_raster: Path to a MCV1 coverage raster (GeoTIFF).
         mcv2_raster: Path to a MCV2 coverage raster (GeoTIFF).
 
+    Examples:
 
-    **Example:**
-
-        ```python
         from laser.measles.demographics.raster_patch import RasterPatchParams
 
         params = RasterPatchParams(admin_level=2)
-        ```
     """
 
     id: str = Field(..., description="Unique identifier for the scenario")
@@ -83,9 +80,8 @@ class RasterPatchGenerator:
             specifying inputs.
         verbose: Print progress messages.
 
-    **Example:**
+    Examples:
 
-        ```python
         from laser.measles.demographics.raster_patch import (
             RasterPatchGenerator, RasterPatchParams,
         )
@@ -99,7 +95,6 @@ class RasterPatchGenerator:
         )
         generator = RasterPatchGenerator(config)
         scenario_df = generator.generate_demographics()
-        ```
     """
 
     def __init__(self, config: RasterPatchParams, verbose: bool = True):

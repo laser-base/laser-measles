@@ -45,50 +45,64 @@ class ImportationPressureParams(BaseModel):
             ``importation_start`` when not ``-1``.
 
     Examples:
-        Uniform low background pressure across all patches::
+        Uniform low background pressure across all patches:
 
-            params = ImportationPressureParams(crude_importation_rate=0.05)
+        ```python
+        params = ImportationPressureParams(crude_importation_rate=0.05)
+        ```
 
-        Disable importation entirely::
+        Disable importation entirely:
 
-            params = ImportationPressureParams(crude_importation_rate=0.0)
+        ```python
+        params = ImportationPressureParams(crude_importation_rate=0.0)
+        ```
 
-        Per-patch sequence (one entry per patch, aligned to scenario row order)::
+        Per-patch sequence (one entry per patch, aligned to scenario row order):
 
-            # 25-patch model; patch at row index 12 is the metro hub
-            rates = [0.02] * 25
-            rates[12] = 0.5
-            params = ImportationPressureParams(crude_importation_rate=rates)
+        ```python
+        # 25-patch model; patch at row index 12 is the metro hub
+        rates = [0.02] * 25
+        rates[12] = 0.5
+        params = ImportationPressureParams(crude_importation_rate=rates)
+        ```
 
-        Sparse dict — only named patches receive importation; all others get 0.0::
+        Sparse dict — only named patches receive importation; all others get 0.0:
 
-            # Use string ids from model.scenario["id"], e.g. "n_0_0", "n_2_2"
-            params = ImportationPressureParams(
-                crude_importation_rate={"n_2_2": 0.5, "n_0_0": 0.1},
-            )
+        ```python
+        # Use string ids from model.scenario["id"], e.g. "n_0_0", "n_2_2"
+        params = ImportationPressureParams(
+            crude_importation_rate={"n_2_2": 0.5, "n_0_0": 0.1},
+        )
+        ```
 
-        Numpy array input (accepted and converted to list internally)::
+        Numpy array input (accepted and converted to list internally):
 
-            import numpy as np
-            params = ImportationPressureParams(
-                crude_importation_rate=np.array([0.01, 0.05, 0.01, 0.01, 0.01])
-            )
+        ```python
+        import numpy as np
+        params = ImportationPressureParams(
+            crude_importation_rate=np.array([0.01, 0.05, 0.01, 0.01, 0.01])
+        )
+        ```
 
-        Time-windowed importation active only during the first year (days 0-364)::
+        Time-windowed importation active only during the first year (days 0-364):
 
-            params = ImportationPressureParams(
-                crude_importation_rate=0.1,
-                importation_start=0,
-                importation_end=364,
-            )
+        ```python
+        params = ImportationPressureParams(
+            crude_importation_rate=0.1,
+            importation_start=0,
+            importation_end=364,
+        )
+        ```
 
-        Metro-only importation for the first year, then stop::
+        Metro-only importation for the first year, then stop:
 
-            params = ImportationPressureParams(
-                crude_importation_rate={"n_2_2": 2.0},
-                importation_start=0,
-                importation_end=364,
-            )
+        ```python
+        params = ImportationPressureParams(
+            crude_importation_rate={"n_2_2": 2.0},
+            importation_start=0,
+            importation_end=364,
+        )
+        ```
     """
 
     model_config = ConfigDict(extra="forbid")
@@ -153,27 +167,22 @@ class ImportationPressureProcess(BasePhase):
 
     This component handles the simulation of disease importation into the population.
     It processes:
+
     - Importation of cases based on crude importation rate
     - Time-windowed importation (start/end times)
     - Population updates: Moves individuals from susceptible to infected state
 
-    Parameters
-    ----------
-    model : object
-        The simulation model containing nodes, states, and parameters
-    params : Optional[ImportationPressureParams], default=None
-        Component-specific parameters. If None, will use default parameters
+    Args:
+        model: The simulation model containing nodes, states, and parameters
+        params: Component-specific parameters. If None, will use default parameters
 
-    Notes
-    -----
-    - Importation rates are calculated per year
-    - Importation is limited to the susceptible population
-    - All state counts are ensured to be non-negative
+    Note:
+        - Importation rates are calculated per year
+        - Importation is limited to the susceptible population
+        - All state counts are ensured to be non-negative
 
+    Examples:
 
-    **Example:**
-
-        ```python
         from laser.measles.scenarios.synthetic import single_patch_scenario
         from laser.measles.biweekly import BiweeklyModel, BiweeklyParams
         from laser.measles.biweekly import components
@@ -183,7 +192,6 @@ class ImportationPressureProcess(BasePhase):
         params = BiweeklyParams(num_ticks=52, seed=42, start_time="2000-01")
         model = BiweeklyModel(scenario, params)
         model.add_component(create_component(components.ImportationPressureProcess, components.ImportationPressureParams()))
-        ```
     """
 
     def __init__(self, model: BiweeklyModel, params: ImportationPressureParams | None = None) -> None:

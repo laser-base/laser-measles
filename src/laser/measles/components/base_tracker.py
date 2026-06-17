@@ -14,13 +14,11 @@ from ..base import BaseComponent
 class BaseTrackerParams(BaseModel):
     """Common parameters for tracker components.
 
-    **Example:**
+    Examples:
 
-        ```python
         from laser.measles.biweekly.components.tracker_state import StateTrackerParams
 
         params = StateTrackerParams(track_states=True, output_frequency=1)
-        ```
     """
 
     model_config = ConfigDict(extra="forbid")
@@ -35,9 +33,8 @@ class BaseTrackerParams(BaseModel):
 class BaseTracker(BaseComponent, ABC):
     """Abstract base class for tracker components.
 
-    **Example:**
+    Examples:
 
-        ```python
         from laser.measles.scenarios.synthetic import single_patch_scenario
         from laser.measles.biweekly import BiweeklyModel, BiweeklyParams
         from laser.measles.biweekly import components
@@ -47,7 +44,6 @@ class BaseTracker(BaseComponent, ABC):
         params = BiweeklyParams(num_ticks=52, seed=42, start_time="2000-01")
         model = BiweeklyModel(scenario, params)
         model.add_component(create_component(components.StateTracker, components.StateTrackerParams()))
-        ```
     """
 
     def __init__(self, model, params: BaseTrackerParams | None = None):

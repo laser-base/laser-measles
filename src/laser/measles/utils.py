@@ -199,7 +199,8 @@ class StateArray(np.ndarray):
     while maintaining full numpy array functionality and backward compatibility with
     numeric indexing (e.g., states[0], states[1]).
 
-    Example:
+    Examples:
+
         >>> states = StateArray(source_array=np.zeros((3, 100)), state_names=["S", "I", "R"], state_axis=0)
         >>> states.S[0] = 1000  # Set susceptible population in patch 0
         >>> prevalence = states.I / states.sum(axis=0)  # Calculate prevalence

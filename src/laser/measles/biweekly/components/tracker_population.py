@@ -9,9 +9,8 @@ class PopulationTracker(BasePopulationTracker):
     ``(n_patches, n_ticks)``) after ``model.run()``. Sum across the patch
     axis for the global population time series.
 
-    **Example:**
+    Examples:
 
-        ```python
         from laser.measles.scenarios.synthetic import single_patch_scenario
         from laser.measles.biweekly import BiweeklyModel, BiweeklyParams
         from laser.measles.biweekly import components
@@ -28,18 +27,15 @@ class PopulationTracker(BasePopulationTracker):
         pop_per_patch = tracker.population_tracker     # shape (n_patches, n_ticks)
         pop_global = pop_per_patch.sum(axis=0)         # shape (n_ticks,)
         print(f"start: {pop_global[0]:,}, end: {pop_global[-1]:,}")
-        ```
     """
 
 
 class PopulationTrackerParams(BasePopulationTrackerParams):
     """Parameters for PopulationTrackerParams (inherits all fields from base).
 
-    **Example:**
+    Examples:
 
-        ```python
         from laser.measles.biweekly.components.tracker_population import PopulationTrackerParams
 
         params = PopulationTrackerParams()
-        ```
     """

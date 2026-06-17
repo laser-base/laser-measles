@@ -22,13 +22,11 @@ from laser.measles.utils import coerce_utf8_date_column
 class SIACalendarParams(BaseModel):
     """Parameters specific to the SIA calendar component.
 
-    **Example:**
+    Examples:
 
-        ```python
         from laser.measles.compartmental.components.process_sia_calendar import SIACalendarParams
 
         params = SIACalendarParams()
-        ```
     """
 
     model_config = ConfigDict(extra="forbid", arbitrary_types_allowed=True)
@@ -61,25 +59,20 @@ class SIACalendarProcess(BasePhase):
     3. Uses the model's current_date to determine when to implement SIAs
     4. Applies vaccination with configurable efficacy rate
 
-    Parameters
-    ----------
-    model : object
-        The simulation model containing nodes, states, and parameters
-    params : Optional[SIACalendarParams], default=None
-        Component-specific parameters. If None, will use default parameters
+    Args:
+        model (object): The simulation model containing nodes, states, and parameters
+        params (Optional[SIACalendarParams], default=None): Component-specific parameters. If None, will use default parameters
 
-    Notes
-    -----
-    - SIA efficacy determines the fraction of susceptibles that get vaccinated
-    - Vaccination is simulated using a binomial distribution
-    - SIAs are implemented when the model's current_date has passed the scheduled date
-    - Since the model steps in 14-day increments, SIAs are implemented on the first step after their scheduled date
-    - Each SIA is implemented exactly once
+    Notes:
+        - SIA efficacy determines the fraction of susceptibles that get vaccinated
+        - Vaccination is simulated using a binomial distribution
+        - SIAs are implemented when the model's current_date has passed the scheduled date
+        - Since the model steps in 14-day increments, SIAs are implemented on the first step after their scheduled date
+        - Each SIA is implemented exactly once
 
 
-    **Example:**
+    Examples:
 
-        ```python
         from laser.measles.scenarios.synthetic import single_patch_scenario
         from laser.measles.compartmental import CompartmentalModel, CompartmentalParams
         from laser.measles.compartmental import components
@@ -89,7 +82,6 @@ class SIACalendarProcess(BasePhase):
         params = CompartmentalParams(num_ticks=365, seed=42, start_time="2000-01")
         model = CompartmentalModel(scenario, params)
         model.add_component(create_component(components.SIACalendarProcess, components.SIACalendarParams()))
-        ```
     """
 
     def __init__(self, model: CompartmentalModel, params: SIACalendarParams | None = None) -> None:
@@ -200,11 +192,9 @@ class SIACalendarProcess(BasePhase):
         """
         Get the SIA schedule.
 
-        Returns
-        -------
-        pl.DataFrame
-            DataFrame with columns:
-            - {group_column}: Group identifier
-            - {date_column}: Scheduled date for SIA
+        Returns:
+            pl.DataFrame: DataFrame with columns:
+                - {group_column}: Group identifier
+                - {date_column}: Scheduled date for SIA
         """
         return self._original_schedule

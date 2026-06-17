@@ -107,13 +107,11 @@ else:
 class TransmissionParams(BaseModel):
     """Parameters specific to the transmission process component.
 
-    **Example:**
+    Examples:
 
-        ```python
         from laser.measles.abm.components.process_transmission import TransmissionParams
 
         params = TransmissionParams(beta=0.3)
-        ```
     """
 
     model_config = ConfigDict(extra="forbid", arbitrary_types_allowed=True)
@@ -141,9 +139,8 @@ class TransmissionProcess(BasePhase):
     A component to model the transmission of disease in a population.
 
 
-    **Example:**
+    Examples:
 
-        ```python
         from laser.measles.scenarios.synthetic import single_patch_scenario
         from laser.measles.abm import ABMModel, ABMParams
         from laser.measles.abm import components
@@ -153,7 +150,6 @@ class TransmissionProcess(BasePhase):
         params = ABMParams(num_ticks=365, seed=42, start_time="2000-01")
         model = ABMModel(scenario, params)
         model.add_component(create_component(components.TransmissionProcess, components.TransmissionParams(beta=0.3)))
-        ```
     """
 
     def __init__(self, model, params: TransmissionParams | None = None) -> None:
@@ -161,20 +157,18 @@ class TransmissionProcess(BasePhase):
         Initializes the transmission object.
 
         Args:
-
             model: The model object that contains the patches and parameters.
 
         Attributes:
-
             model: The model object passed during initialization.
 
         The model's patches are extended with the following scalar property:
 
-            - 'incidence' (uint32, per patch): number of *new* infections
-              during the most recent tick; overwritten each tick. For
-              cumulative incidence over a run, sum this each tick yourself,
-              or compute from per-tick decreases in ``S`` recorded by a
-              StateTracker.
+        - 'incidence' (uint32, per patch): number of *new* infections
+          during the most recent tick; overwritten each tick. For
+          cumulative incidence over a run, sum this each tick yourself,
+          or compute from per-tick decreases in ``S`` recorded by a
+          StateTracker.
         """
 
         super().__init__(model)
@@ -205,12 +199,10 @@ class TransmissionProcess(BasePhase):
         updates the infected state of the population.
 
         Parameters:
-
             model (object): The model object containing the population, patches, and parameters.
             tick (int): The current time step in the simulation.
 
         Returns:
-
             None
 
         """

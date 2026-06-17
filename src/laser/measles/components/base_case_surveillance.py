@@ -28,14 +28,11 @@ class BaseCaseSurveillanceParams(BaseModel):
         aggregate_cases: Whether to aggregate cases by geographic level.
         aggregation_level: Number of levels to use for aggregation (e.g., 2 for country:state:lga).
 
+    Examples:
 
-    **Example:**
-
-        ```python
         from laser.measles.biweekly.components.tracker_case_surveillance import CaseSurveillanceParams
 
         params = CaseSurveillanceParams()
-        ```
     """
 
     model_config = ConfigDict(extra="forbid")
@@ -80,10 +77,8 @@ class BaseCaseSurveillanceTracker(BasePhase):
         model: The simulation model containing nodes, states, and parameters.
         params: Component-specific parameters. If None, will use default parameters.
 
+    Examples:
 
-    **Example:**
-
-        ```python
         from laser.measles.scenarios.synthetic import single_patch_scenario
         from laser.measles.biweekly import BiweeklyModel, BiweeklyParams
         from laser.measles.biweekly import components
@@ -93,7 +88,6 @@ class BaseCaseSurveillanceTracker(BasePhase):
         params = BiweeklyParams(num_ticks=52, seed=42, start_time="2000-01")
         model = BiweeklyModel(scenario, params)
         model.add_component(create_component(components.CaseSurveillanceTracker, components.CaseSurveillanceParams()))
-        ```
     """
 
     def __init__(self, model: BaseLaserModel, params: BaseCaseSurveillanceParams | None = None) -> None:

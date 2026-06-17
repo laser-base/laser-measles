@@ -26,13 +26,11 @@ from ..utils import seed_infections_randomly
 class ImportationParams(BaseModel):
     """Parameters specific to the importation process components.
 
-    **Example:**
+    Examples:
 
-        ```python
         from laser.measles.abm.components.process_importation import ImportationParams
 
         params = ImportationParams()
-        ```
     """
 
     model_config = ConfigDict(extra="forbid")
@@ -50,9 +48,8 @@ class InfectRandomAgentsProcess:
     A component to update the infection timers of a population in a model.
 
 
-    **Example:**
+    Examples:
 
-        ```python
         from laser.measles.scenarios.synthetic import single_patch_scenario
         from laser.measles.abm import ABMModel, ABMParams
         from laser.measles.abm import components
@@ -62,7 +59,6 @@ class InfectRandomAgentsProcess:
         params = ABMParams(num_ticks=365, seed=42, start_time="2000-01")
         model = ABMModel(scenario, params)
         model.add_component(create_component(components.InfectRandomAgentsProcess, components.ImportationParams()))
-        ```
     """
 
     def __init__(self, model: ABMModel, params: ImportationParams | None = None) -> None:
@@ -79,7 +75,6 @@ class InfectRandomAgentsProcess:
                 the values are loaded from ``model.params`` for backward compatibility.
 
         Attributes:
-
             model: The model object that contains the population.
 
         Side Effects:
@@ -110,12 +105,10 @@ class InfectRandomAgentsProcess:
         Updates the infection timers for the population in the model.
 
         Args:
-
             model: The model containing the population data.
             tick: The current tick or time step in the simulation.
 
         Returns:
-
             None
         """
         if (tick >= self.start) and ((tick - self.start) % self.period == 0) and (tick < self.end):
@@ -140,9 +133,8 @@ class InfectAgentsInPatchProcess:
     A component to update the infection timers of a population in a model.
 
 
-    **Example:**
+    Examples:
 
-        ```python
         from laser.measles.scenarios.synthetic import single_patch_scenario
         from laser.measles.abm import ABMModel, ABMParams
         from laser.measles.abm import components
@@ -152,7 +144,6 @@ class InfectAgentsInPatchProcess:
         params = ABMParams(num_ticks=365, seed=42, start_time="2000-01")
         model = ABMModel(scenario, params)
         model.add_component(create_component(components.InfectAgentsInPatchProcess, components.ImportationParams()))
-        ```
     """
 
     def __init__(self, model: ABMModel, params: ImportationParams | None = None) -> None:
@@ -171,7 +162,6 @@ class InfectAgentsInPatchProcess:
                 ``model.params`` for backward compatibility.
 
         Attributes:
-
             model: The model object that contains the population.
 
         Side Effects:
@@ -204,12 +194,10 @@ class InfectAgentsInPatchProcess:
         Updates the infection timers for the population in the model.
 
         Args:
-
             model: The model containing the population data.
             tick: The current tick or time step in the simulation.
 
         Returns:
-
             None
         """
         if (tick >= self.start) and ((tick - self.start) % self.period == 0) and (tick < self.end):

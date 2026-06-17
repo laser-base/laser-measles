@@ -4,21 +4,23 @@ Snapshot save/load for the laser-measles ABM.
 Snapshots capture the full population and patch state at a given point in time
 and allow the simulation to be resumed exactly from that point.
 
-Typical usage::
+Typical usage:
 
-    import laser.measles as lm
+```python
+import laser.measles as lm
 
-    # --- Segment 1 ---
-    model1 = lm.ABMModel(scenario, params1)
-    model1.components = [lm.VitalDynamicsProcess, lm.InfectionProcess]
-    model1.run()
-    lm.save_snapshot(model1, "checkpoint.h5")
+# --- Segment 1 ---
+model1 = lm.ABMModel(scenario, params1)
+model1.components = [lm.VitalDynamicsProcess, lm.InfectionProcess]
+model1.run()
+lm.save_snapshot(model1, "checkpoint.h5")
 
-    # --- Segment 2 ---
-    params2 = lm.ABMParams(start_time="2001-01", num_ticks=365)
-    model2 = lm.load_snapshot("checkpoint.h5", params2,
-                               components=[lm.VitalDynamicsProcess, lm.InfectionProcess])
-    model2.run()
+# --- Segment 2 ---
+params2 = lm.ABMParams(start_time="2001-01", num_ticks=365)
+model2 = lm.load_snapshot("checkpoint.h5", params2,
+                           components=[lm.VitalDynamicsProcess, lm.InfectionProcess])
+model2.run()
+```
 
 Notes:
     - ``save_snapshot`` **modifies** the model in place: R agents are squashed and
@@ -78,9 +80,8 @@ def save_snapshot(
             measles runs.
         verbose: Print a progress summary.
 
-    **Example:**
+    Examples:
 
-        ```python
         import laser.measles as lm
 
         params = lm.ABMParams(num_ticks=3650, seed=42, start_time="2000-01")
@@ -90,7 +91,6 @@ def save_snapshot(
 
         lm.save_snapshot(model, "checkpoint.h5")
         # Do not use model after this point.
-        ```
     """
     path = Path(path)
 
@@ -211,9 +211,8 @@ def load_snapshot(
         A configured [`ABMModel`][laser.measles.abm.model.ABMModel] instance.
             Call ``model.run()`` to continue the simulation.
 
-    **Example:**
+    Examples:
 
-        ```python
         import laser.measles as lm
 
         params2 = lm.ABMParams(num_ticks=1825, seed=42, start_time="2009-12")
@@ -223,7 +222,6 @@ def load_snapshot(
             components=[lm.VitalDynamicsProcess, lm.InfectionProcess],
         )
         model2.run()
-        ```
     """
     from laser.measles.abm.base import PeopleLaserFrame  # noqa: PLC0415
     from laser.measles.abm.model import ABMModel  # noqa: PLC0415
