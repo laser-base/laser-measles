@@ -6,21 +6,19 @@ and allow the simulation to be resumed exactly from that point.
 
 Typical usage:
 
-```python
-import laser.measles as lm
+    import laser.measles as lm
 
-# --- Segment 1 ---
-model1 = lm.ABMModel(scenario, params1)
-model1.components = [lm.VitalDynamicsProcess, lm.InfectionProcess]
-model1.run()
-lm.save_snapshot(model1, "checkpoint.h5")
+    # --- Segment 1 ---
+    model1 = lm.ABMModel(scenario, params1)
+    model1.components = [lm.VitalDynamicsProcess, lm.InfectionProcess]
+    model1.run()
+    lm.save_snapshot(model1, "checkpoint.h5")
 
-# --- Segment 2 ---
-params2 = lm.ABMParams(start_time="2001-01", num_ticks=365)
-model2 = lm.load_snapshot("checkpoint.h5", params2,
-                           components=[lm.VitalDynamicsProcess, lm.InfectionProcess])
-model2.run()
-```
+    # --- Segment 2 ---
+    params2 = lm.ABMParams(start_time="2001-01", num_ticks=365)
+    model2 = lm.load_snapshot("checkpoint.h5", params2,
+                               components=[lm.VitalDynamicsProcess, lm.InfectionProcess])
+    model2.run()
 
 Notes:
     - ``save_snapshot`` **modifies** the model in place: R agents are squashed and

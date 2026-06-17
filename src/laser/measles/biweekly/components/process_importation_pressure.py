@@ -47,62 +47,49 @@ class ImportationPressureParams(BaseModel):
     Examples:
         Uniform low background pressure across all patches:
 
-        ```python
-        params = ImportationPressureParams(crude_importation_rate=0.05)
-        ```
+            params = ImportationPressureParams(crude_importation_rate=0.05)
 
         Disable importation entirely:
 
-        ```python
-        params = ImportationPressureParams(crude_importation_rate=0.0)
-        ```
+            params = ImportationPressureParams(crude_importation_rate=0.0)
 
         Per-patch sequence (one entry per patch, aligned to scenario row order):
 
-        ```python
-        # 25-patch model; patch at row index 12 is the metro hub
-        rates = [0.02] * 25
-        rates[12] = 0.5
-        params = ImportationPressureParams(crude_importation_rate=rates)
-        ```
+            # 25-patch model; patch at row index 12 is the metro hub
+            rates = [0.02] * 25
+            rates[12] = 0.5
+            params = ImportationPressureParams(crude_importation_rate=rates)
 
         Sparse dict — only named patches receive importation; all others get 0.0:
 
-        ```python
-        # Use string ids from model.scenario["id"], e.g. "n_0_0", "n_2_2"
-        params = ImportationPressureParams(
-            crude_importation_rate={"n_2_2": 0.5, "n_0_0": 0.1},
-        )
-        ```
+            # Use string ids from model.scenario["id"], e.g. "n_0_0", "n_2_2"
+            params = ImportationPressureParams(
+                crude_importation_rate={"n_2_2": 0.5, "n_0_0": 0.1},
+            )
 
         Numpy array input (accepted and converted to list internally):
 
-        ```python
-        import numpy as np
-        params = ImportationPressureParams(
-            crude_importation_rate=np.array([0.01, 0.05, 0.01, 0.01, 0.01])
-        )
-        ```
+            import numpy as np
+            params = ImportationPressureParams(
+                crude_importation_rate=np.array([0.01, 0.05, 0.01, 0.01, 0.01])
+            )
 
         Time-windowed importation active only during the first year (days 0-364):
 
-        ```python
-        params = ImportationPressureParams(
-            crude_importation_rate=0.1,
-            importation_start=0,
-            importation_end=364,
-        )
-        ```
+            params = ImportationPressureParams(
+                crude_importation_rate=0.1,
+                importation_start=0,
+                importation_end=364,
+            )
+
 
         Metro-only importation for the first year, then stop:
 
-        ```python
-        params = ImportationPressureParams(
-            crude_importation_rate={"n_2_2": 2.0},
-            importation_start=0,
-            importation_end=364,
-        )
-        ```
+            params = ImportationPressureParams(
+                crude_importation_rate={"n_2_2": 2.0},
+                importation_start=0,
+                importation_end=364,
+            )
     """
 
     model_config = ConfigDict(extra="forbid")

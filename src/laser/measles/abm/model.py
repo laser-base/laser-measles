@@ -224,19 +224,16 @@ class ABMModel(BaseLaserModel):
                 ready for ``model.run()``.
 
         Examples:
-            This is my code.
 
-        ```python
-        import laser.measles as lm
+            import laser.measles as lm
 
-        params2 = lm.ABMParams(num_ticks=1825, seed=42, start_time="2009-12")
-        model2 = lm.ABMModel.from_snapshot(
-            "checkpoint.h5",
-            params2,
-            components=[lm.VitalDynamicsProcess, lm.InfectionProcess],
-        )
-        model2.run()
-        ```
+            params2 = lm.ABMParams(num_ticks=1825, seed=42, start_time="2009-12")
+            model2 = lm.ABMModel.from_snapshot(
+                "checkpoint.h5",
+                params2,
+                components=[lm.VitalDynamicsProcess, lm.InfectionProcess],
+            )
+            model2.run()
         """
         from laser.measles.abm.snapshot import load_snapshot  # noqa: PLC0415
 

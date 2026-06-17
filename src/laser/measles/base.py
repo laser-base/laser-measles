@@ -783,8 +783,8 @@ class BaseComponent:
 
         Examples:
 
-            >>> # In a component's __init__ or _initialize method:
-            >>> self.update_func = self.select_function(numpy_update, numba_update)
+            # In a component's __init__ or _initialize method:
+            self.update_func = self.select_function(numpy_update, numba_update)
         """
         # Check if model has use_numba parameter
         use_numba = getattr(self.model.params, "use_numba", True)
