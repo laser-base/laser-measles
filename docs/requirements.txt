@@ -19,5 +19,6 @@ markdownify
 matplotlib
 numpy
 polars
+pyarrow # required by polars.DataFrame.to_pandas(), invoked by mkdocs-jupyter when rendering polars frames
 seaborn
 laser.core
