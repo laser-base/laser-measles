@@ -68,7 +68,7 @@ if not output_path.exists():
 # This is saved into a dataframe that we can use to initialize a simulation.
 
 # %%
-import sciris as sc
+import time
 
 from laser.measles.demographics import RasterPatchGenerator
 from laser.measles.demographics import RasterPatchParams
@@ -83,10 +83,11 @@ config = RasterPatchParams(
 # Create the generator
 generator = RasterPatchGenerator(config)
 # Time the population calculation
-with sc.Timer() as t:
-    # Generate the demographics (in this case the population per patch)
-    generator.generate_demographics()
-    print(f"Total population: {generator.population['pop'].sum() / 1e6:.2f} million")  # Should be ~90.5M
+start = time.perf_counter()
+# Generate the demographics (in this case the population per patch)
+generator.generate_demographics()
+print(f"Total population: {generator.population['pop'].sum() / 1e6:.2f} million")  # Should be ~90.5M
+print(f"Elapsed: {time.perf_counter() - start:.2f} s")
 # the result is stored in a polars dataframe and can be accessed via `population`
 generator.population.head(n=2)
 
@@ -96,10 +97,11 @@ generator.population.head(n=2)
 
 # %%
 new_generator = RasterPatchGenerator(config)
-with sc.Timer() as t:
-    # # Generate the demographics (in this case the population)
-    new_generator.generate_demographics()
-    print(f"Total population: {new_generator.population['pop'].sum() / 1e6:.2f} million")  # Should be ~90.5M
+start = time.perf_counter()
+# Generate the demographics (in this case the population)
+new_generator.generate_demographics()
+print(f"Total population: {new_generator.population['pop'].sum() / 1e6:.2f} million")  # Should be ~90.5M
+print(f"Elapsed: {time.perf_counter() - start:.2f} s")
 
 # Note how the time to run the `generate_demographics` method a second time is greatly improved.
 

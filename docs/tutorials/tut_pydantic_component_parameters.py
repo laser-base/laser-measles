@@ -199,11 +199,16 @@ except ValidationError:
     print("✗ Negative importation rate caught:")
     print(traceback.format_exc())
 
-# Time range validation happens at component level, not parameter level
-params_with_bad_time_range = ImportationPressureParams(importation_start=10, importation_end=5)
-print(
-    f"✓ Parameters created (time range validation happens in component): start={params_with_bad_time_range.importation_start}, end={params_with_bad_time_range.importation_end}"
-)
+# Time range constraints are enforced at parameter construction:
+# importation_end must be greater than importation_start, so this raises.
+try:
+    params_with_bad_time_range = ImportationPressureParams(importation_start=10, importation_end=5)
+    print(
+        f"✓ Parameters created: start={params_with_bad_time_range.importation_start}, end={params_with_bad_time_range.importation_end}"
+    )
+except ValidationError:
+    print("✗ Invalid time range caught:")
+    print(traceback.format_exc())
 
 # %% [markdown]
 # ## Parameter inheritance and customization

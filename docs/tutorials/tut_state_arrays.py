@@ -41,8 +41,8 @@ data = np.array(
     ]
 )
 
-# Wrap with StateArray
-states = StateArray(data, state_names=["S", "I", "R"])
+# Wrap with StateArray (states live along axis 0 — one row per compartment)
+states = StateArray(state_names=["S", "I", "R"], state_axis=0, source_array=data)
 print("StateArray shape:", states.shape)
 print("State names:", states._state_names)
 
@@ -51,12 +51,12 @@ print("State names:", states._state_names)
 #
 # `StateArray` uses standard numpy array storage with additional metadata:
 # - The underlying data is stored as a regular numpy array
-# - `_state_names` stores the list of state compartment names
-# - `_state_indices` provides a mapping from names to array indices
+# - `_state_names` stores the tuple of state compartment names
+# - `get_state_index(name)` resolves a name to its axis index
 
 # %%
 print("Underlying data type:", type(states.view(np.ndarray)))
-print("State indices mapping:", states._state_indices)
+print("State indices mapping:", {name: states.get_state_index(name) for name in states._state_names})
 
 # %% [markdown]
 # ### Access patterns
@@ -97,8 +97,8 @@ num_patches = len(patch_pops)
 seir_states = np.zeros((4, num_patches))
 seir_states[0] = patch_pops  # Initialize all as Susceptible
 
-# Wrap with StateArray
-patch_states = StateArray(seir_states, state_names=["S", "E", "I", "R"])
+# Wrap with StateArray (states live along axis 0)
+patch_states = StateArray(state_names=["S", "E", "I", "R"], state_axis=0, source_array=seir_states)
 
 print("Initial populations:")
 print(f"Susceptible: {patch_states.S}")
@@ -150,8 +150,8 @@ except AttributeError as e:
     print(f"Error caught: {e}")
 
 # Example: Different state configurations
-sir_states = StateArray(np.zeros((3, 2)), state_names=["S", "I", "R"])
-seirs_states = StateArray(np.zeros((5, 2)), state_names=["S", "E", "I", "R", "S2"])
+sir_states = StateArray(state_names=["S", "I", "R"], state_axis=0, source_array=np.zeros((3, 2)))
+seirs_states = StateArray(state_names=["S", "E", "I", "R", "S2"], state_axis=0, source_array=np.zeros((5, 2)))
 
 print("SIR state names:", sir_states._state_names)
 print("SEIRS state names:", seirs_states._state_names)

@@ -29,7 +29,7 @@ docs-build:
 # ── Notebook execution ─────────────────────────────────────────────────────────
 docs-executed-nbs:
 	@echo "Converting tutorial .py files to notebooks (jupytext)..."
-	cd $(NBS_SRC) && $(PYTHON) convert_tutorials.py
+	$(PYTHON) scripts/convert_tutorials.py
 	@echo "Executing notebooks -> $(EXEC_DIR)/ ..."
 	mkdir -p $(EXEC_DIR)
 	$(PYTHON) -m jupyter nbconvert \
@@ -44,7 +44,7 @@ docs-executed-nbs:
 # ── Full combined markdown pipeline ───────────────────────────────────────────
 docs-jenner: docs-executed-nbs docs-build
 	@echo "Generating combined markdown -> $(COMBINED) ..."
-	$(PYTHON) docs/concat_mkdocs.py $(SITE_DIR) $(EXEC_DIR) $(COMBINED)
+	$(PYTHON) scripts/concat_mkdocs.py $(SITE_DIR) $(EXEC_DIR) $(COMBINED)
 	@echo ""
 	@echo "RAG artifact ready: $(COMBINED)"
 	@echo "Hand this file to laser-mcp: make ingest-measles COMBINED_MD=<path>"

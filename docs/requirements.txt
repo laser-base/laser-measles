@@ -19,5 +19,7 @@ markdownify
 matplotlib
 numpy
 polars
+pyarrow # required by polars.DataFrame.to_pandas(), invoked by mkdocs-jupyter when rendering polars frames
 seaborn
 laser.core
+numba>=0.60 # laser-core's unconstrained `numba` dep causes uv to backtrack to numba==0.53.1 (Py<=3.9 only); floor here forces a modern, Py>=3.10-compatible wheel
