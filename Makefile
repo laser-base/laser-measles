@@ -29,7 +29,7 @@ docs-build:
 # ── Notebook execution ─────────────────────────────────────────────────────────
 docs-executed-nbs:
 	@echo "Converting tutorial .py files to notebooks (jupytext)..."
-	cd $(NBS_SRC) && $(PYTHON) convert_tutorials.py
+	$(PYTHON) scripts/convert_tutorials.py
 	@echo "Executing notebooks -> $(EXEC_DIR)/ ..."
 	mkdir -p $(EXEC_DIR)
 	$(PYTHON) -m jupyter nbconvert \

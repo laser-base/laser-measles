@@ -14,7 +14,7 @@ jobs:
       - name: Install dependencies
         run: pip install ".[docs,examples]"
       - name: Convert tutorial notebooks
-        run: python docs/tutorials/convert_tutorials.py
+        run: python scripts/convert_tutorials.py
       - name: Execute tutorial notebooks
         run: |
           mkdir -p dist/executed_nbs

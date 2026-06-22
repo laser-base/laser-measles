@@ -5,19 +5,20 @@ import glob
 import os
 import subprocess
 import sys
+from pathlib import Path
+
+REPO_ROOT = Path(__file__).resolve().parent.parent
+TUTORIALS_DIR = REPO_ROOT / "docs" / "tutorials"
 
 
 def convert_tutorials():
-    """Convert all tut_*.py files to notebooks."""
-    # Change to the tutorials directory
-    script_dir = os.path.dirname(os.path.abspath(__file__))
-    os.chdir(script_dir)
+    """Convert all tut_*.py files in docs/tutorials/ to notebooks."""
+    os.chdir(TUTORIALS_DIR)
 
-    # Find all tutorial Python files
     py_files = glob.glob("tut_*.py")
 
     if not py_files:
-        print("No tutorial files found matching pattern 'tut_*.py'")
+        print(f"No tutorial files found matching pattern 'tut_*.py' under {TUTORIALS_DIR}")
         return
 
     for py_file in py_files:

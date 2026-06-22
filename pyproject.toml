@@ -70,7 +70,7 @@ Changelog = "https://github.com/laser-base/laser-measles/blob/master/CHANGELOG.m
 laser-measles = "laser.measles.cli:app"
 
 [tool.ruff]
-extend-exclude = ["static", "ci/templates", "docs/tutorials/not_ready/*", "docs/tutorials/convert_tutorials.py", "docs/tutorials/tut_*.py"]
+extend-exclude = ["static", "ci/templates", "docs/tutorials/not_ready/*", "scripts/convert_tutorials.py", "docs/tutorials/tut_*.py"]
 line-length = 140
 src = ["src", "tests"]
 target-version = "py312"

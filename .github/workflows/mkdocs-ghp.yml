@@ -26,5 +26,5 @@ jobs:
           restore-keys: |
             mkdocs-material-
       - run: pip install ".[docs,examples]"
-      - run: python docs/tutorials/convert_tutorials.py
+      - run: python scripts/convert_tutorials.py
       - run: mkdocs gh-deploy --force --config-file mkdocs.ci.yml
