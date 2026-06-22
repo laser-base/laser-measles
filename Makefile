@@ -44,7 +44,7 @@ docs-executed-nbs:
 # ── Full combined markdown pipeline ───────────────────────────────────────────
 docs-jenner: docs-executed-nbs docs-build
 	@echo "Generating combined markdown -> $(COMBINED) ..."
-	$(PYTHON) docs/concat_mkdocs.py $(SITE_DIR) $(EXEC_DIR) $(COMBINED)
+	$(PYTHON) scripts/concat_mkdocs.py $(SITE_DIR) $(EXEC_DIR) $(COMBINED)
 	@echo ""
 	@echo "RAG artifact ready: $(COMBINED)"
 	@echo "Hand this file to laser-mcp: make ingest-measles COMBINED_MD=<path>"
