@@ -40,6 +40,10 @@ classifiers = [
 
 dependencies = [
   "laser-core>=1.0.2,<2.0",
+  # laser-core declares an unconstrained `numba` dependency, which lets uv backtrack to
+  # numba==0.53.1 (Python <=3.9 only) trying to satisfy other parts of the tree. Pin a
+  # floor that actually supports Python >=3.10 so the resolver picks a modern numba.
+  "numba>=0.60",
   "diskcache~=5.0",
   "appdirs~=1.4",
   "pydantic~=2.12",
@@ -173,6 +177,7 @@ docs = [
     "mkdocs-table-reader-plugin",
     "mkdocs-exclude",
     "markdownify",
+    "pyarrow",  # required by polars.DataFrame.to_pandas(), invoked by mkdocs-jupyter when rendering polars frames
 ]
 examples = [
     "jupytext>=1.17.2",
