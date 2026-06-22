@@ -168,7 +168,7 @@ class ABMModel(BaseLaserModel):
 
         Parameters:
             fig (Figure, optional): A matplotlib Figure object to use for plotting. If None, a new figure will be created.
-        
+
         Yields:
             None: This function uses a generator to yield control back to the caller after each plot is created.
 
