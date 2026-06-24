@@ -34,7 +34,7 @@ class BaseInfectionParams(BaseModel):
         ),
         ge=0.0,
         le=1.0,
-        validation_alias=AliasChoices("seasonality", "seasonal_amplitude", "amplitude"),
+        validation_alias=AliasChoices("seasonality", "seasonal_amplitude"),
     )
     season_start: int = Field(default=0, description="Season start tick (0-25)", ge=0, le=25)
     distance_exponent: float = Field(default=1.5, description="Distance exponent", ge=0.0)
