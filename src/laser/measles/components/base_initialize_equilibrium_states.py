@@ -33,11 +33,11 @@ class BaseInitializeEquilibriumStatesParams(BaseModel):
         description=(
             "Basic reproduction number used to set initial S and R partition "
             "(S = N/R0, R = N*(1 - 1/R0)). For R0 <= 1 no endemic equilibrium "
-            "exists and the whole population is placed in S. Accepts `R0`, "
-            "`effective_R0`, `effective_r0`, or `R_0` on input."
+            "exists and the whole population is placed in S. Accepts `R0`, `r0`, "
+            "`R_0`, `effective_R0`, or `effective_r0` on input."
         ),
         ge=0.0,
-        validation_alias=AliasChoices("R0", "effective_R0", "effective_r0", "R_0"),
+        validation_alias=AliasChoices("R0", "r0", "R_0", "effective_R0", "effective_r0"),
     )
 
 

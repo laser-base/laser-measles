@@ -9,6 +9,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import polars as pl
 from matplotlib.figure import Figure
+from pydantic import AliasChoices
 from pydantic import BaseModel
 from pydantic import ConfigDict
 from pydantic import Field
@@ -39,7 +40,26 @@ class BaseCaseSurveillanceParams(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    detection_rate: float = Field(default=0.1, description="Probability of detecting an infected case", ge=0.0, le=1.0)
+    detection_rate: float = Field(
+        default=0.1,
+        description=(
+            "Per-case probability of detection / notification under passive surveillance "
+            "(0.0-1.0; e.g. 0.3 = 30% of true infections are detected and reported). "
+            "Accepts `detection_rate`, `detection_probability`, `reporting_prob`, "
+            "`reporting_probability`, `notification_rate`, or `notification_probability` "
+            "on input."
+        ),
+        ge=0.0,
+        le=1.0,
+        validation_alias=AliasChoices(
+            "detection_rate",
+            "detection_probability",
+            "reporting_prob",
+            "reporting_probability",
+            "notification_rate",
+            "notification_probability",
+        ),
+    )
     filter_fn: Callable[[str], bool] = Field(default=lambda x: True, description="Function to filter which nodes to include in aggregation")
     aggregation_level: int = Field(default=-1, description="Number of levels to use for aggregation (e.g., 2 for country:state:lga)")
 
