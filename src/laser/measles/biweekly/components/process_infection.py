@@ -1,6 +1,7 @@
 from typing import Any
 
 import numpy as np
+from pydantic import AliasChoices
 from pydantic import Field
 
 from laser.measles.base import BaseLaserModel
@@ -24,7 +25,17 @@ class InfectionParams(BaseInfectionParams):
     beta: float = Field(
         default=1 * 8 / 14, description="Base transmission rate (infections per day)", ge=0.0
     )  # beta = R0 / (mean infectious period)
-    seasonality: float = Field(default=0.0, description="Seasonality factor, default is no seasonality", ge=0.0, le=1.0)
+    seasonality: float = Field(
+        default=0.0,
+        description=(
+            "Amplitude of seasonal modulation of beta (range 0.0-1.0; e.g. 0.3 = "
+            "30% amplitude, 0.0 = no seasonality). Accepts either `seasonality` "
+            "or `seasonal_amplitude` on input. Pairs with `season_start`."
+        ),
+        ge=0.0,
+        le=1.0,
+        validation_alias=AliasChoices("seasonality", "seasonal_amplitude"),
+    )
     season_start: int = Field(default=0, description="Season start tick (0-25)", ge=0, le=25)
     mixer: Any = Field(default_factory=lambda: GravityMixing(), description="Mixing object")
 

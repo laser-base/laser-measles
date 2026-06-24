@@ -6,6 +6,7 @@ from typing import Any
 
 import numpy as np
 from matplotlib.figure import Figure
+from pydantic import AliasChoices
 from pydantic import Field
 
 from laser.measles.abm.model import ABMModel
@@ -55,7 +56,17 @@ class InfectionParams(BaseInfectionParams):
     """
 
     beta: float = Field(default=1.0, description="Base transmission rate", ge=0.0)
-    seasonality: float = Field(default=0.0, description="Seasonality factor", ge=0.0, le=1.0)
+    seasonality: float = Field(
+        default=0.0,
+        description=(
+            "Amplitude of seasonal modulation of beta (range 0.0-1.0; e.g. 0.3 = "
+            "30% amplitude, 0.0 = no seasonality). Accepts either `seasonality` "
+            "or `seasonal_amplitude` on input. Pairs with `season_start`."
+        ),
+        ge=0.0,
+        le=1.0,
+        validation_alias=AliasChoices("seasonality", "seasonal_amplitude"),
+    )
     season_start: float = Field(default=0, description="Season start day (0-364)", ge=0, le=364)
     exp_mu: float = Field(default=6.0, description="Exposure mean (lognormal)", gt=0.0)
     exp_sigma: float = Field(default=2.0, description="Exposure sigma (lognormal)", gt=0.0)

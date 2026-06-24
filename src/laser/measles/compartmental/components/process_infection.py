@@ -5,6 +5,7 @@ Component for simulating the SEIR infection process in the compartmental model.
 from typing import Any
 
 import numpy as np
+from pydantic import AliasChoices
 from pydantic import Field
 
 from laser.measles.base import BaseLaserModel
@@ -41,7 +42,17 @@ class InfectionParams(BaseInfectionParams):
     beta: float = Field(default=1.0, description="Base transmission rate", ge=0.0)
     exp_mu: float = Field(default=6.0, description="Exposure mean", gt=0.0)
     inf_mu: float = Field(default=8.0, description="Infection mean", gt=0.0)
-    seasonality: float = Field(default=0.0, description="Seasonality factor, default is no seasonality", ge=0.0, le=1.0)
+    seasonality: float = Field(
+        default=0.0,
+        description=(
+            "Amplitude of seasonal modulation of beta (range 0.0-1.0; e.g. 0.3 = "
+            "30% amplitude, 0.0 = no seasonality). Accepts either `seasonality` "
+            "or `seasonal_amplitude` on input. Pairs with `season_start`."
+        ),
+        ge=0.0,
+        le=1.0,
+        validation_alias=AliasChoices("seasonality", "seasonal_amplitude"),
+    )
     season_start: float = Field(default=0, description="Season start day (0-364)", ge=0, le=364)
     mixer: Any = Field(default_factory=lambda: GravityMixing(), description="Spatial mixing model")
 
