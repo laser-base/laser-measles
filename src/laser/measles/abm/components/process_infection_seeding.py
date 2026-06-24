@@ -45,9 +45,7 @@ class InfectionSeedingParams(BaseModel):
         validation_alias=AliasChoices("num_infections", "n_seeds", "n_initial_infections"),
     )
     target_patches: list[str] | None = Field(default=None, description="List of specific patch IDs to seed")
-    infections_per_patch: (
-        int | list[int]
-    ) | None = Field(
+    infections_per_patch: (int | list[int]) | None = Field(
         default=None,
         description=(
             "Per-patch override of `num_infections`: an int (same count for every patch "
