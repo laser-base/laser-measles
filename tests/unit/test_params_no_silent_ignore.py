@@ -25,7 +25,15 @@ from pydantic import ValidationError
 from laser.measles.abm.components import InfectionParams
 from laser.measles.abm.components import InfectionSeedingParams
 from laser.measles.abm.components import VitalDynamicsParams
+from laser.measles.abm.components.process_infection import InfectionParams as ABMInfectionParams
+from laser.measles.abm.components.process_infection_seeding import InfectionSeedingParams as ABMSeedingParams
 from laser.measles.abm.components.process_transmission import TransmissionParams
+from laser.measles.biweekly.components.process_infection import InfectionParams as BWInfectionParams
+from laser.measles.biweekly.components.process_infection_seeding import InfectionSeedingParams as BWSeedingParams
+from laser.measles.biweekly.components.process_initialize_equilibrium_states import InitializeEquilibriumStatesParams as BWInitEq
+from laser.measles.biweekly.components.tracker_case_surveillance import CaseSurveillanceParams as BWCaseSurveillance
+from laser.measles.compartmental.components.process_infection import InfectionParams as CompInfectionParams
+from laser.measles.components import ResultsWriterParams
 
 
 @pytest.mark.parametrize(
@@ -90,17 +98,6 @@ def test_vital_dynamics_cbr_typo_does_not_silently_default():
 # validation_alias rather than plain alias. Lock both directions in.
 # ──────────────────────────────────────────────────────────────────────
 
-from laser.measles.abm.components.process_infection import InfectionParams as ABMInfectionParams
-from laser.measles.abm.components.process_infection_seeding import InfectionSeedingParams as ABMSeedingParams
-from laser.measles.biweekly.components.process_infection import InfectionParams as BWInfectionParams
-from laser.measles.biweekly.components.process_infection_seeding import InfectionSeedingParams as BWSeedingParams
-from laser.measles.biweekly.components.process_initialize_equilibrium_states import (
-    InitializeEquilibriumStatesParams as BWInitEq,
-)
-from laser.measles.biweekly.components.tracker_case_surveillance import CaseSurveillanceParams as BWCaseSurveillance
-from laser.measles.compartmental.components.process_infection import InfectionParams as CompInfectionParams
-from laser.measles.components import ResultsWriterParams
-
 
 @pytest.mark.parametrize(
     ("params_cls", "canonical_field", "alias_kwarg", "value"),
@@ -113,8 +110,8 @@ from laser.measles.components import ResultsWriterParams
         pytest.param(BWInfectionParams, "seasonality", "seasonal_amplitude", 0.3, id="biweekly-infection-seasonal_amplitude"),
         pytest.param(CompInfectionParams, "seasonality", "seasonal_amplitude", 0.3, id="compartmental-infection-seasonal_amplitude"),
         # ResultsWriterParams.path
-        pytest.param(ResultsWriterParams, "path", "output_file", "/tmp/x.json", id="results_writer-output_file"),
-        pytest.param(ResultsWriterParams, "path", "output_path", "/tmp/x.json", id="results_writer-output_path"),
+        pytest.param(ResultsWriterParams, "path", "output_file", "results.json", id="results_writer-output_file"),
+        pytest.param(ResultsWriterParams, "path", "output_path", "results.json", id="results_writer-output_path"),
         # InfectionSeedingParams.num_infections — biweekly+compartmental share
         # BaseInfectionSeedingParams via empty subclass pass-through. ABM has its
         # own parallel BaseModel declaration that has to carry the alias too.
