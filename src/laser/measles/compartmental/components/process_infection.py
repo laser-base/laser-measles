@@ -51,7 +51,7 @@ class InfectionParams(BaseInfectionParams):
         ),
         ge=0.0,
         le=1.0,
-        validation_alias=AliasChoices("seasonality", "seasonal_amplitude", "amplitude"),
+        validation_alias=AliasChoices("seasonality", "seasonal_amplitude"),
     )
     season_start: float = Field(default=0, description="Season start day (0-364)", ge=0, le=364)
     mixer: Any = Field(default_factory=lambda: GravityMixing(), description="Spatial mixing model")
