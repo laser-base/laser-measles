@@ -11,6 +11,7 @@ import json
 from pathlib import Path
 
 import numpy as np
+from pydantic import AliasChoices
 from pydantic import BaseModel
 from pydantic import ConfigDict
 from pydantic import Field
@@ -31,7 +32,13 @@ class ResultsWriterParams(BaseModel):
 
     path: str = Field(
         default="results.json",
-        description="Destination file for the JSON results dump.",
+        description=(
+            "Destination *file path* for the JSON results dump (e.g. "
+            "`'results.json'` or `'output/run42.json'`). This is the full "
+            "file path, not a directory — to write into a directory, include "
+            "the filename. Accepts `path`, `output_file`, or `output_path` on input."
+        ),
+        validation_alias=AliasChoices("path", "output_file", "output_path"),
     )
 
 

@@ -6,6 +6,7 @@ selects the largest patch by population for seeding.
 """
 
 import numpy as np
+from pydantic import AliasChoices
 from pydantic import BaseModel
 from pydantic import ConfigDict
 from pydantic import Field
@@ -31,11 +32,29 @@ class InfectionSeedingParams(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    num_infections: int = Field(default=1, description="Default number of infections to seed", ge=1)
+    num_infections: int = Field(
+        default=1,
+        description=(
+            "Number of infections to seed per patch (used for every patch in "
+            "`target_patches`, and for the largest patch when `target_patches` is None "
+            "and `use_largest_patch=True`). To set different counts per patch, use "
+            "`infections_per_patch` instead. Accepts `num_infections`, `n_seeds`, or "
+            "`n_initial_infections` on input."
+        ),
+        ge=1,
+        validation_alias=AliasChoices("num_infections", "n_seeds", "n_initial_infections"),
+    )
     target_patches: list[str] | None = Field(default=None, description="List of specific patch IDs to seed")
     infections_per_patch: (
         int | list[int]
-    ) | None = Field(default=None, description="Number of infections per patch (single int or list matching target_patches)")
+    ) | None = Field(
+        default=None,
+        description=(
+            "Per-patch override of `num_infections`: an int (same count for every patch "
+            "in `target_patches`) or a list of ints (one per target patch, lengths must "
+            "match). Leave None to use `num_infections` uniformly."
+        ),
+    )
     use_largest_patch: bool = Field(default=True, description="Whether to seed the largest patch by default")
 
     @field_validator("infections_per_patch")
