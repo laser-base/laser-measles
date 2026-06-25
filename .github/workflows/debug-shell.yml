@@ -1,5 +1,7 @@
-# .github/workflows/debug-shell.yml — inline probes of the Artifactory 403
-# (no SSH, no tmate; output just lands in the workflow log).
+# Matrix probe: dispatch this once, get 8 parallel runners hitting the same
+# URL. Each emits a one-line tag "PROBE_RESULT: <region> <egress_ip> <status>"
+# so we can scan logs and confirm whether the 403 is runner-region-specific
+# (Cloudflare WAF gating on IP reputation, as the prior single probe suggested).
 name: Debug artifactory access from a GHA runner
 
 on:
@@ -8,24 +10,31 @@ on:
 jobs:
   probe:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        i: [1, 2, 3, 4, 5, 6, 7, 8]
     steps:
       - name: Probe Artifactory tutorial artifact
         run: |
           URL=https://packages.idmod.org/artifactory/idm-data/LASER/laser_measles_calib_tutorial.tgz
-          echo "=== Runner public egress IP ==="
-          curl -sS https://ifconfig.me; echo
-          echo
-          echo "=== DNS for the host ==="
-          getent hosts packages.idmod.org
-          echo
-          echo "=== Anonymous HEAD (vanilla User-Agent) ==="
-          curl -sS -i -m 10 -I "$URL" | head -25
-          echo
-          echo "=== Anonymous HEAD with browser UA (in case a WAF filters by UA) ==="
-          curl -sS -i -m 10 -A "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36" -I "$URL" | head -10
-          echo
-          echo "=== Anonymous GET, full response headers + first 4 KB of body ==="
-          curl -sS -i -m 10 "$URL" | head -40
-          echo
-          echo "=== /v2/ ping on the docker side (sanity that base host responds) ==="
-          curl -sS -i -m 10 https://packages.idmod.org/v2/ | head -5
+          EGRESS=$(curl -sS https://ifconfig.me || echo unknown)
+          REGION="${AZ_REGION:-${RUNNER_REGION:-unknown}}"
+          # GHA exposes Azure region indirectly; surface it via the Azure IMDS as a fallback.
+          if [ "$REGION" = "unknown" ]; then
+            REGION=$(curl -sS -H "Metadata: true" -m 2 \
+              'http://169.254.169.254/metadata/instance/compute/location?api-version=2021-02-01&format=text' \
+              2>/dev/null || echo "n/a")
+          fi
+          echo "PROBE_INFO matrix=${{ matrix.i }} egress=$EGRESS region=$REGION"
+          # Headers from a HEAD; capture status + Cloudflare ray for both success and failure modes.
+          HEADERS=$(curl -sS -i -m 10 -I "$URL" 2>&1)
+          STATUS=$(echo "$HEADERS" | head -1 | tr -d '\r')
+          CF_RAY=$(echo "$HEADERS" | grep -i '^cf-ray:' | tr -d '\r' || true)
+          CF_MITIGATED=$(echo "$HEADERS" | grep -i '^cf-mitigated:' | tr -d '\r' || true)
+          SERVER=$(echo "$HEADERS" | grep -i '^server:' | tr -d '\r' || true)
+          # Tabulatable single-line result.
+          echo "PROBE_RESULT matrix=${{ matrix.i }} egress=$EGRESS region=$REGION status='$STATUS' $SERVER $CF_RAY $CF_MITIGATED"
+          # Full headers, in case a 403 comes back with hints we don't think to scan for.
+          echo "=== full HEAD response ==="
+          echo "$HEADERS" | head -20
