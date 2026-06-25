@@ -207,6 +207,7 @@ optuna.logging.set_verbosity(optuna.logging.WARNING)  # quiet TPE chatter
 #   Stage-1 result for deterministic comparisons.
 
 # %%
+import shutil
 import tarfile
 import urllib.error
 import urllib.request
@@ -236,7 +237,17 @@ if not _canary.exists():
     _tarball = SANDBOX / "_artifacts.tgz"
     print(f"Downloading cached artifacts (~2 MB) -> {SANDBOX}")
     try:
-        urllib.request.urlretrieve(ARTIFACT_URL, _tarball)  # noqa: S310 - URL is hard-coded above
+        # Cloudflare's bot-fight rule on packages.idmod.org returns 403 to the
+        # default `Python-urllib/<ver>` User-Agent regardless of source IP.
+        # urlretrieve doesn't take headers, so use urlopen + Request with a
+        # browser-like UA. The URL is fixed and we own the artifact, so the
+        # UA spoof is purely a workaround for the WAF rule.
+        req = urllib.request.Request(  # noqa: S310 - URL is hard-coded above
+            ARTIFACT_URL,
+            headers={"User-Agent": "Mozilla/5.0"},
+        )
+        with urllib.request.urlopen(req, timeout=60) as resp, _tarball.open("wb") as f:  # noqa: S310 - URL is hard-coded above
+            shutil.copyfileobj(resp, f)
     except (urllib.error.URLError, OSError) as exc:
         raise RuntimeError(
             f"Could not download tutorial artifacts from {ARTIFACT_URL}.\n"
