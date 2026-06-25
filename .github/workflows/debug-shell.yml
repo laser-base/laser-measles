@@ -1,23 +1,31 @@
-# .github/workflows/debug-shell.yml
-name: Debug shell on runner
+# .github/workflows/debug-shell.yml — inline probes of the Artifactory 403
+# (no SSH, no tmate; output just lands in the workflow log).
+name: Debug artifactory access from a GHA runner
 
 on:
   workflow_dispatch:
 
 jobs:
-  shell:
+  probe:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - name: Set up Python (same one mkdocs-pr uses)
-        uses: actions/setup-python@v5
-        with: { python-version: "3.x" }
-      - name: Open SSH session via tmate
-        uses: mxschmitt/action-tmate@v3
-        with:
-          # `limit-access-to-actor` removed — would gate SSH on GitHub-registered
-          # SSH keys, which the dispatcher doesn't have. Anyone with the
-          # web URL printed in the log can connect, so disconnect when done.
-          # Auto-terminate after this many minutes — bound the billing cost
-          # even if you forget to disconnect from the browser session.
-          timeout-minutes: 30
+      - name: Probe Artifactory tutorial artifact
+        run: |
+          URL=https://packages.idmod.org/artifactory/idm-data/LASER/laser_measles_calib_tutorial.tgz
+          echo "=== Runner public egress IP ==="
+          curl -sS https://ifconfig.me; echo
+          echo
+          echo "=== DNS for the host ==="
+          getent hosts packages.idmod.org
+          echo
+          echo "=== Anonymous HEAD (vanilla User-Agent) ==="
+          curl -sS -i -m 10 -I "$URL" | head -25
+          echo
+          echo "=== Anonymous HEAD with browser UA (in case a WAF filters by UA) ==="
+          curl -sS -i -m 10 -A "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36" -I "$URL" | head -10
+          echo
+          echo "=== Anonymous GET, full response headers + first 4 KB of body ==="
+          curl -sS -i -m 10 "$URL" | head -40
+          echo
+          echo "=== /v2/ ping on the docker side (sanity that base host responds) ==="
+          curl -sS -i -m 10 https://packages.idmod.org/v2/ | head -5
