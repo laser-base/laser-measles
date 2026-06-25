@@ -1,7 +1,8 @@
-# Matrix probe: dispatch this once, get 8 parallel runners hitting the same
-# URL. Each emits a one-line tag "PROBE_RESULT: <region> <egress_ip> <status>"
-# so we can scan logs and confirm whether the 403 is runner-region-specific
-# (Cloudflare WAF gating on IP reputation, as the prior single probe suggested).
+# Targeted UA probe: reproduce the failing call exactly (python-urllib) AND
+# the working call (curl with vanilla UA) from the same runner. If python
+# trips a 403 where curl doesn't, the failing builds are losing to a
+# Cloudflare bot-fight rule that gates on User-Agent — fix is to spoof a
+# browser-like UA in the tutorial's urlretrieve.
 name: Debug artifactory access from a GHA runner
 
 on:
@@ -15,26 +16,36 @@ jobs:
       matrix:
         i: [1, 2, 3, 4, 5, 6, 7, 8]
     steps:
-      - name: Probe Artifactory tutorial artifact
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.x" }
+      - name: Probe with vanilla Python urllib + curl, side by side
         run: |
           URL=https://packages.idmod.org/artifactory/idm-data/LASER/laser_measles_calib_tutorial.tgz
           EGRESS=$(curl -sS https://ifconfig.me || echo unknown)
-          REGION="${AZ_REGION:-${RUNNER_REGION:-unknown}}"
-          # GHA exposes Azure region indirectly; surface it via the Azure IMDS as a fallback.
-          if [ "$REGION" = "unknown" ]; then
-            REGION=$(curl -sS -H "Metadata: true" -m 2 \
-              'http://169.254.169.254/metadata/instance/compute/location?api-version=2021-02-01&format=text' \
-              2>/dev/null || echo "n/a")
-          fi
+          REGION=$(curl -sS -H "Metadata: true" -m 2 \
+            'http://169.254.169.254/metadata/instance/compute/location?api-version=2021-02-01&format=text' \
+            2>/dev/null || echo "n/a")
+
           echo "PROBE_INFO matrix=${{ matrix.i }} egress=$EGRESS region=$REGION"
-          # Headers from a HEAD; capture status + Cloudflare ray for both success and failure modes.
-          HEADERS=$(curl -sS -i -m 10 -I "$URL" 2>&1)
-          STATUS=$(echo "$HEADERS" | head -1 | tr -d '\r')
-          CF_RAY=$(echo "$HEADERS" | grep -i '^cf-ray:' | tr -d '\r' || true)
-          CF_MITIGATED=$(echo "$HEADERS" | grep -i '^cf-mitigated:' | tr -d '\r' || true)
-          SERVER=$(echo "$HEADERS" | grep -i '^server:' | tr -d '\r' || true)
-          # Tabulatable single-line result.
-          echo "PROBE_RESULT matrix=${{ matrix.i }} egress=$EGRESS region=$REGION status='$STATUS' $SERVER $CF_RAY $CF_MITIGATED"
-          # Full headers, in case a 403 comes back with hints we don't think to scan for.
-          echo "=== full HEAD response ==="
-          echo "$HEADERS" | head -20
+
+          # (a) Vanilla curl — what we already know works
+          CURL_STATUS=$(curl -sS -o /dev/null -w "%{http_code}" -m 10 -I "$URL" || echo "ERR")
+          echo "PROBE_CURL  matrix=${{ matrix.i }} ua='curl-default'    status=$CURL_STATUS"
+
+          # (b) curl with Python-urllib UA — does pretending to be urllib trip the WAF?
+          UA_LIKE_URLLIB="Python-urllib/3.14"
+          URLLIB_LIKE_CURL=$(curl -sS -o /dev/null -w "%{http_code}" -m 10 -A "$UA_LIKE_URLLIB" -I "$URL" || echo "ERR")
+          echo "PROBE_CURLAS matrix=${{ matrix.i }} ua='$UA_LIKE_URLLIB' status=$URLLIB_LIKE_CURL"
+
+          # (c) The exact call the failing tutorial makes — urlretrieve, real Python
+          PY_STATUS=$(python3 -c "
+          import sys, urllib.request, urllib.error
+          try:
+              resp = urllib.request.urlopen('$URL', timeout=10)
+              print(resp.getcode())
+          except urllib.error.HTTPError as e:
+              print(e.code)
+          except Exception as e:
+              print(type(e).__name__, str(e)[:80])
+          " 2>&1 | tail -1)
+          echo "PROBE_PY    matrix=${{ matrix.i }} ua='Python-urllib/real' status=$PY_STATUS"
