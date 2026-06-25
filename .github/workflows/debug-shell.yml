@@ -15,8 +15,9 @@ jobs:
       - name: Open SSH session via tmate
         uses: mxschmitt/action-tmate@v3
         with:
-          # Lock the session to YOUR github account so randos can't connect.
-          limit-access-to-actor: true
-          # Auto-terminate after this many minutes of inactivity (default 10).
+          # `limit-access-to-actor` removed — would gate SSH on GitHub-registered
+          # SSH keys, which the dispatcher doesn't have. Anyone with the
+          # web URL printed in the log can connect, so disconnect when done.
+          # Auto-terminate after this many minutes — bound the billing cost
+          # even if you forget to disconnect from the browser session.
           timeout-minutes: 30
-
