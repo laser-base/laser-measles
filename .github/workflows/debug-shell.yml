@@ -1,0 +1,22 @@
+# .github/workflows/debug-shell.yml
+name: Debug shell on runner
+
+on:
+  workflow_dispatch:
+
+jobs:
+  shell:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python (same one mkdocs-pr uses)
+        uses: actions/setup-python@v5
+        with: { python-version: "3.x" }
+      - name: Open SSH session via tmate
+        uses: mxschmitt/action-tmate@v3
+        with:
+          # Lock the session to YOUR github account so randos can't connect.
+          limit-access-to-actor: true
+          # Auto-terminate after this many minutes of inactivity (default 10).
+          timeout-minutes: 30
+
