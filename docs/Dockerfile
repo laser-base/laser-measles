@@ -45,15 +45,43 @@ RUN pip install --no-cache-dir 'pip<26' 'uv<1'
 # files) so the image is self-contained — anyone pulling the image gets the
 # same closure regardless of which checkout they're consuming it from.
 #
-# Keep this list aligned with:
+# Keep these lists aligned with:
 #   - laser-measles' [docs] / [examples] extras in pyproject.toml
 #   - docs/requirements.txt (used by the tox docs env)
+#
+# Split across four `RUN` invocations on purpose — the single 940 MB combined
+# layer trips a server-side 500 on push to the IDM Artifactory at certain
+# transfer sizes, and tooling like `crane` falls into a chunked-upload code
+# path that triggers an unrelated Artifactory NPE on the same monolithic
+# blob. Four ~150-300 MB layers push cleanly via `docker push` without
+# chunking, and rebuilds get better cache reuse when one group's pin moves.
 #
 # Key constraints:
 #   - numba>=0.60 because laser-core leaves numba unpinned, which lets uv
 #     backtrack to numba==0.53.1 (Python<=3.9 only) on a 3.12 base.
 #   - pyarrow is required by polars.DataFrame.to_pandas(), which
 #     mkdocs-jupyter triggers when rendering polars frames in tutorials.
+
+# Numeric stack — heaviest, most cache-stable (~250 MB).
+RUN uv pip install --system --no-cache \
+        'numpy>=1.26,<3' \
+        'numba>=0.60' \
+        pyarrow
+
+# Scientific stack + laser-core (~250 MB).
+RUN uv pip install --system --no-cache \
+        matplotlib \
+        polars \
+        seaborn \
+        'laser-core>=1.0.2,<2.0'
+
+# Jupyter execution (~150 MB).
+RUN uv pip install --system --no-cache \
+        notebook \
+        ipykernel \
+        jupytext
+
+# MkDocs + plugins (~100 MB) — smallest, most likely to churn.
 RUN uv pip install --system --no-cache \
         'mkdocs-material~=9.7' \
         mkdocs-include-markdown-plugin \
@@ -68,16 +96,6 @@ RUN uv pip install --system --no-cache \
         mkdocstrings-python \
         mkdocs-table-reader-plugin \
         mkdocs-exclude \
-        jupytext \
-        markdownify \
-        notebook \
-        ipykernel \
-        pyarrow \
-        matplotlib \
-        'numpy>=1.26,<3' \
-        'numba>=0.60' \
-        polars \
-        seaborn \
-        'laser-core>=1.0.2,<2.0'
+        markdownify
 
 WORKDIR /repo
