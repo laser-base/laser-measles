@@ -4,7 +4,7 @@ build-backend = "uv_build"
 
 [project]
 name = "laser.measles"
-version = "0.13.3"
+version = "0.13.4"
 authors = [
   {name = "Christopher Lorton"},
   {name = "Jonathan Bloedow"},
@@ -127,7 +127,7 @@ force-single-line = true
 quote-style = "double"
 
 [tool.bumpversion]
-current_version = "0.13.3"
+current_version = "0.13.4"
 parse = "(?P<major>\\d+)\\.(?P<minor>\\d+)\\.(?P<patch>\\d+)"
 serialize = ["{major}.{minor}.{patch}"]
 search = "{current_version}"
