@@ -19,15 +19,12 @@ class AdminShapefile(BaseShapefile):
         admin_level: Admin level of the shapefile.
         dotname_fields: List of fields to use for dotname. e.g., ["ADMIN0", "ADMIN1", "ADMIN2"]
 
+    Examples:
 
-    **Example:**
-
-        ```python
         from laser.measles.demographics.admin_shapefile import AdminShapefile
 
         shapefile = AdminShapefile("path/to/shapefile.shp")
         df = shapefile.get_dataframe()
-        ```
     """
 
     admin_level: int | None = None

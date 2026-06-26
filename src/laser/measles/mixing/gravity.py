@@ -20,13 +20,11 @@ class GravityParams(BaseModel):
         c: Distance decay exponent - larger values suppress long-distance travel.
         k: Average trip probability (scales the overall matrix).
 
-    **Example:**
+    Examples:
 
-        ```python
         from laser.measles.mixing.gravity import GravityParams
 
         params = GravityParams(a=1.0, b=1.0, c=2.0, k=0.01)
-        ```
     """
 
     a: float = Field(default=1.0, description="Population source scale parameter", ge=1.0)
@@ -55,9 +53,8 @@ class GravityMixing(BaseMixing):
             [`GravityParams`][laser.measles.mixing.gravity.GravityParams]
             defaults if ``None``.
 
-    **Example:**
+    Examples:
 
-        ```python
         from laser.measles.mixing.gravity import GravityMixing, GravityParams
         from laser.measles.compartmental import components
         from laser.measles import create_component
@@ -65,7 +62,6 @@ class GravityMixing(BaseMixing):
         mixer = GravityMixing(params=GravityParams(a=1.0, b=1.0, c=2.0, k=0.01))
         infection_params = components.InfectionParams(beta=0.8, mixer=mixer)
         model.components = [create_component(components.InfectionProcess, infection_params)]
-        ```
     """
 
     def __init__(self, scenario: pl.DataFrame | None = None, params: GravityParams | None = None):

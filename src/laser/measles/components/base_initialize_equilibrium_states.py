@@ -16,14 +16,11 @@ class BaseInitializeEquilibriumStatesParams(BaseModel):
     """
     Parameters for the InitializeEquilibriumStatesProcess.
 
+    Examples:
 
-    **Example:**
-
-        ```python
         from laser.measles.biweekly.components.process_initialize_equilibrium_states import InitializeEquilibriumStatesParams
 
         params = InitializeEquilibriumStatesParams()
-        ```
     """
 
     model_config = ConfigDict(extra="forbid")
@@ -45,10 +42,8 @@ class BaseInitializeEquilibriumStatesProcess(BasePhase):
     """
     Initialize S, R states of the population in each of the model states by rough equilibrium of R0.
 
+    Examples:
 
-    **Example:**
-
-        ```python
         from laser.measles.scenarios.synthetic import single_patch_scenario
         from laser.measles.biweekly import BiweeklyModel, BiweeklyParams
         from laser.measles.biweekly import components
@@ -58,7 +53,6 @@ class BaseInitializeEquilibriumStatesProcess(BasePhase):
         params = BiweeklyParams(num_ticks=52, seed=42, start_time="2000-01")
         model = BiweeklyModel(scenario, params)
         model.add_component(create_component(components.InitializeEquilibriumStatesProcess, components.InitializeEquilibriumStatesParams()))
-        ```
     """
 
     def __init__(self, model: BaseLaserModel, params: BaseInitializeEquilibriumStatesParams | None = None):

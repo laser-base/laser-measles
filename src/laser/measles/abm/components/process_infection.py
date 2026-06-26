@@ -28,7 +28,7 @@ class InfectionParams(BaseInfectionParams):
 
     1. **Default gravity** — leave ``mixer`` as ``None`` and configure
        ``distance_exponent`` and ``mixing_scale``. Internally a
-       :class:`~laser.measles.mixing.gravity.GravityMixing` is constructed
+       [`GravityMixing`][laser.measles.mixing.gravity.GravityMixing] is constructed
        using those values.
     2. **Custom mixer** — pass any mixing object (e.g. ``GravityMixing(...)``,
        ``RadiationMixing(...)``) as ``mixer=``. When set, this takes
@@ -38,7 +38,7 @@ class InfectionParams(BaseInfectionParams):
     initialisation, so callers don't need to assign ``mixer.scenario``
     themselves.
 
-    Examples::
+    Examples:
 
         # 1. Default gravity, tuned via the convenience knobs
         infection_params = InfectionParams(
@@ -122,9 +122,8 @@ class InfectionProcess(BaseInfectionProcess):
     but for agent-based modeling.
 
 
-    **Example:**
+    Examples:
 
-        ```python
         from laser.measles.scenarios.synthetic import single_patch_scenario
         from laser.measles.abm import ABMModel, ABMParams
         from laser.measles.abm import components
@@ -134,7 +133,6 @@ class InfectionProcess(BaseInfectionProcess):
         params = ABMParams(num_ticks=365, seed=42, start_time="2000-01")
         model = ABMModel(scenario, params)
         model.add_component(create_component(components.InfectionProcess, components.InfectionParams(beta=0.3)))
-        ```
     """
 
     def __init__(self, model: ABMModel, params: InfectionParams | None = None) -> None:

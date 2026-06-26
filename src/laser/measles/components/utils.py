@@ -37,9 +37,9 @@ def component(cls: type[T] | None = None, **default_params: Any) -> Callable[[ty
         The decorated class (with ``create`` attached), or a decorator
             function if ``cls`` is ``None``.
 
-    Examples
-    --------
-    Basic usage:
+    Examples:
+
+        Basic usage:
 
     >>> @component
     ... class MyComponent(BaseComponent):
@@ -98,43 +98,34 @@ def create_component(component_class: type[T], params: type[B] | None = None) ->
     This function creates a callable object that will instantiate the component
     with the given parameters when called by the model.
 
-    Parameters
-    ----------
-    component_class : Type[BaseComponent]
-        The component class to instantiate
-    params : BaseModel, optional
-        Parameter object to pass to the component constructor as ``params=...``.
+    Args:
+        component_class (Type[BaseComponent]): The component class to instantiate
+        params (BaseModel, optional): Parameter object to pass to the component constructor as ``params=...``.
 
-    Returns
-    -------
-    Callable[[Any], BaseComponent]
-        A single-argument factory: when called by the model with the model
-        instance, it returns ``component_class(model, params=params)``.
+    Returns:
+        Callable[[Any], BaseComponent]: A single-argument factory: when called by the model with the model
+            instance, it returns ``component_class(model, params=params)``.
 
-    **Example:**
+    Examples:
 
-        ```python
         from laser.measles import create_component
         from laser.measles.compartmental.components import InfectionProcess, InfectionParams
 
         model.components = [
             create_component(InfectionProcess, InfectionParams(beta=0.8)),
         ]
-        ```
     """
 
     class ComponentFactory:
         """Callable wrapper that pairs a component class with its parameters.
 
-        **Example:**
+        Examples:
 
-            ```python
             from laser.measles.components.utils import ComponentFactory
             from laser.measles.biweekly.components.process_infection import InfectionProcess, InfectionParams
 
             factory = ComponentFactory()
             component = factory.create(InfectionProcess, InfectionParams(beta=0.57), model=model)
-            ```
         """
 
         def __init__(self, component_class: type[T], params: BaseModel | None = None):

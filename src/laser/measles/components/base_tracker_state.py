@@ -34,14 +34,11 @@ class BaseStateTrackerParams(BaseModel):
             The ``patch_id`` column in ``get_dataframe()`` matches the ``id`` column of the
             scenario DataFrame at the requested hierarchy level.
 
+    Examples:
 
-    **Example:**
-
-        ```python
         from laser.measles.biweekly.components.tracker_state import StateTrackerParams
 
         params = StateTrackerParams()
-        ```
     """
 
     model_config = ConfigDict(extra="forbid")
@@ -74,10 +71,8 @@ class BaseStateTracker(BasePhase):
         model: The simulation model containing nodes, states, and parameters.
         params: Component-specific parameters. If None, will use default parameters.
 
+    Examples:
 
-    **Example:**
-
-        ```python
         from laser.measles.scenarios.synthetic import single_patch_scenario
         from laser.measles.biweekly import BiweeklyModel, BiweeklyParams
         from laser.measles.biweekly import components
@@ -89,7 +84,6 @@ class BaseStateTracker(BasePhase):
         model.add_component(create_component(components.StateTracker, components.StateTrackerParams()))
         model.run()
         state_tracker = model.get_component("StateTracker")
-        ```
     """
 
     def __init__(self, model: BaseLaserModel, params: BaseStateTrackerParams | None = None) -> None:
@@ -197,7 +191,8 @@ class BaseStateTracker(BasePhase):
             None: This function uses a generator to yield control back to the caller.
             If used directly (not as a generator), it will show the plot immediately.
 
-        Example:
+        Examples:
+
             # Use as a generator (for model.visualize()):
             for _ in tracker.plot():
                 plt.show()

@@ -21,13 +21,11 @@ class CompetingDestinationsParams(BaseModel):
         delta: Destination-competition exponent — negative values
             penalise destinations with many nearby competitors.
 
-    **Example:**
+    Examples:
 
-        ```python
         from laser.measles.mixing.competing_destinations import CompetingDestinationsParams
 
         params = CompetingDestinationsParams(a=1.0, b=1.0, c=1.5, k=0.01, delta=-0.5)
-        ```
     """
 
     a: float = Field(default=1.0, description="Population source scale parameter", ge=1.0)
@@ -55,9 +53,8 @@ class CompetingDestinationsMixing(BaseMixing):
             model will set it automatically.
         params (CompetingDestinationsParams | None): Model parameters.
 
-    **Example:**
+    Examples:
 
-        ```python
         from laser.measles.mixing.competing_destinations import (
             CompetingDestinationsMixing, CompetingDestinationsParams,
         )
@@ -69,7 +66,6 @@ class CompetingDestinationsMixing(BaseMixing):
         )
         infection_params = components.InfectionParams(beta=0.8, mixer=mixer)
         model.add_component(create_component(components.InfectionProcess, infection_params))
-        ```
     """
 
     def __init__(self, scenario: pl.DataFrame | None = None, params: CompetingDestinationsParams | None = None):

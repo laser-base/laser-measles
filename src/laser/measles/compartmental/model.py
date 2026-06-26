@@ -38,9 +38,8 @@ class CompartmentalModel(BaseLaserModel):
         name (str): Display name for log messages.  Defaults to
             ``"compartmental"``.
 
-    **Example:**
+    Examples:
 
-        ```python
         import laser.measles as lm
         from laser.measles.compartmental.components import (
             InfectionSeedingProcess,
@@ -51,7 +50,6 @@ class CompartmentalModel(BaseLaserModel):
         model = lm.CompartmentalModel(scenario=df, params=params)
         model.components = [InfectionSeedingProcess, InfectionProcess]
         model.run()
-        ```
     """
 
     # Specify the scenario wrapper class for auto-wrapping DataFrames
@@ -151,9 +149,8 @@ class CompartmentalModel(BaseLaserModel):
                 [`CompartmentalModel`][laser.measles.compartmental.model.CompartmentalModel]
                 ready for ``model.run()``.
 
-        **Example:**
+        Examples:
 
-            ```python
             import laser.measles as lm
             from laser.measles.compartmental.components import InfectionProcess
 
@@ -162,7 +159,6 @@ class CompartmentalModel(BaseLaserModel):
                 "checkpoint.h5", params2, components=[InfectionProcess]
             )
             model2.run()
-            ```
         """
         from laser.measles.compartmental.snapshot import load_snapshot  # noqa: PLC0415
 

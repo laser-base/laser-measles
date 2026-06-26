@@ -78,7 +78,7 @@ class ResultsWriter(BaseComponent):
             peak_infectious_per_group:  list[int]   | None
             final_state_per_group:      dict[str, list[int]] | None
 
-    Example::
+    Examples:
 
         from laser.measles.components import ResultsWriter, ResultsWriterParams
         from laser.measles.components import create_component
@@ -125,7 +125,7 @@ class ResultsWriter(BaseComponent):
     def _build(self, model: BaseLaserModel) -> dict:
         """Construct the results dict from the model's StateTracker.
 
-        Internal helper for :meth:`finalize`. Private by convention —
+        Internal helper for [`finalize`][laser.measles.components.results_writer.ResultsWriter.finalize]. Private by convention —
         external callers should add ``ResultsWriter`` to
         ``model.components`` rather than calling this directly.
 

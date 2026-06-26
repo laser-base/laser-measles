@@ -25,11 +25,9 @@ class BiweeklyParams(BaseModelParams):
             Default: ``"2000-01"``.
         verbose: Print detailed logging.  Default: ``False``.
 
-    **Example:**
+    Examples:
 
-        ```python
         params = BiweeklyParams(num_ticks=26, seed=42, start_time="2000-01")
-        ```
     """
 
     @property

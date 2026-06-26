@@ -15,13 +15,11 @@ from laser.measles.utils import coerce_utf8_date_column
 class SIACalendarParams(BaseModel):
     """Parameters specific to the SIA calendar component.
 
-    **Example:**
+    Examples:
 
-        ```python
         from laser.measles.biweekly.components.process_sia_calendar import SIACalendarParams
 
         params = SIACalendarParams()
-        ```
     """
 
     model_config = {"arbitrary_types_allowed": True}
@@ -49,30 +47,25 @@ class SIACalendarProcess(BasePhase):
     Phase for implementing Supplementary Immunization Activities (SIAs) based on a calendar schedule.
 
     This component:
+
     1. Groups nodes by geographic level using the same aggregation schema as CaseSurveillanceTracker
     2. Implements SIAs at scheduled times by moving susceptibles to recovered state
     3. Uses the model's current_date to determine when to implement SIAs
     4. Applies vaccination with configurable efficacy rate
 
-    Parameters
-    ----------
-    model : object
-        The simulation model containing nodes, states, and parameters
-    params : Optional[SIACalendarParams], default=None
-        Component-specific parameters. If None, will use default parameters
+    Args:
+        model (object): The simulation model containing nodes, states, and parameters
+        params (SAICalendarParams): Component-specific parameters. If None, will use default parameters
 
-    Notes
-    -----
-    - SIA efficacy determines the fraction of susceptibles that get vaccinated
-    - Vaccination is simulated using a binomial distribution
-    - SIAs are implemented when the model's current_date has passed the scheduled date
-    - Since the model steps in 14-day increments, SIAs are implemented on the first step after their scheduled date
-    - Each SIA is implemented exactly once
+    Note:
+        - SIA efficacy determines the fraction of susceptibles that get vaccinated
+        - Vaccination is simulated using a binomial distribution
+        - SIAs are implemented when the model's current_date has passed the scheduled date
+        - Since the model steps in 14-day increments, SIAs are implemented on the first step after their scheduled date
+        - Each SIA is implemented exactly once
 
+    Examples:
 
-    **Example:**
-
-        ```python
         from laser.measles.scenarios.synthetic import single_patch_scenario
         from laser.measles.biweekly import BiweeklyModel, BiweeklyParams
         from laser.measles.biweekly import components
@@ -82,7 +75,6 @@ class SIACalendarProcess(BasePhase):
         params = BiweeklyParams(num_ticks=52, seed=42, start_time="2000-01")
         model = BiweeklyModel(scenario, params)
         model.add_component(create_component(components.SIACalendarProcess, components.SIACalendarParams()))
-        ```
     """
 
     def __init__(self, model, params: SIACalendarParams | None = None) -> None:
@@ -169,10 +161,9 @@ class SIACalendarProcess(BasePhase):
         """
         Get the SIA schedule.
 
-        Returns
-        -------
-        pl.DataFrame
-            DataFrame with columns:
+        Returns:
+            pl.DataFrame: DataFrame with columns:
+
             - {group_column}: Group identifier
             - {date_column}: Scheduled date for SIA
         """

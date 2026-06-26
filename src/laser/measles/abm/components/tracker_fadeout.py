@@ -5,9 +5,8 @@ from laser.measles.components import BaseFadeOutTrackerParams
 class FadeOutTracker(BaseFadeOutTracker):
     """A component that tracks the number of nodes experiencing fade-outs over time.
 
-    **Example:**
+    Examples:
 
-        ```python
         from laser.measles.scenarios.synthetic import single_patch_scenario
         from laser.measles.abm import ABMModel, ABMParams
         from laser.measles.abm import components
@@ -17,18 +16,15 @@ class FadeOutTracker(BaseFadeOutTracker):
         params = ABMParams(num_ticks=365, seed=42, start_time="2000-01")
         model = ABMModel(scenario, params)
         model.add_component(create_component(components.FadeOutTracker, components.FadeOutTrackerParams()))
-        ```
     """
 
 
 class FadeOutTrackerParams(BaseFadeOutTrackerParams):
     """Parameters for the FadeOutTracker component.
 
-    **Example:**
+    Examples:
 
-        ```python
         from laser.measles.abm.components.tracker_fadeout import FadeOutTrackerParams
 
         params = FadeOutTrackerParams()
-        ```
     """

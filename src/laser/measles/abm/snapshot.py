@@ -4,7 +4,7 @@ Snapshot save/load for the laser-measles ABM.
 Snapshots capture the full population and patch state at a given point in time
 and allow the simulation to be resumed exactly from that point.
 
-Typical usage::
+Typical usage:
 
     import laser.measles as lm
 
@@ -78,9 +78,8 @@ def save_snapshot(
             measles runs.
         verbose: Print a progress summary.
 
-    **Example:**
+    Examples:
 
-        ```python
         import laser.measles as lm
 
         params = lm.ABMParams(num_ticks=3650, seed=42, start_time="2000-01")
@@ -90,7 +89,6 @@ def save_snapshot(
 
         lm.save_snapshot(model, "checkpoint.h5")
         # Do not use model after this point.
-        ```
     """
     path = Path(path)
 
@@ -211,9 +209,8 @@ def load_snapshot(
         A configured [`ABMModel`][laser.measles.abm.model.ABMModel] instance.
             Call ``model.run()`` to continue the simulation.
 
-    **Example:**
+    Examples:
 
-        ```python
         import laser.measles as lm
 
         params2 = lm.ABMParams(num_ticks=1825, seed=42, start_time="2009-12")
@@ -223,7 +220,6 @@ def load_snapshot(
             components=[lm.VitalDynamicsProcess, lm.InfectionProcess],
         )
         model2.run()
-        ```
     """
     from laser.measles.abm.base import PeopleLaserFrame  # noqa: PLC0415
     from laser.measles.abm.model import ABMModel  # noqa: PLC0415

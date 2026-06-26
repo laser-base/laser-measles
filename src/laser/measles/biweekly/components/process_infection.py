@@ -13,13 +13,11 @@ from laser.measles.mixing.gravity import GravityMixing
 class InfectionParams(BaseInfectionParams):
     """Parameters specific to the infection process component.
 
-    **Example:**
+    Examples:
 
-        ```python
         from laser.measles.biweekly.components.process_infection import InfectionParams
 
         params = InfectionParams(beta=0.57, seasonality=0.2)
-        ```
     """
 
     beta: float = Field(
@@ -57,35 +55,29 @@ class InfectionProcess(BaseInfectionProcess):
 
     1. Calculates expected new infections based on:
 
-       - Base transmission rate (beta)
-       - Seasonal variation
-       - Population mixing matrix
-       - Current number of infected individuals
+        - Base transmission rate (beta)
+        - Seasonal variation
+        - Population mixing matrix
+        - Current number of infected individuals
 
     2. Converts expected infections to probabilities
     3. Samples actual new infections from a binomial distribution
     4. Updates population states:
 
-       - Moves current infected to recovered (configurable recovery period)
-       - Adds new infections to infected population
-       - Removes new infections from susceptible population
+        - Moves current infected to recovered (configurable recovery period)
+        - Adds new infections to infected population
+        - Removes new infections from susceptible population
 
-    Parameters
-    ----------
-    model : object
-        The simulation model containing population states and parameters
-    params : InfectionParams | None, default=None
-        Component-specific parameters. If None, will use default parameters
+    Args:
+        model: The simulation model containing population states and parameters
+        params: Component-specific parameters. If None, will use default parameters
 
-    Notes
-    -----
-    The infection process uses a configurable recovery period and seasonal
-    transmission rate that varies sinusoidally over time.
+    Note:
+        The infection process uses a configurable recovery period and seasonal
+        transmission rate that varies sinusoidally over time.
 
+    Examples:
 
-    **Example:**
-
-        ```python
         from laser.measles.scenarios.synthetic import single_patch_scenario
         from laser.measles.biweekly import BiweeklyModel, BiweeklyParams
         from laser.measles.biweekly import components
@@ -95,7 +87,6 @@ class InfectionProcess(BaseInfectionProcess):
         params = BiweeklyParams(num_ticks=52, seed=42, start_time="2000-01")
         model = BiweeklyModel(scenario, params)
         model.add_component(create_component(components.InfectionProcess, components.InfectionParams(beta=0.57)))
-        ```
     """
 
     def __init__(self, model: BaseLaserModel, params: InfectionParams | None = None) -> None:

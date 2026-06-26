@@ -44,15 +44,13 @@ from laser.measles.wrapper import pretty_laserframe
 class ParamsProtocol(Protocol):
     """Protocol defining the expected structure of model parameters.
 
-    **Example:**
+    Examples:
 
-        ```python
         from laser.measles.biweekly import BiweeklyParams
 
         params = BiweeklyParams(num_ticks=52, seed=42, start_time="2000-01")
         params.time_step_days  # 14 (biweekly)
         params.states          # ["S", "I", "R"]
-        ```
     """
 
     seed: int
@@ -113,13 +111,11 @@ class BaseModelParams(BaseModel):
             Falls back to pure Python if numba is unavailable.
 
 
-    **Example:**
+    Examples:
 
-        ```python
         from laser.measles.biweekly import BiweeklyParams
 
         params = BiweeklyParams(num_ticks=52, seed=42, start_time="2000-01")
-        ```
     """
 
     model_config = ConfigDict(extra="forbid")
@@ -163,13 +159,11 @@ class BaseModelParams(BaseModel):
 class BasePatchLaserFrame(LaserFrame):
     """LaserFrame that has a states property.
 
-    **Example:**
+    Examples:
 
-        ```python
         model.run()
         model.patches.S  # shape (nticks+1, num_patches), susceptible counts
         model.patches.I  # shape (nticks+1, num_patches), infectious counts
-        ```
     """
 
     states: StateArray  # StateArray with attribute access (S, E, I, R, etc.)
@@ -183,15 +177,12 @@ class BasePeopleLaserFrame(LaserFrame):
     This class provides factory methods for creating new instances with the same
     properties but different capacity, making it easy to resize people collections.
 
+    Examples:
 
-    **Example:**
-
-        ```python
         # ABM models have a people LaserFrame for individual agents
         model.people.state     # agent health states
         model.people.age       # agent ages in days
         model.people.patch_id  # which patch each agent belongs to
-        ```
     """
 
     @classmethod
@@ -264,10 +255,8 @@ class BaseLaserModel(ABC):
     Provides common functionality for model initialization, component management,
     timing, metrics collection, and execution loops.
 
+    Examples:
 
-    **Example:**
-
-        ```python
         from laser.measles.scenarios.synthetic import single_patch_scenario
         from laser.measles.biweekly import BiweeklyModel, BiweeklyParams
 
@@ -275,7 +264,6 @@ class BaseLaserModel(ABC):
         params = BiweeklyParams(num_ticks=52, seed=42, start_time="2000-01")
         model = BiweeklyModel(scenario, params)
         model.run()
-        ```
     """
 
     ScenarioType = TypeVar("ScenarioType")
@@ -604,7 +592,8 @@ class BaseLaserModel(ABC):
             List of instances of the specified class, or [None] if none found.
             Works with inheritance - subclasses will match parent class searches.
 
-        Example:
+        Examples:
+
             state_trackers = model.get_instance(StateTracker)
             if state_trackers:
                 state_tracker = state_trackers[0]  # Get first instance
@@ -734,15 +723,12 @@ class BaseComponent:
     Components follow a uniform interface with __call__(model, tick) method
     for execution during simulation loops.
 
+    Examples:
 
-    **Example:**
-
-        ```python
         from laser.measles.biweekly import BiweeklyModel, BiweeklyParams, components
         from laser.measles import create_component
 
         model.add_component(create_component(components.InfectionProcess, components.InfectionParams(beta=0.57)))
-        ```
     """
 
     ModelType = TypeVar("ModelType")
@@ -795,9 +781,10 @@ class BaseComponent:
         Returns:
             The selected function implementation.
 
-        Example:
-            >>> # In a component's __init__ or _initialize method:
-            >>> self.update_func = self.select_function(numpy_update, numba_update)
+        Examples:
+
+            # In a component's __init__ or _initialize method:
+            self.update_func = self.select_function(numpy_update, numba_update)
         """
         # Check if model has use_numba parameter
         use_numba = getattr(self.model.params, "use_numba", True)
@@ -833,17 +820,14 @@ class BasePhase(BaseComponent):
 
     Phases are components that are called every tick and include a __call__ method.
 
+    Examples:
 
-    **Example:**
-
-        ```python
         from laser.measles.biweekly import components
         from laser.measles import create_component
 
         # Processes (BasePhase subclasses) execute in order each tick
         model.add_component(create_component(components.VitalDynamicsProcess, components.VitalDynamicsParams()))
         model.add_component(create_component(components.InfectionProcess, components.InfectionParams()))
-        ```
     """
 
     @abstractmethod
@@ -868,15 +852,12 @@ class BaseScenario(ABC):
     Provides a wrapper around polars DataFrames with additional validation
     and convenience methods.
 
+    Examples:
 
-    **Example:**
-
-        ```python
         from laser.measles.scenarios.synthetic import single_patch_scenario
 
         scenario = single_patch_scenario(population=100_000, mcv1_coverage=0.85)
         # scenario is a Polars DataFrame with columns: id, pop, lat, lon, mcv1
-        ```
     """
 
     def __init__(self, df: pl.DataFrame):

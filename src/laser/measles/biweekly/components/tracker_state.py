@@ -9,14 +9,11 @@ class StateTrackerParams(BaseStateTrackerParams):
     Inherits all parameters from BaseStateTrackerParams with
     ABM-specific defaults and validation.
 
+    Examples:
 
-    **Example:**
-
-        ```python
         from laser.measles.biweekly.components.tracker_state import StateTrackerParams
 
         params = StateTrackerParams()
-        ```
     """
 
 
@@ -28,10 +25,8 @@ class StateTracker(BaseStateTracker):
     Records detailed temporal dynamics of S, I, R compartments
     at the patch level.
 
+    Examples:
 
-    **Example:**
-
-        ```python
         from laser.measles.scenarios.synthetic import single_patch_scenario
         from laser.measles.biweekly import BiweeklyModel, BiweeklyParams
         from laser.measles.biweekly import components
@@ -41,5 +36,4 @@ class StateTracker(BaseStateTracker):
         params = BiweeklyParams(num_ticks=52, seed=42, start_time="2000-01")
         model = BiweeklyModel(scenario, params)
         model.add_component(create_component(components.StateTracker, components.StateTrackerParams()))
-        ```
     """

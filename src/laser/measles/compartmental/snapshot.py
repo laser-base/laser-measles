@@ -68,9 +68,8 @@ def save_snapshot(
         path: Destination HDF5 file path (created or overwritten).
         verbose: Print a progress summary.
 
-    **Example:**
+    Examples:
 
-        ```python
         import laser.measles as lm
         from laser.measles.compartmental import save_snapshot
         from laser.measles.compartmental.components import (
@@ -84,7 +83,6 @@ def save_snapshot(
         model.run()
 
         save_snapshot(model, "checkpoint.h5")
-        ```
     """
     path = Path(path)
 
@@ -160,9 +158,8 @@ def load_snapshot(
             [`CompartmentalModel`][laser.measles.compartmental.model.CompartmentalModel]
             instance.  Call ``model.run()`` to continue the simulation.
 
-    **Example:**
+    Examples:
 
-        ```python
         import laser.measles as lm
         from laser.measles.compartmental import load_snapshot
         from laser.measles.compartmental.components import InfectionProcess
@@ -172,7 +169,6 @@ def load_snapshot(
             "checkpoint.h5", params2, components=[InfectionProcess]
         )
         model2.run()
-        ```
     """
     from laser.measles.compartmental.model import CompartmentalModel  # noqa: PLC0415
 

@@ -26,16 +26,14 @@ class BaseMixing(ABC):
             (the model sets it automatically).
         params: Pydantic parameter object specific to the mixing model.
 
-    **Example:**
+    Examples:
 
-        ```python
         from laser.measles.mixing.gravity import GravityMixing, GravityParams
 
         # Construct a mixer — scenario is set automatically by the model
         mixer = GravityMixing(params=GravityParams(k=0.01, c=2.0))
         migration = mixer.migration_matrix  # (N, N) patch-to-patch travel
         mixing = mixer.mixing_matrix        # rows sum to 1 (includes self-mixing)
-        ```
     """
 
     def __init__(self, scenario: pl.DataFrame | None, params: BaseModel | None):

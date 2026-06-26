@@ -16,13 +16,11 @@ ModelType = TypeVar("ModelType")
 class BaseVitalDynamicsParams(BaseModel):
     """Parameters specific to vital dynamics.
 
-    **Example:**
+    Examples:
 
-        ```python
         from laser.measles.biweekly.components.process_vital_dynamics import VitalDynamicsParams
 
         params = VitalDynamicsParams()
-        ```
     """
 
     model_config = ConfigDict(extra="forbid")
@@ -44,8 +42,7 @@ class BaseVitalDynamicsProcess(BasePhase, ABC):
     This phase handles the simulation of births and deaths in the population model along
     with routine vaccination (MCV1).
 
-    .. warning::
-
+    Warning:
         The ``mcv1`` scenario parameter **only vaccinates newborns** at each tick.
         It does **not** immunize the existing population. In short simulations
         (< 5 years), this produces negligible population-level immunity changes.
@@ -60,18 +57,14 @@ class BaseVitalDynamicsProcess(BasePhase, ABC):
         See the *Vaccination Modeling* tutorial (``docs/tutorials/tut_vaccination.py``)
         for detailed examples of each approach.
 
-    Parameters
-    ----------
-    model : object
-        The simulation model containing nodes, states, and parameters
-    params : VitalDynamicsParams | None, default=None
-        Component-specific parameters. If None, will use default parameters
+    Args:
+        model (object): The simulation model containing nodes, states, and parameters
+        params (VitalDynamicsParams | None, default=None): Component-specific parameters. If None, will use default parameters
 
-    Notes
-    -----
-    - Birth rates are calculated per tick
-    - MCV1 coverage is applied only to newborns; expect 5-10+ years of simulation
-      time before routine immunization significantly shifts population-level immunity
+    Notes:
+        - Birth rates are calculated per tick
+        - MCV1 coverage is applied only to newborns; expect 5-10+ years of simulation
+          time before routine immunization significantly shifts population-level immunity
     """
 
     def __init__(self, model, params: BaseVitalDynamicsParams | None = None) -> None:

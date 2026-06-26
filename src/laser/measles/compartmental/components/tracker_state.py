@@ -14,13 +14,11 @@ class StateTrackerParams(BaseStateTrackerParams):
     ABM-specific defaults and validation.
 
 
-    **Example:**
+    Examples:
 
-        ```python
         from laser.measles.compartmental.components.tracker_state import StateTrackerParams
 
         params = StateTrackerParams()
-        ```
     """
 
 
@@ -33,9 +31,8 @@ class StateTracker(BaseStateTracker):
     at the patch level.
 
 
-    **Example:**
+    Examples:
 
-        ```python
         from laser.measles.scenarios.synthetic import single_patch_scenario
         from laser.measles.compartmental import CompartmentalModel, CompartmentalParams
         from laser.measles.compartmental import components
@@ -45,5 +42,4 @@ class StateTracker(BaseStateTracker):
         params = CompartmentalParams(num_ticks=365, seed=42, start_time="2000-01")
         model = CompartmentalModel(scenario, params)
         model.add_component(create_component(components.StateTracker, components.StateTrackerParams()))
-        ```
     """

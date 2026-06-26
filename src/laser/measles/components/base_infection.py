@@ -11,13 +11,11 @@ from laser.measles.base import BasePhase
 class BaseInfectionParams(BaseModel):
     """Parameters specific to the infection process component.
 
-    **Example:**
+    Examples:
 
-        ```python
         from laser.measles.biweekly.components.process_infection import InfectionParams
 
         params = InfectionParams(beta=0.57, seasonality=0.2)
-        ```
     """
 
     model_config = ConfigDict(extra="forbid")
@@ -44,9 +42,8 @@ class BaseInfectionParams(BaseModel):
 class BaseInfectionProcess(BasePhase, ABC):
     """Base class for infection (transmission and disease progression).
 
-    **Example:**
+    Examples:
 
-        ```python
         from laser.measles.scenarios.synthetic import single_patch_scenario
         from laser.measles.biweekly import BiweeklyModel, BiweeklyParams
         from laser.measles.biweekly import components
@@ -56,5 +53,4 @@ class BaseInfectionProcess(BasePhase, ABC):
         params = BiweeklyParams(num_ticks=52, seed=42, start_time="2000-01")
         model = BiweeklyModel(scenario, params)
         model.add_component(create_component(components.InfectionProcess, components.InfectionParams(beta=0.57)))
-        ```
     """

@@ -14,13 +14,11 @@ class RadiationParams(BaseModel):
         include_home: Whether to include home in the migration matrix
         k: Scale parameter (avg trip probability)
 
-    **Example:**
+    Examples:
 
-        ```python
         from laser.measles.mixing.radiation import RadiationParams
 
         params = RadiationParams(k=0.02, include_home=True)
-        ```
     """
 
     include_home: bool = Field(default=True, description="Whether to include home in the migration matrix")
@@ -46,9 +44,8 @@ class RadiationMixing(BaseMixing):
             [`RadiationParams`][laser.measles.mixing.radiation.RadiationParams]
             defaults if ``None``.
 
-    **Example:**
+    Examples:
 
-        ```python
         from laser.measles.mixing.radiation import RadiationMixing, RadiationParams
         from laser.measles.compartmental import components
         from laser.measles import create_component
@@ -56,10 +53,9 @@ class RadiationMixing(BaseMixing):
         mixer = RadiationMixing(params=RadiationParams(k=0.01))
         infection_params = components.InfectionParams(beta=0.8, mixer=mixer)
         model.add_component(create_component(components.InfectionProcess, infection_params))
-        ```
 
     The ``include_home`` and ``k`` model parameters are configured via
-    :class:`RadiationParams`.
+    [`RadiationParams`][laser.measles.mixing.radiation.RadiationParams].
     """
 
     def __init__(self, scenario: pl.DataFrame | None = None, params: RadiationParams | None = None):

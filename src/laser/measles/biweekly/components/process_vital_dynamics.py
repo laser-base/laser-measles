@@ -6,14 +6,11 @@ class VitalDynamicsParams(BaseVitalDynamicsParams):
     """
     Parameters for the vital dynamics process.
 
+    Examples:
 
-    **Example:**
-
-        ```python
         from laser.measles.biweekly.components.process_vital_dynamics import VitalDynamicsParams
 
         params = VitalDynamicsParams()
-        ```
     """
 
 
@@ -21,10 +18,8 @@ class VitalDynamicsProcess(BaseVitalDynamicsProcess):
     """
     Phase for simulating the vital dynamics in the model with MCV1.
 
+    Examples:
 
-    **Example:**
-
-        ```python
         from laser.measles.scenarios.synthetic import single_patch_scenario
         from laser.measles.biweekly import BiweeklyModel, BiweeklyParams
         from laser.measles.biweekly import components
@@ -34,7 +29,6 @@ class VitalDynamicsProcess(BaseVitalDynamicsProcess):
         params = BiweeklyParams(num_ticks=52, seed=42, start_time="2000-01")
         model = BiweeklyModel(scenario, params)
         model.add_component(create_component(components.VitalDynamicsProcess, components.VitalDynamicsParams()))
-        ```
     """
 
     def calculate_capacity(self, model) -> int:

@@ -13,13 +13,11 @@ from laser.measles.components import BaseVitalDynamicsProcess
 class BaseConstantPopParams(BaseVitalDynamicsParams):
     """Parameters specific to the births process component.
 
-    **Example:**
+    Examples:
 
-        ```python
         from laser.measles.biweekly.components.process_constant_pop import ConstantPopParams
 
         params = ConstantPopParams(crude_birth_rate=20)
-        ```
     """
 
     crude_birth_rate: float = Field(default=20, description="Crude birth rate per 1000 people per year", ge=0.0)
@@ -35,15 +33,12 @@ class BaseConstantPopProcess(BaseVitalDynamicsProcess):
     A component to handle the birth events in a model with constant population - that is, births == deaths.
 
     Attributes:
-
         model: The model instance containing population and parameters.
         initializers (list): List of initializers to be called on birth events.
         metrics (DataFrame): DataFrame to holding timing metrics for initializers.
 
+    Examples:
 
-    **Example:**
-
-        ```python
         from laser.measles.scenarios.synthetic import single_patch_scenario
         from laser.measles.biweekly import BiweeklyModel, BiweeklyParams
         from laser.measles.biweekly import components
@@ -53,7 +48,6 @@ class BaseConstantPopProcess(BaseVitalDynamicsProcess):
         params = BiweeklyParams(num_ticks=52, seed=42, start_time="2000-01")
         model = BiweeklyModel(scenario, params)
         model.add_component(create_component(components.ConstantPopProcess, components.ConstantPopParams()))
-        ```
     """
 
     def __init__(self, model: BaseLaserModel, params: BaseConstantPopParams | None = None):
@@ -61,7 +55,6 @@ class BaseConstantPopProcess(BaseVitalDynamicsProcess):
         Initialize the Births component.
 
         Parameters:
-
             model (object): The model object which must have a `population` attribute.
             params (BirthsParams, optional): Component parameters. If None, uses model.params.
 
@@ -78,17 +71,15 @@ class BaseConstantPopProcess(BaseVitalDynamicsProcess):
         Adds new agents to each patch based on expected daily births calculated from CBR. Calls each of the registered initializers for the newborns.
 
         Args:
-
             model: The simulation model containing patches, population, and parameters.
             tick: The current time step in the simulation.
 
         Returns:
-
             None
 
         This method performs the following steps:
 
-            1. Draw a random set of indices, or size size "number of births"  from the population,
+        1. Draw a random set of indices, or size size "number of births"  from the population,
         """
         raise NotImplementedError("This method should be implemented in the subclass.")
 

@@ -57,13 +57,11 @@ class BaseTransmission(BasePhase, ABC):
             Uses [`BaseTransmissionParams`][laser.measles.components.base_transmission.BaseTransmissionParams]
             defaults if ``None``.
 
-    **Example:**
+    Examples:
 
-        ```python
         # Transmission components are typically added via the model's component list:
         from laser.measles.compartmental.components import InfectionProcess
         model.add_component(InfectionProcess)
-        ```
     """
 
     def __init__(self, model: BaseLaserModel, params: BaseTransmissionParams | None = None):

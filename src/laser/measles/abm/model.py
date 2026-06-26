@@ -46,9 +46,8 @@ class ABMModel(BaseLaserModel):
             ``seed``, and ``start_time``.  This argument is **mandatory**.
         name (str): Display name for log messages.  Defaults to ``"abm"``.
 
-    **Example:**
+    Examples:
 
-        ```python
         import laser.measles as lm
 
         params = lm.ABMParams(num_ticks=365, seed=42, start_time="2000-01")
@@ -56,7 +55,6 @@ class ABMModel(BaseLaserModel):
         model.add_component(lm.InfectionSeedingProcess)
         model.add_component(lm.InfectionProcess)
         model.run()
-        ```
     """
 
     people: PeopleLaserFrame
@@ -169,18 +167,16 @@ class ABMModel(BaseLaserModel):
         Plots various visualizations related to the scenario and population data.
 
         Parameters:
-
             fig (Figure, optional): A matplotlib Figure object to use for plotting. If None, a new figure will be created.
 
         Yields:
-
             None: This function uses a generator to yield control back to the caller after each plot is created.
 
         The function generates three plots:
 
-            1. A scatter plot of the scenario patches and populations.
-            2. A histogram of the distribution of the day of birth for the initial population.
-            3. A pie chart showing the distribution of update phase times.
+        1. A scatter plot of the scenario patches and populations.
+        2. A histogram of the distribution of the day of birth for the initial population.
+        3. A pie chart showing the distribution of update phase times.
         """
 
         _fig = plt.figure(figsize=(12, 9), dpi=128) if fig is None else fig
@@ -227,9 +223,8 @@ class ABMModel(BaseLaserModel):
             A configured [`ABMModel`][laser.measles.abm.model.ABMModel]
                 ready for ``model.run()``.
 
-        **Example:**
+        Examples:
 
-            ```python
             import laser.measles as lm
 
             params2 = lm.ABMParams(num_ticks=1825, seed=42, start_time="2009-12")
@@ -239,7 +234,6 @@ class ABMModel(BaseLaserModel):
                 components=[lm.VitalDynamicsProcess, lm.InfectionProcess],
             )
             model2.run()
-            ```
         """
         from laser.measles.abm.snapshot import load_snapshot  # noqa: PLC0415
 
