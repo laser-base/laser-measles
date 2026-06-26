@@ -3,6 +3,7 @@ Component for initializing the population in each of the model states by rough e
 """
 
 import numpy as np
+from pydantic import AliasChoices
 from pydantic import BaseModel
 from pydantic import ConfigDict
 from pydantic import Field
@@ -27,7 +28,17 @@ class BaseInitializeEquilibriumStatesParams(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    R0: float = Field(default=8.0, description="Basic reproduction number setting the initialization", ge=0.0)
+    R0: float = Field(
+        default=8.0,
+        description=(
+            "Basic reproduction number used to set initial S and R partition "
+            "(S = N/R0, R = N*(1 - 1/R0)). For R0 <= 1 no endemic equilibrium "
+            "exists and the whole population is placed in S. Accepts `R0`, `r0`, "
+            "`R_0`, `effective_R0`, or `effective_r0` on input."
+        ),
+        ge=0.0,
+        validation_alias=AliasChoices("R0", "r0", "R_0", "effective_R0", "effective_r0"),
+    )
 
 
 class BaseInitializeEquilibriumStatesProcess(BasePhase):
