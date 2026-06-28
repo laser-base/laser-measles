@@ -50,6 +50,10 @@ model.run()
 
 Full documentation is available at [laser.idmod.org/laser-measles](https://laser.idmod.org/laser-measles/).
 
+## AI-assisted code generation (Jenner)
+
+`jenner-measles-mcp` is a Model Context Protocol (MCP) server that lets Claude and other MCP-compatible tools search the laser-measles documentation and generate model code from natural-language prompts. See [InstituteforDiseaseModeling/laser-mcp](https://github.com/InstituteforDiseaseModeling/laser-mcp) for setup, supported clients, and the deployed endpoint.
+
 ## Contributing
 
 Contributions are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) for development setup, testing, and submission guidelines.
