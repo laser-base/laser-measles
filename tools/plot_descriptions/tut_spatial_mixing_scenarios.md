@@ -1,8 +1,8 @@
 ### Reading the two scenarios plot
 
-A `1 × 2` subplot displaying two synthetic spatial scenarios used in the mixing-model comparison:
+A `1 × 2` subplot displaying the two synthetic spatial scenarios used to compare gravity and radiation mixing. Marker color and size both encode population.
 
-- **Left (Two-Cluster Scenario):** Two Gaussian-clustered groups of patches in lon/lat space. Marker color and size both encode population. The two clusters are visibly distinct, with within-cluster jitter.
-- **Right (Linear Chain Scenario (Used for Analysis)):** Patches arranged in a roughly linear chain along longitude, with population varying in a U-shape across the chain (largest at both ends, smallest in the middle). A colorbar on this panel maps color to population. The linear chain is used for the main analysis because it produces more dramatic differences between gravity and radiation mixing models than the two-cluster scenario does.
+- **Left (Two-Cluster Scenario):** Two Gaussian-clustered groups of patches in lon/lat space, populations clustered at moderate values. Visually distinct clusters with within-cluster jitter. Used to confirm both mixing models behave reasonably on a clustered geography.
+- **Right (Linear Chain Scenario (Used for Analysis)):** 30 patches arranged in a roughly linear chain along longitude, with population varying in a **U-shape** across the chain (largest at both ends, smallest in the middle). A colorbar maps color to population. The U-shape is deliberate — it gives the population-vs-distance scatter in the bottom-center panel of the next figure its dynamic range, so the two mixing models' population-sensitivity differences become visible.
 
-The plot serves as a scenario overview before the main analysis. The chain layout (right panel) is what subsequent figures dissect.
+The chain layout (right panel) is the substrate for the subsequent 6-panel mixing analysis.

@@ -59,12 +59,14 @@ for i, process in enumerate([VitalDynamicsProcess, ConstantPopProcess]):
 # %% [markdown]
 # ### Reading the population-vs-LaserFrame-length plot
 #
-# A `1 × 2` subplot comparing two vital-dynamics process variants over a one-year ABM run:
+# A `1 × 2` subplot comparing two vital-dynamics process variants over a one-year ABM run (365 daily ticks) with CBR=10/1000/yr and CDR=5/1000/yr.
 #
-# - **Left panel — `VitalDynamicsProcess`:** Two curves on the same axes. The solid `Population Size` curve sums living agents over time and rises slowly (births at CBR=10/1000/yr exceed deaths at CDR=5/1000/yr). The dashed `Length(People)` curve is the underlying `LaserFrame` length — it rises FASTER than population because agents that die stay in memory as "dead but not removed" rows. The gap between the two curves at any tick is the cumulative death count.
-# - **Right panel — `ConstantPopProcess`:** Same two curves, but `Length(People)` tracks `Population Size` exactly. `ConstantPopProcess` recycles array slots when agents leave the simulation, so the LaserFrame never grows beyond the current population.
+# - **Left panel — `VitalDynamicsProcess`:** Two curves on the same axes. The solid `Population Size` curve sums LIVING agents and rises at the net rate (CBR - CDR) = 5/1000/yr = 0.5%/yr. The dashed `Length(People)` curve is the underlying `LaserFrame` length — it rises FASTER at CBR alone = 10/1000/yr = 1.0%/yr, because dead agents remain in memory as "dead but not removed" rows. The gap between the two curves at year-end is approximately `N_0 * CDR / 1000` (≈ 500 rows for a starting population of 100k). Visually the dashed line sits above the solid by a few percent at year-end — small but unmistakable.
+# - **Right panel — `ConstantPopProcess`:** Same two curves, but `Length(People)` tracks `Population Size` exactly (the two lines overlap to within visual resolution). `ConstantPopProcess` recycles array slots when agents leave the simulation, so the LaserFrame never grows beyond the active population. CBR is set to 0 for this comparison so total population stays nearly flat.
 #
-# The figure exists to make the memory-handling difference concrete. Choose `VitalDynamicsProcess` when you need full demographic accounting (births and deaths tracked separately, ageing). Choose `ConstantPopProcess` when total population should stay flat and memory pressure matters.
+# **Decision rule (the figure's empirical case):** choose `VitalDynamicsProcess` when you need full demographic accounting (age-at-death, cohort tracking) and can tolerate the ~CBR-rate LaserFrame growth. Choose `ConstantPopProcess` when you want a stable memory footprint and don't need per-agent death records — the LaserFrame size at end of run will equal what you initialized it with.
+#
+# **Sanity check:** if you're running `VitalDynamicsProcess` and your dashed line tracks the solid one exactly, something is wrong — either no agents are dying (check CDR) or the tracker is double-counting. If you're running `ConstantPopProcess` and the dashed line diverges from solid, the slot-recycling logic isn't engaging — check that `ConstantPopParams.crude_birth_rate` is set deliberately and the component is in `model.components` in the right order (before any process that creates agents).
 
 # %% [markdown]
 # ## WPP vital dynamics with age structure
@@ -105,10 +107,21 @@ plt.show()
 # %% [markdown]
 # ### Reading the age-pyramid plot
 #
-# A bar chart comparing the simulated age distribution produced by `WPPVitalDynamicsProcess` (laser-measles) against the corresponding World Population Prospects (WPP) reference data for Nigeria, after 5 years of simulation. Both distributions are normalised to fractions and plotted on the same age-bin grid.
+# A bar chart comparing the simulated age distribution from `WPPVitalDynamicsProcess` (laser-measles) against the corresponding World Population Prospects (WPP) reference for Nigeria after 5 years of simulation. Both distributions are normalized to fractions and plotted on the same age-bin grid.
 #
-# - **Solid bars:** laser-measles age pyramid at simulation year 2005, taken from the `AgePyramidTracker`.
-# - **Hatched outlined bars:** WPP estimates for Nigeria 2005, the validation target. Note the trailing WPP bar extends beyond the laser-measles bins because WPP includes an open-ended `100+` category.
+# - **Solid bars:** laser-measles age pyramid at simulated year 2005, drawn from the `AgePyramidTracker`.
+# - **Hatched outlined bars:** WPP Nigeria 2005 reference. Note the trailing WPP bar extends past the laser-measles bins because WPP includes a `100+` open-ended category that laser-measles does not.
 #
-# A well-functioning age-structured simulation produces solid bars that closely match the hatched outlines: a high-base pyramid characteristic of high-fertility / high-mortality populations like Nigeria, with the largest cohort being children under 5 and a steady decline thereafter. Systematic deviations — too few young agents (under-fertility) or too many old agents (under-mortality) — would indicate the WPP rate-tables aren't being applied correctly, or the simulation hasn't run long enough to reach the equilibrium age structure.
+# **What a well-functioning simulation looks like:** solid bars within roughly 5-10% relative error of the hatched outlines across the bin range. The expected shape is a high-base pyramid (Nigeria is high-fertility / high-mortality): the under-5 cohort is the largest (typically ~15-18% of population), the curve steps down through working-age, and the elderly tail is thin (single-digit percentages).
+#
+# **Failure modes to recognize:**
+#
+# - **Inverted pyramid** (oldest cohort larger than youngest): WPP fertility rates aren't being applied. Births aren't entering the simulation at the expected rate. Check that `WPPVitalDynamicsProcess` is in `model.components` and that no other vital-dynamics process is shadowing it.
+# - **Squashed pyramid** (no working-age, no elderly): WPP mortality is over-killing or `num_ticks` is too small to reach equilibrium. The Nigerian age structure takes roughly one mortality timescale (~60-80 years simulated) to fully equilibrate from arbitrary initial conditions; a 5-year window relies on the model's initialization being already close to equilibrium.
+# - **Mid-range bumps or gaps** (cohort spike or hole at one age band): birth-rate discontinuity or cohort-processing error. Check the WPP `birth_rates` time series for unexpected jumps.
+# - **WPP overshoot in the rightmost bin only** (laser-measles falls short of WPP's `100+`): expected, not a bug. The WPP open-ended category bundles all centenarians while laser-measles bins by definite ranges; correct comparison requires aggregating laser-measles' top bins or ignoring the rightmost WPP bar.
+#
+# **For programmatic use:** the histogram values are read from `model.get_component("AgePyramidTracker")[0].age_pyramid[f'{year}-01-01']` — a NumPy array of length `len(age_bins) - 1`, indexed by age bin in years. Bin edges live on `tracker.params.age_bins` (in days). Compare against `pyvd.make_pop_dat('NGA')` for Nigeria-specific WPP data; for other countries replace the ISO-3 code accordingly.
+#
+# The figure validates that `WPPVitalDynamicsProcess` is correctly applying age-structured WPP rate tables. A well-matched pyramid is the empirical evidence the rate-table integration is working as intended.
 
