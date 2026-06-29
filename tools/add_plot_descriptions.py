@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Insert markdown plot-description cells into jupytext percent-format .py
 tutorial files.
 
