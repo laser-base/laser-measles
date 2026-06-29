@@ -32,6 +32,11 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+    env:
+      # Redirect GADM downloads (used by tutorial-execution during mkdocs build)
+      # to the IDM Artifactory mirror so releases don't break when
+      # geodata.ucdavis.edu is unreachable.
+      LASER_GADM_MIRROR: https://packages.idmod.org/artifactory/idm-data
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - name: Configure Git Credentials
@@ -128,6 +133,11 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+    env:
+      # Redirect GADM downloads (used by tutorial-execution during the combined-doc
+      # build) to the IDM Artifactory mirror so releases don't break when
+      # geodata.ucdavis.edu is unreachable.
+      LASER_GADM_MIRROR: https://packages.idmod.org/artifactory/idm-data
 
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2

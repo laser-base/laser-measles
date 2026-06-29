@@ -3,6 +3,7 @@ GADM shapefiles
 """
 
 import io
+import os
 import zipfile
 from pathlib import Path
 
@@ -16,7 +17,14 @@ from laser.measles.demographics.admin_shapefile import AdminShapefile
 
 VERSION = "4.1"
 VERSION_INT = VERSION.replace(".", "")
-GADM_URL = "https://geodata.ucdavis.edu/gadm/gadm{VERSION}/shp/gadm{VERSION_INT}_{COUNTRY_CODE}_shp.zip"
+# Base host for GADM zip downloads. Defaults to GADM's upstream geodata.ucdavis.edu.
+# Override via the LASER_GADM_MIRROR environment variable to point at a different host
+# (e.g. an internal Artifactory mirror) — useful when UCDavis is unreachable from your
+# network (corporate firewall, transient outages). The override only replaces the host;
+# the path layout (/gadm/gadm<VERSION>/shp/gadm<VERSION_INT>_<COUNTRY_CODE>_shp.zip)
+# must match upstream.
+GADM_HOST = os.environ.get("LASER_GADM_MIRROR", "https://geodata.ucdavis.edu").rstrip("/")
+GADM_URL = GADM_HOST + "/gadm/gadm{VERSION}/shp/gadm{VERSION_INT}_{COUNTRY_CODE}_shp.zip"
 GADM_SHP_FILE = "gadm{VERSION_INT}_{COUNTRY_CODE}_{LEVEL}.shp"
 DOTNAME_FIELDS_DICT = {
     0: ["COUNTRY"],

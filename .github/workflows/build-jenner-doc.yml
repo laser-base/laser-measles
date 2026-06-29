@@ -6,6 +6,11 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      # Redirect GADM downloads (used by tutorial-execution step) to the IDM
+      # Artifactory mirror so doc builds don't break when geodata.ucdavis.edu
+      # is unreachable.
+      LASER_GADM_MIRROR: https://packages.idmod.org/artifactory/idm-data
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5

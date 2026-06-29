@@ -7,6 +7,11 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      # Redirect GADM downloads (used by tutorial-execution step) to the IDM
+      # Artifactory mirror so PR builds don't break when geodata.ucdavis.edu
+      # is unreachable.
+      LASER_GADM_MIRROR: https://packages.idmod.org/artifactory/idm-data
 
     steps:
       - name: Checkout code
