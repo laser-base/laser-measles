@@ -109,7 +109,10 @@ def find_marker_cell(cells, marker):
 
 
 def heading_of(text):
-    return text.lstrip().splitlines()[0].strip()
+    lines = text.lstrip().splitlines()
+    if not lines:
+        raise ValueError("plot-description text is empty or whitespace-only; check the .md file for accidental truncation")
+    return lines[0].strip()
 
 
 def markdown_cell_from_text(text):

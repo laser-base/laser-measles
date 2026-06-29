@@ -177,17 +177,21 @@ def concat(mkdocs_dir: str, notebooks_dir: str, output_file: str):
     # didn't need it. Keep them as user-facing docs (still in mkdocs.yml nav)
     # but out of the RAG-ingest payload.
     tutorial_names = [
+        # Quick start
         "tut_quickstart_hello_world",
+        # Beginning
         "tut_basic_model",
         "tut_model_structure",
         "tut_abm_intro",
         "tut_scenarios",
+        # Feature (in nav order: random_numbers before creating_component)
+        "tut_random_numbers",
         "tut_creating_component",
         "tut_abm_vital_dynamics",
         "tut_spatial_mixing",
         "tut_pydantic_component_parameters",
         "tut_state_arrays",
-        "tut_random_numbers",
+        # End-to-end
         "tut_vaccination",
     ]
 
