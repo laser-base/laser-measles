@@ -485,15 +485,6 @@ plt.tight_layout()
 plt.show()
 
 # %% [markdown]
-# ### Reading the three-cluster chain layout
-#
-# A scatter showing the calibration tutorial's geography: four clusters labeled `A`, `B_far`, `B_near`, `C` arranged in a chain. Longitude on the x-axis, latitude on the y-axis. Each patch is a point, color-coded by cluster (blue=A, orange=B_far, deep-orange=B_near, green=C), with marker size proportional to population.
-#
-# This is the substrate for everything that follows in the tutorial. The key visual fact: the four clusters lie in a horizontal chain, with `B_far` and `B_near` between A and C. The custom chain mixer used in §4 forbids direct A↔C transmission — all spread from A to C must traverse `A → B_far → B_near → C` in sequence. Because B_far has an SIA pinning it subcritical, the chain has a stochastic bottleneck there.
-#
-# If you understand this layout, the rest of the tutorial's calibration story — the bimodal C-invasion fingerprint, the unidentifiability of `c`, the need for an ensemble target — falls into place.
-
-# %% [markdown]
 # ## 4. Custom mixing geometry: a chain mixer
 #
 # A plain `GravityMixing` would let cluster A talk to cluster C
@@ -752,20 +743,6 @@ plt.tight_layout()
 plt.show()
 
 # %% [markdown]
-# ### Reading the single-simulation ABM trajectory
-#
-# A `1 × 1` plot of infectious-agent counts over time at the TRUE calibration parameters (`beta`, `k`, `c`, RNG seed = 42), one curve per cluster: `A` (blue), `B_far` (orange), `B_near` (deep-orange), `C` (green). X-axis is tick (days); y-axis is total infectious in that cluster summed across its patches.
-#
-# What you should see depends on the RNG draw, but the canonical pattern is:
-#
-# - **A peaks first** — the seed is in the three largest A patches. Clear outbreak in cluster A within ~1-3 months.
-# - **B_far peaks much smaller** because of its SIA — the SIA holds susceptibility low enough that B_far is barely supercritical even with arriving chain transmission. Visually, B_far's curve is a tiny bump compared to A's.
-# - **B_near peaks if chain transmission gets through B_far**. About half the time across seeds, the chain breaks at B_far and B_near stays near zero.
-# - **C peaks only if B_near peaked first.** Strict ordering; no shortcuts (chain mixer geometry).
-#
-# The point of this single-simulation view is to show that a single seed produces a single trajectory — but the system is bimodal at the C level (sometimes C invades, sometimes it doesn't). That stochasticity is what motivates the ensemble-based calibration target used downstream; a single trajectory isn't a meaningful loss-function input.
-
-# %% [markdown]
 # **Stochastic invasion in action.** Whether you see a C wave depends
 # on the particular stochastic realization — the design point is that
 # **B_far is subcritical** thanks to its SIA, so chain transmission to
@@ -850,15 +827,6 @@ ax.set_ylabel("Number of simulations (out of 20)")
 ax.set_title("Bimodal C-invasion across reference simulations")
 plt.tight_layout()
 plt.show()
-
-# %% [markdown]
-# ### Reading the bimodal-AR_C histogram
-#
-# A histogram of final cluster-C attack rate (`AR_C = R_C(T) / N_C`) across the 20 reference simulations at TRUE parameters. X-axis is `AR_C` in [0, 1] with 20 bins; y-axis is count of simulations.
-#
-# What to see: **a clean bimodal distribution** with one peak near `AR_C ≈ 0` and another near `AR_C ≈ 1`. Almost no simulations end up in the middle — either the chain transmission gets through B_far and produces a near-full C epidemic, or it doesn't and C stays near-zero.
-#
-# This is the tutorial's defining methodological point. The mean of this distribution (~0.45) is unphysical — it's the average of an outcome that's actually either 0 or 1, never 0.45. The **standard deviation** (~0.50), on the other hand, is the bimodality fingerprint: only a stochastic ensemble can reproduce that spread. A deterministic ODE model with the same mean would have std = 0, no matter how well it matched any other metric. That's why the calibration loss function uses `std(AR_C)` as a target instead of `mean(AR_C)`.
 
 # %% [markdown]
 # ## 8. Stage 0 — identifiability sweeps before any calibration
@@ -1124,20 +1092,6 @@ ax.legend(frameon=False)
 ax.grid(alpha=0.3)
 plt.tight_layout()
 plt.show()
-
-# %% [markdown]
-# ### Reading the TPE convergence plot
-#
-# A `1 × 1` plot tracking optimisation progress over the 30-trial live Stage-1 (CMP cold-start) TPE run. X-axis is trial number; y-axis is loss (log scale).
-#
-# Two series:
-#
-# - **Light gray circles connected by lines (`trial loss`):** the loss value at each individual trial. Early trials are noisy/high; later trials should cluster lower as TPE concentrates around the basin.
-# - **Red running-best line (`running best`):** monotone-decreasing trace of the best loss seen so far. The shape of this trace is the proper convergence diagnostic — flat sections are stalls, sudden drops are when TPE found a better region.
-#
-# What a healthy run looks like: the running-best should drop substantially in the first ~10 trials (TPE has located the basin), then refine slowly afterward. If the running-best is still falling steeply at trial 30, the optimisation hasn't converged and you'd want more trials or a different prior.
-#
-# This figure exists to show convergence behavior on a small live run; the full-precision 100-trial result loaded next for downstream analysis is what calibration decisions are actually based on.
 
 # %% [markdown]
 # ### Loading the full-precision Stage 1 result

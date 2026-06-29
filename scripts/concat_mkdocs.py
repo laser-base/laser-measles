@@ -167,6 +167,15 @@ def concat(mkdocs_dir: str, notebooks_dir: str, output_file: str):
         )
 
     # Tutorial notebooks (executed), in logical order matching mkdocs.yml nav.
+    #
+    # tut_calibration_spatial and tut_chain_mixing are intentionally excluded —
+    # their content (TPE optimization, chain-mixer geometry, bimodal AR_C
+    # statistics) is heavy and esoteric relative to what the RAG corpus is for,
+    # and an empirical comparison (v0.6.29a vs v0.6.26a, 2 runs each) showed
+    # including them collapsed first-try pass rate on the laser-mcp suite from
+    # 13.5 to 2.5 — the LLM was retrieving their content for prompts that
+    # didn't need it. Keep them as user-facing docs (still in mkdocs.yml nav)
+    # but out of the RAG-ingest payload.
     tutorial_names = [
         "tut_quickstart_hello_world",
         "tut_basic_model",
@@ -180,8 +189,6 @@ def concat(mkdocs_dir: str, notebooks_dir: str, output_file: str):
         "tut_state_arrays",
         "tut_random_numbers",
         "tut_vaccination",
-        "tut_calibration_spatial",
-        "tut_chain_mixing",
     ]
 
     # Reference pages (all public, excluding /base/)
