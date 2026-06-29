@@ -1,0 +1,71 @@
+[
+  {
+    "tutorial": "../../docs/tutorials/tut_basic_model.py",
+    "inserts": [
+      {
+        "after_cell_containing": "plt.title(\"Population Distribution\")",
+        "md_file": "tut_basic_model_population_scatter.md"
+      },
+      {
+        "after_cell_containing": "make_plot(biweekly_model)",
+        "md_file": "tut_basic_model_biweekly_three_panel.md"
+      },
+      {
+        "after_cell_containing": "make_plot(compartmental_model)",
+        "md_file": "tut_basic_model_compartmental_three_panel.md"
+      }
+    ]
+  },
+  {
+    "tutorial": "../../docs/tutorials/tut_quickstart_hello_world.py",
+    "inserts": [
+      {
+        "after_cell_containing": "ax.set_title(\"Global SEIR\")",
+        "md_file": "tut_quickstart_hello_world_three_panel.md"
+      }
+    ]
+  },
+  {
+    "tutorial": "../../docs/tutorials/tut_abm_vital_dynamics.py",
+    "inserts": [
+      {
+        "after_cell_containing": "label='Length(People)'",
+        "md_file": "tut_abm_vital_dynamics_pop_vs_length.md"
+      },
+      {
+        "after_cell_containing": "plt.title(f'Age pyramid for {year}')",
+        "md_file": "tut_abm_vital_dynamics_age_pyramid.md"
+      }
+    ]
+  },
+  {
+    "tutorial": "../../docs/tutorials/tut_vaccination.py",
+    "inserts": [
+      {
+        "after_cell_containing": "Epidemic Curve by Pre-existing Immunity Level",
+        "md_file": "tut_vaccination_preexisting_immunity.md"
+      },
+      {
+        "after_cell_containing": "Epidemic Curve: Routine Immunization (20 years)",
+        "md_file": "tut_vaccination_routine_immunization.md"
+      },
+      {
+        "after_cell_containing": "Epidemic Curve with SIA Campaigns",
+        "md_file": "tut_vaccination_sia_campaigns.md"
+      }
+    ]
+  },
+  {
+    "tutorial": "../../docs/tutorials/tut_spatial_mixing.py",
+    "inserts": [
+      {
+        "after_cell_containing": "Linear Chain Scenario (Used for Analysis)",
+        "md_file": "tut_spatial_mixing_scenarios.md"
+      },
+      {
+        "after_cell_containing": "axes[0, 0].set_title('Gravity Mixing Matrix')",
+        "md_file": "tut_spatial_mixing_gravity_vs_radiation.md"
+      }
+    ]
+  }
+]

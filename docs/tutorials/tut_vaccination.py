@@ -110,6 +110,16 @@ plt.tight_layout()
 plt.show()
 
 # %% [markdown]
+# ### Reading the pre-existing-immunity comparison
+#
+# A `1 × 2` subplot comparing four immunity levels (set via the effective `R0` parameter of `InitializeEquilibriumStatesProcess`). Each panel overlays four curves — R0 = 1, 4, 8, 16 — corresponding to initial susceptible fractions of 100%, 25%, 12.5%, and 6.25% respectively. 3-year compartmental simulation, single 500k-person patch, `seasonality=0.15`.
+#
+# - **Left (Epidemic Curve by Pre-existing Immunity Level):** Infectious count over time, one curve per R0 level. The R0=1 line should produce a clear large-amplitude epidemic peak (typically tens of thousands infectious at peak — a population-wide outbreak). The R0=16 line stays orders of magnitude lower and contains quickly — initial 6% susceptibility is below the herd-immunity threshold for most realistic transmission parameters.
+# - **Right (Susceptible Population Over Time):** Same four runs, susceptible-count time series. The R0=1 trace plummets as the wave passes; the R0=16 trace is nearly flat near its already-low initial value.
+#
+# The takeaway: `R0` in `InitializeEquilibriumStatesProcess` is the lever for "what fraction of the population is already immune at t=0". Use it for outbreak scenario analysis when historical vaccination context matters but you don't want to simulate decades of routine immunization first.
+
+# %% [markdown]
 # Notice the dramatic difference: With no pre-existing immunity the
 # entire population experiences a large epidemic, while with high
 # immunity (R0=16, ~94% initially immune) outbreaks are small and
@@ -181,6 +191,16 @@ axes[1].grid(True, alpha=0.3)
 
 plt.tight_layout()
 plt.show()
+
+# %% [markdown]
+# ### Reading the routine-immunization 20-year plot
+#
+# A `1 × 2` subplot comparing `mcv1 = 0` (no routine immunization) vs `mcv1 = 0.80` (80% of newborns vaccinated through `VitalDynamicsProcess`). 20-year compartmental simulation, single 500k-person patch.
+#
+# - **Left (Epidemic Curve: Routine Immunization (20 years)):** Infectious count over time, two overlaid curves. Both runs show recurring measles outbreaks driven by `seasonality=0.15`. The 80% MCV1 curve has noticeably damped peak amplitudes by the later years as vaccinated cohorts replace unvaccinated ones, but the peaks remain visible — 80% routine coverage alone is not enough to interrupt transmission in this configuration.
+# - **Right (Susceptible Fraction Over Time):** Susceptible fraction (S / total) for the two runs. The 0% MCV1 trace oscillates around a stable mean fraction (~6% under endemic equilibrium for R0=16-ish). The 80% MCV1 trace drifts DOWN over the 20 years as new births enter the recovered pool. The gap between the two curves widens monotonically — that's the lever's slow accumulation.
+#
+# Key takeaway: `mcv1` only protects newborns, so its population-level effect is gradual. The figure exists to make the timescale concrete: meaningful difference takes a decade-plus. For short-horizon outbreak modeling, use Approach 1 (`InitializeEquilibriumStatesProcess`) or Approach 3 (SIAs) instead.
 
 # %% [markdown]
 # Over 20 years, the 80% MCV1 coverage gradually reduces the susceptible
@@ -261,6 +281,16 @@ axes[1].grid(True, alpha=0.3)
 
 plt.tight_layout()
 plt.show()
+
+# %% [markdown]
+# ### Reading the SIA-campaigns plot
+#
+# A `1 × 2` subplot from a 5-year compartmental run with two scheduled SIA (Supplementary Immunization Activity) campaigns at 2001-06-15 (year 1.5) and 2003-06-15 (year 3.5). `sia_efficacy=0.9` — each campaign vaccinates 90% of the currently-susceptible population in the targeted patch.
+#
+# - **Left (Epidemic Curve with SIA Campaigns):** Infectious count over time (red), with green dashed vertical lines marking the two campaign dates. You should see a recurring outbreak pattern (driven by `seasonality=0.15`) where each post-SIA wave is visibly suppressed compared to a no-SIA counterfactual; the second SIA further dampens the next 1-2 wave cycles before susceptible buildup from births allows new outbreaks.
+# - **Right (Susceptible Fraction with SIA Campaigns):** Susceptible fraction (S / total) in blue, with the same green vertical lines. The most prominent visual feature is two near-vertical drops in the curve at the SIA dates — the campaigns remove 90% of susceptibles in a single tick, which looks like a step function on the year-scale x-axis.
+#
+# The takeaway: SIAs are the right tool when you need IMMEDIATE population-level immunity changes at specific dates. They complement `mcv1` (slow, ongoing) and `InitializeEquilibriumStatesProcess` (historical, t=0).
 
 # %% [markdown]
 # The SIA campaigns produce sharp drops in the susceptible population

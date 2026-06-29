@@ -1,0 +1,10 @@
+### Reading the population-vs-LaserFrame-length plot
+
+A `1 × 2` subplot comparing two vital-dynamics process variants over a one-year ABM run (365 daily ticks) with CBR=10/1000/yr and CDR=5/1000/yr.
+
+- **Left panel — `VitalDynamicsProcess`:** Two curves on the same axes. The solid `Population Size` curve sums LIVING agents and rises at the net rate (CBR - CDR) = 5/1000/yr = 0.5%/yr. The dashed `Length(People)` curve is the underlying `LaserFrame` length — it rises FASTER at CBR alone = 10/1000/yr = 1.0%/yr, because dead agents remain in memory as "dead but not removed" rows. The gap between the two curves at year-end is approximately `N_0 * CDR / 1000` (≈ 500 rows for a starting population of 100k). Visually the dashed line sits above the solid by a few percent at year-end — small but unmistakable.
+- **Right panel — `ConstantPopProcess`:** Same two curves, but `Length(People)` tracks `Population Size` exactly (the two lines overlap to within visual resolution). `ConstantPopProcess` recycles array slots when agents leave the simulation, so the LaserFrame never grows beyond the active population. CBR is set to 0 for this comparison so total population stays nearly flat.
+
+**Decision rule (the figure's empirical case):** choose `VitalDynamicsProcess` when you need full demographic accounting (age-at-death, cohort tracking) and can tolerate the ~CBR-rate LaserFrame growth. Choose `ConstantPopProcess` when you want a stable memory footprint and don't need per-agent death records — the LaserFrame size at end of run will equal what you initialized it with.
+
+**Sanity check:** if you're running `VitalDynamicsProcess` and your dashed line tracks the solid one exactly, something is wrong — either no agents are dying (check CDR) or the tracker is double-counting. If you're running `ConstantPopProcess` and the dashed line diverges from solid, the slot-recycling logic isn't engaging — check that `ConstantPopParams.crude_birth_rate` is set deliberately and the component is in `model.components` in the right order (before any process that creates agents).
