@@ -31,12 +31,12 @@ Usage:
     python tools/add_plot_descriptions.py tools/plot_descriptions/config.json
     python tools/add_plot_descriptions.py tools/plot_descriptions/config.json --check
 """
+
 import argparse
 import json
 import re
 import sys
 from pathlib import Path
-
 
 # Anchored to start of line; matches '# %%' optionally followed by anything
 # (e.g. ' [markdown]'). The whole line is the cell delimiter.

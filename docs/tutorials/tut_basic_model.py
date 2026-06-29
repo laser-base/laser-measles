@@ -306,4 +306,3 @@ make_plot(compartmental_model)
 # - **Right panel:** The epidemic curve has visibly more inter-tick noise (per-day infectious count, not per-biweek) but the envelope of peaks tracks the biweekly figure.
 #
 # The takeaway is that the compartmental and biweekly variants are intended to be interchangeable at this level of detail — choose biweekly when you need speed (~26× fewer ticks), compartmental when you need daily resolution for parameter estimation or short-timescale interventions.
-

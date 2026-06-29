@@ -124,4 +124,3 @@ plt.show()
 # **For programmatic use:** the histogram values are read from `model.get_component("AgePyramidTracker")[0].age_pyramid[f'{year}-01-01']` — a NumPy array of length `len(age_bins) - 1`, indexed by age bin in years. Bin edges live on `tracker.params.age_bins` (in days). Compare against `pyvd.make_pop_dat('NGA')` for Nigeria-specific WPP data; for other countries replace the ISO-3 code accordingly.
 #
 # The figure validates that `WPPVitalDynamicsProcess` is correctly applying age-structured WPP rate tables. A well-matched pyramid is the empirical evidence the rate-table integration is working as intended.
-
