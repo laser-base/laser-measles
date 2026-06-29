@@ -17,14 +17,17 @@ from laser.measles.demographics.admin_shapefile import AdminShapefile
 
 VERSION = "4.1"
 VERSION_INT = VERSION.replace(".", "")
-# Base host for GADM zip downloads. Defaults to GADM's upstream geodata.ucdavis.edu.
-# Override via the LASER_GADM_MIRROR environment variable to point at a different host
-# (e.g. an internal Artifactory mirror) — useful when UCDavis is unreachable from your
-# network (corporate firewall, transient outages). The override only replaces the host;
-# the path layout (/gadm/gadm<VERSION>/shp/gadm<VERSION_INT>_<COUNTRY_CODE>_shp.zip)
-# must match upstream.
-GADM_HOST = os.environ.get("LASER_GADM_MIRROR", "https://geodata.ucdavis.edu").rstrip("/")
-GADM_URL = GADM_HOST + "/gadm/gadm{VERSION}/shp/gadm{VERSION_INT}_{COUNTRY_CODE}_shp.zip"
+# Base URL prefix for GADM zip downloads. Defaults to GADM's upstream
+# https://geodata.ucdavis.edu. Override via the LASER_GADM_MIRROR environment
+# variable to point at a different base URL (e.g. an Artifactory mirror that
+# embeds a repo path) — useful when UCDavis is unreachable from your network
+# (corporate firewall, transient outages). The override may include both host
+# and path prefix (e.g. https://packages.idmod.org/artifactory/idm-data); the
+# remaining path /gadm/gadm<VERSION>/shp/gadm<VERSION_INT>_<COUNTRY_CODE>_shp.zip
+# is appended and must match upstream. Empty-string and unset values both fall
+# back to the upstream default.
+GADM_BASE_URL = (os.environ.get("LASER_GADM_MIRROR") or "https://geodata.ucdavis.edu").rstrip("/")
+GADM_URL = GADM_BASE_URL + "/gadm/gadm{VERSION}/shp/gadm{VERSION_INT}_{COUNTRY_CODE}_shp.zip"
 GADM_SHP_FILE = "gadm{VERSION_INT}_{COUNTRY_CODE}_{LEVEL}.shp"
 DOTNAME_FIELDS_DICT = {
     0: ["COUNTRY"],
