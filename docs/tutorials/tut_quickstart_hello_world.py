@@ -84,9 +84,14 @@ model = ABMModel(scenario=scenario, params=params)
 #
 # The key new concept in a spatial model is **how infection crosses patch boundaries**.
 #
-# > **ABM vs compartmental**: The compartmental model accepts an explicit `mixer=` object
-# > (for example, `InfectionParams(mixer=GravityMixing(...))`). The ABM does **not**—it builds
-# > a gravity mixing matrix internally from two parameters:
+# > **Unified mixing API**: Both the ABM and the compartmental model accept an explicit
+# > `mixer=` object on `InfectionParams` — for example, `InfectionParams(mixer=GravityMixing(...))`
+# > or `InfectionParams(mixer=RadiationMixing(...))`. The model assigns the patch scenario to
+# > the mixer automatically at initialization, so callers don't set `mixer.scenario` themselves.
+#
+# **ABM default-gravity convenience.** If you leave `mixer=None` on the ABM's `InfectionParams`,
+# the ABM builds a default `GravityMixing` internally from two parameters on `InfectionParams`.
+# This example takes that convenience path:
 #
 # `distance_exponent`
 # : Controls how quickly mixing declines with distance. A high value (for example, 20) means
@@ -96,9 +101,13 @@ model = ABMModel(scenario=scenario, params=params)
 # `mixing_scale`
 # : Controls the overall strength of cross-patch infection pressure.
 #
-# Each day the ABM (1) counts infectious agents per patch, (2) builds the gravity mixing matrix,
-# (3) computes force of infection per patch, then (4) applies infection probability to each
-# susceptible agent. Agents themselves do not move between patches.
+# When `mixer=` is set explicitly, `distance_exponent` and `mixing_scale` are ignored — the
+# explicit mixer takes precedence. For radiation mixing or any custom mixer, the explicit
+# `mixer=` path is the recommended one.
+#
+# Each day the ABM (1) counts infectious agents per patch, (2) applies the mixing matrix to
+# get force of infection per patch, then (3) applies infection probability to each susceptible
+# agent. Agents themselves do not move between patches.
 
 # %%
 from laser.measles.abm import InfectionParams, InfectionSeedingParams, NoBirthsProcess, InfectionSeedingProcess, InfectionProcess, StateTracker, StateTrackerParams
