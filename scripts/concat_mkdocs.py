@@ -166,7 +166,7 @@ def concat(mkdocs_dir: str, notebooks_dir: str, output_file: str):
             f"The rendered MkDocs site looks incomplete — did `mkdocs build` finish?"
         )
 
-    # Tutorial notebooks (executed), in logical order
+    # Tutorial notebooks (executed), in logical order matching mkdocs.yml nav.
     tutorial_names = [
         "tut_quickstart_hello_world",
         "tut_basic_model",
@@ -180,7 +180,8 @@ def concat(mkdocs_dir: str, notebooks_dir: str, output_file: str):
         "tut_state_arrays",
         "tut_random_numbers",
         "tut_vaccination",
-        "tut_traveling_waves",
+        "tut_calibration_spatial",
+        "tut_chain_mixing",
     ]
 
     # Reference pages (all public, excluding /base/)
