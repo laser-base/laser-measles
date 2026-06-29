@@ -97,3 +97,5 @@ examples/
 .cursor/
 uv.lock
 site/
+# Tutorial notebooks are regenerated from .py percent-format by scripts/convert_tutorials.py
+docs/tutorials/tut_*.ipynb
