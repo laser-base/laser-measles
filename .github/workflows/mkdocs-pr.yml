@@ -2,23 +2,20 @@ name: MkDocs Build on PR
 
 on:
   pull_request:
-    branches: [master, main] # Replace with your desired branches
+    branches: [master, main]
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    container:
+      image: packages.idmod.org/docker-public/laser/laser-docs:latest
 
     steps:
       - name: Checkout code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.x"
-
-      - name: Install MkDocs and dependencies
-        run: pip install ".[docs,examples]"
+      - name: Install laser-measles (deps already in image)
+        run: pip install --no-deps -e .
 
       - name: Convert tutorial .py files to notebooks
         run: python scripts/convert_tutorials.py
