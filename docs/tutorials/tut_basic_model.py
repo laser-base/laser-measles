@@ -41,6 +41,13 @@ plt.title("Population Distribution")
 plt.show()
 
 # %% [markdown]
+# ### Reading the population-distribution plot
+#
+# The map shows the two-cluster synthetic scenario: longitude on the x-axis, latitude on the y-axis, one marker per spatial patch, color from the viridis colormap indicating each patch's population. The 100 patches resolve into two dense Gaussian clouds — the `cluster_size_std=1.0` parameter controls how tightly each cluster hugs its center. Brighter (yellow) markers mark the heavier-population patches near each cluster center, dimming to dark (purple) at the periphery.
+#
+# This is the spatial substrate the simulation will run on: every component (transmission, vital dynamics, immunization) operates on this same 100-patch grid. The clustering matters for downstream metrics — a single epidemic seed in one cluster takes time to reach the other, and per-cluster attack rates depend on this geometry plus the model's mixing assumptions.
+
+# %% [markdown]
 
 # The scenario data is a polars dataframe with the following columns:
 # - `lat`: latitude
@@ -274,7 +281,29 @@ def make_plot(model):
 make_plot(biweekly_model)
 
 # %% [markdown]
+# ### Reading the biweekly-model results
+#
+# Three panels for a 20-year run (520 biweekly ticks) of the biweekly compartmental model:
+#
+# - **Left (Susceptible Fraction Over Time):** Fraction of the population in the S compartment, summed across all 100 patches and divided by total population. Healthy measles dynamics drop S during epidemic waves and recover between waves as births replenish susceptibles. With `seasonality=0.3` in `InfectionParams`, you should see periodic structure rather than a single peak.
+# - **Center (Spatial Attack Rate Distribution):** End-of-run map. Each marker is a patch sized by initial population, colored by attack rate = `(R + I at final tick) / initial population`, using the Reds colormap. A uniform deep-red map indicates the epidemic reached every patch; a salt-and-pepper map indicates spatial heterogeneity.
+# - **Right (Epidemic Curve):** Total infectious count summed across patches at each tick. Confirms the periodicity from the S panel and shows magnitude — peak infectious on the order of a few thousand on a few-hundred-thousand-person population is typical for measles with this configuration.
+#
+# Together the three panels validate measles-like dynamics: recurring outbreaks, attack rates above zero across patches, and seasonality-driven periodicity.
+
+# %% [markdown]
 # Plot the compartmental model results:
 
 # %%
 make_plot(compartmental_model)
+# %% [markdown]
+# ### Reading the compartmental-model results
+#
+# Same three-panel layout as the biweekly figure but for the daily-timestep compartmental (SEIR) model (20 years = 7300 ticks). Key differences when comparing the two:
+#
+# - **Left panel:** The Susceptible-fraction curve is much smoother than the biweekly version because daily ticks resolve the seasonal forcing finer than 26-step-per-year sampling can. Mean level and trough depth should be similar; the noise floor is lower.
+# - **Center panel:** Spatial attack-rate distribution should resemble the biweekly map qualitatively — same scenario, same seasonality, same migration assumptions — but small per-patch differences are expected because the two models discretize state-update timing differently.
+# - **Right panel:** The epidemic curve has visibly more inter-tick noise (per-day infectious count, not per-biweek) but the envelope of peaks tracks the biweekly figure.
+#
+# The takeaway is that the compartmental and biweekly variants are intended to be interchangeable at this level of detail — choose biweekly when you need speed (~26× fewer ticks), compartmental when you need daily resolution for parameter estimation or short-timescale interventions.
+

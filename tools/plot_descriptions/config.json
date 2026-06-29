@@ -1,0 +1,19 @@
+[
+  {
+    "tutorial": "../../docs/tutorials/tut_basic_model.py",
+    "inserts": [
+      {
+        "after_cell_containing": "plt.title(\"Population Distribution\")",
+        "md_file": "tut_basic_model_population_scatter.md"
+      },
+      {
+        "after_cell_containing": "make_plot(biweekly_model)",
+        "md_file": "tut_basic_model_biweekly_three_panel.md"
+      },
+      {
+        "after_cell_containing": "make_plot(compartmental_model)",
+        "md_file": "tut_basic_model_compartmental_three_panel.md"
+      }
+    ]
+  }
+]
