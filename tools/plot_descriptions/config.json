@@ -15,5 +15,99 @@
         "md_file": "tut_basic_model_compartmental_three_panel.md"
       }
     ]
+  },
+  {
+    "tutorial": "../../docs/tutorials/tut_quickstart_hello_world.py",
+    "inserts": [
+      {
+        "after_cell_containing": "ax.set_title(\"Global SEIR\")",
+        "md_file": "tut_quickstart_hello_world_three_panel.md"
+      }
+    ]
+  },
+  {
+    "tutorial": "../../docs/tutorials/tut_abm_vital_dynamics.py",
+    "inserts": [
+      {
+        "after_cell_containing": "label='Length(People)'",
+        "md_file": "tut_abm_vital_dynamics_pop_vs_length.md"
+      },
+      {
+        "after_cell_containing": "plt.title(f'Age pyramid for {year}')",
+        "md_file": "tut_abm_vital_dynamics_age_pyramid.md"
+      }
+    ]
+  },
+  {
+    "tutorial": "../../docs/tutorials/tut_chain_mixing.py",
+    "inserts": [
+      {
+        "after_cell_containing": "Synthetic chain scenario — 4 clusters × 5 patches",
+        "md_file": "tut_chain_mixing_scenario_layout.md"
+      },
+      {
+        "after_cell_containing": "ax.imshow(allowed.astype(float), cmap=\"RdYlBu_r\"",
+        "md_file": "tut_chain_mixing_allowed_mask.md"
+      },
+      {
+        "after_cell_containing": "Migration matrix M  —  rows sum to k=0.01",
+        "md_file": "tut_chain_mixing_migration_matrix.md"
+      },
+      {
+        "after_cell_containing": "Population flow under the chain mixer",
+        "md_file": "tut_chain_mixing_population_flow.md"
+      }
+    ]
+  },
+  {
+    "tutorial": "../../docs/tutorials/tut_vaccination.py",
+    "inserts": [
+      {
+        "after_cell_containing": "Epidemic Curve by Pre-existing Immunity Level",
+        "md_file": "tut_vaccination_preexisting_immunity.md"
+      },
+      {
+        "after_cell_containing": "Epidemic Curve: Routine Immunization (20 years)",
+        "md_file": "tut_vaccination_routine_immunization.md"
+      },
+      {
+        "after_cell_containing": "Epidemic Curve with SIA Campaigns",
+        "md_file": "tut_vaccination_sia_campaigns.md"
+      }
+    ]
+  },
+  {
+    "tutorial": "../../docs/tutorials/tut_spatial_mixing.py",
+    "inserts": [
+      {
+        "after_cell_containing": "Linear Chain Scenario (Used for Analysis)",
+        "md_file": "tut_spatial_mixing_scenarios.md"
+      },
+      {
+        "after_cell_containing": "axes[0, 0].set_title('Gravity Mixing Matrix')",
+        "md_file": "tut_spatial_mixing_gravity_vs_radiation.md"
+      }
+    ]
+  },
+  {
+    "tutorial": "../../docs/tutorials/tut_calibration_spatial.py",
+    "inserts": [
+      {
+        "after_cell_containing": "Three-cluster chain layout (marker size ∝ population)",
+        "md_file": "tut_calibration_spatial_chain_layout.md"
+      },
+      {
+        "after_cell_containing": "Single-simulation ABM at TRUE (seed=42) — does C invade?",
+        "md_file": "tut_calibration_spatial_single_sim.md"
+      },
+      {
+        "after_cell_containing": "Bimodal C-invasion across reference simulations",
+        "md_file": "tut_calibration_spatial_bimodal_arc.md"
+      },
+      {
+        "after_cell_containing": "Stage 1 CMP cold-start convergence (30 trials, live)",
+        "md_file": "tut_calibration_spatial_tpe_convergence.md"
+      }
+    ]
   }
 ]

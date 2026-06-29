@@ -142,6 +142,16 @@ print(f"Population range: {scenario['pop'].min():,} - {scenario['pop'].max():,}"
 print(f"Spatial extent: lon=[{scenario['lon'].min():.1f}, {scenario['lon'].max():.1f}], lat=[{scenario['lat'].min():.1f}, {scenario['lat'].max():.1f}]")
 
 # %% [markdown]
+# ### Reading the two scenarios plot
+#
+# A `1 × 2` subplot displaying two synthetic spatial scenarios used in the mixing-model comparison:
+#
+# - **Left (Two-Cluster Scenario):** Two Gaussian-clustered groups of patches in lon/lat space. Marker color and size both encode population. The two clusters are visibly distinct, with within-cluster jitter.
+# - **Right (Linear Chain Scenario (Used for Analysis)):** Patches arranged in a roughly linear chain along longitude, with population varying in a U-shape across the chain (largest at both ends, smallest in the middle). A colorbar on this panel maps color to population. The linear chain is used for the main analysis because it produces more dramatic differences between gravity and radiation mixing models than the two-cluster scenario does.
+#
+# The plot serves as a scenario overview before the main analysis. The chain layout (right panel) is what subsequent figures dissect.
+
+# %% [markdown]
 # ## How mixing matrices work in disease transmission
 #
 # Before we compare models, let's understand how the mixing matrix is used in the infection process.
@@ -404,6 +414,25 @@ radiation_gini = mixing_inequality(radiation_mixing_matrix)
 print(f"\nGravity model - Mixing inequality (Gini): {gravity_gini:.3f}")
 print(f"Radiation model - Mixing inequality (Gini): {radiation_gini:.3f}")
 print("(Higher Gini = more unequal mixing, more concentrated on specific connections)")
+
+# %% [markdown]
+# ### Reading the gravity-vs-radiation mixing analysis
+#
+# A `2 × 3` multi-panel figure dissecting how the gravity and radiation mixing models differ on the same linear-chain scenario.
+#
+# **Top row — the matrices themselves:**
+#
+# - **Top-left (Gravity Mixing Matrix):** Heatmap, Blues colormap. Source patch on y-axis, destination patch on x-axis. Should show a smooth gradient with a bright diagonal and a steady falloff away from it; gravity models are continuous in distance.
+# - **Top-center (Radiation Mixing Matrix):** Same axes, Reds colormap. The radiation model is non-parametric and tends to look more block-structured — sharper transitions, with mixing strength conditioned on the population between source and destination.
+# - **Top-right (Difference (Gravity - Radiation)):** Diverging `RdBu_r` heatmap, symmetric color limits. Red cells indicate gravity assigns more weight than radiation; blue cells the reverse. The diff panel makes the structural differences between the two models concrete: gravity over-couples some pairs that radiation under-couples and vice versa.
+#
+# **Bottom row — derived metrics:**
+#
+# - **Bottom-left (Mixing Distance Profiles):** Average mixing distance per patch (population-weighted average over destinations), one line per model, x-axis is patch position along the chain. Gravity (blue circles) and radiation (red squares) trace different profiles — particularly at the chain ends where boundary effects matter.
+# - **Bottom-center (Population Size vs Mixing Distance):** Scatter of per-patch population vs that patch's average mixing distance, two colors for the two models. Highlights whether bigger patches mix at longer ranges (yes for gravity; less so for radiation).
+# - **Bottom-right (Mixing vs Distance (Representative Patches)):** For three representative patches (positions 5, 15, 25 — left, center, right of chain), plot mixing probability vs distance from that source. Y-axis is log scale. Gravity (solid) and radiation (dashed) overlay; you should see gravity's smooth power-law-like decay vs radiation's flatter step-like decay.
+#
+# Together the six panels are the canonical visual for "gravity vs radiation mixing have different functional forms; choose based on what your data supports."
 
 # %% [markdown]
 # ## Key insights and summary

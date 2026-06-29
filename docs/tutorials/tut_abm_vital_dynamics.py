@@ -57,6 +57,16 @@ for i, process in enumerate([VitalDynamicsProcess, ConstantPopProcess]):
     axs[i].legend()
 
 # %% [markdown]
+# ### Reading the population-vs-LaserFrame-length plot
+#
+# A `1 × 2` subplot comparing two vital-dynamics process variants over a one-year ABM run:
+#
+# - **Left panel — `VitalDynamicsProcess`:** Two curves on the same axes. The solid `Population Size` curve sums living agents over time and rises slowly (births at CBR=10/1000/yr exceed deaths at CDR=5/1000/yr). The dashed `Length(People)` curve is the underlying `LaserFrame` length — it rises FASTER than population because agents that die stay in memory as "dead but not removed" rows. The gap between the two curves at any tick is the cumulative death count.
+# - **Right panel — `ConstantPopProcess`:** Same two curves, but `Length(People)` tracks `Population Size` exactly. `ConstantPopProcess` recycles array slots when agents leave the simulation, so the LaserFrame never grows beyond the current population.
+#
+# The figure exists to make the memory-handling difference concrete. Choose `VitalDynamicsProcess` when you need full demographic accounting (births and deaths tracked separately, ageing). Choose `ConstantPopProcess` when total population should stay flat and memory pressure matters.
+
+# %% [markdown]
 # ## WPP vital dynamics with age structure
 #
 # The `WPPVitalDynamicsProcess` uses World Population Prospect (WPP)
@@ -92,3 +102,13 @@ plt.ylabel('Number of people')
 plt.title(f'Age pyramid for {year}')
 plt.legend()
 plt.show()
+# %% [markdown]
+# ### Reading the age-pyramid plot
+#
+# A bar chart comparing the simulated age distribution produced by `WPPVitalDynamicsProcess` (laser-measles) against the corresponding World Population Prospects (WPP) reference data for Nigeria, after 5 years of simulation. Both distributions are normalised to fractions and plotted on the same age-bin grid.
+#
+# - **Solid bars:** laser-measles age pyramid at simulation year 2005, taken from the `AgePyramidTracker`.
+# - **Hatched outlined bars:** WPP estimates for Nigeria 2005, the validation target. Note the trailing WPP bar extends beyond the laser-measles bins because WPP includes an open-ended `100+` category.
+#
+# A well-functioning age-structured simulation produces solid bars that closely match the hatched outlines: a high-base pyramid characteristic of high-fertility / high-mortality populations like Nigeria, with the largest cohort being children under 5 and a steady decline thereafter. Systematic deviations — too few young agents (under-fertility) or too many old agents (under-mortality) — would indicate the WPP rate-tables aren't being applied correctly, or the simulation hasn't run long enough to reach the equilibrium age structure.
+

@@ -156,6 +156,15 @@ plt.tight_layout()
 plt.show()
 
 # %% [markdown]
+# ### Reading the synthetic-chain-scenario layout plot
+#
+# A `1 × 1` scatter showing the 20-patch / 4-cluster synthetic scenario. Longitude on the x-axis, latitude on the y-axis. Marker color encodes cluster membership (viridis colormap, c0 darkest through c3 brightest); marker size is proportional to patch population (`pops / 300`).
+#
+# Four cluster centers are spaced 300 km apart along the longitude axis at latitude 40, with `cluster_spread_km=30` of within-cluster jitter — so each cluster reads as a tight blob, and the four blobs form a horizontal chain. Population sizes are drawn uniformly from 20k-80k so marker sizes vary substantially within each cluster.
+#
+# This is the spatial substrate the chain-mixer operates on. The clustering matters for everything that follows: the migration matrix only allows exchange between patches in the same or adjacent clusters, so the geographic chain visible here translates directly into the chain-topology structure visible in the next two figures.
+
+# %% [markdown]
 # ## 3. The `chain_migration_matrix` function
 #
 # This is the function used by the calibration tutorial, inlined here
@@ -284,6 +293,19 @@ plt.tight_layout()
 plt.show()
 
 # %% [markdown]
+# ### Reading the allowed/forbidden routes mask
+#
+# A `20 × 20` binary heatmap. Source patch on the y-axis, destination patch on the x-axis. Red cells mark allowed migration routes; blue cells mark forbidden routes. White rectangles overlay cluster boundaries with `c0`-`c3` labels.
+#
+# What you should see:
+#
+# - **Block structure.** Four `5 × 5` diagonal blocks (within-cluster routes — c0→c0, c1→c1, ..., minus the diagonal) and immediately-off-diagonal blocks (adjacent-cluster routes — c0↔c1, c1↔c2, c2↔c3). All red.
+# - **Forbidden regions.** Everything else is blue: c0↔c2, c0↔c3, c1↔c3. Non-adjacent clusters cannot exchange at all under the chain topology.
+# - **Blue diagonal.** A patch cannot migrate to itself; self-loops are deliberately blocked in the migration matrix (self-mixing happens elsewhere in the SEIR pipeline).
+#
+# This is the topology of the chain mixer, separated from the gravity weights. The defining feature is the off-diagonal-only coupling — transmission can only propagate through the chain, never skip a cluster, which is what makes B_far a stochastic bottleneck in the calibration tutorial.
+
+# %% [markdown]
 # What to see in the figure above:
 #
 # - The matrix is block-structured. Four diagonal blocks (one per
@@ -318,6 +340,20 @@ ax.set_ylabel("source patch")
 ax.set_title("Migration matrix M  —  rows sum to k=0.01")
 plt.tight_layout()
 plt.show()
+
+# %% [markdown]
+# ### Reading the migration-matrix heatmap
+#
+# The same `20 × 20` grid as the allowed-mask figure, but now showing actual migration weights from `chain_migration_matrix(scenario, cluster_indices, k=0.01, c=1.5)`. Color scale is log-scaled `viridis` (purple→yellow as weights go from `~1e-7` to `~1e-3`); zero entries are blank/NaN.
+#
+# What to read off:
+#
+# - **Same block sparsity pattern as the mask.** Weights only appear in the allowed regions (within-cluster + adjacent-cluster); the forbidden cells are exactly zero.
+# - **Within-cluster weights dominate.** Patches inside a cluster are close in distance and similar in population, so the gravity kernel `pop_j / d^c` favors them. These cells are the brightest yellow.
+# - **Cross-cluster (adjacent) weights are visible but smaller.** A faint but populated off-diagonal band — this is what couples adjacent clusters together, making the chain a chain rather than a set of isolated cliques.
+# - **Each row sums to k=0.01.** Within a row, more probability mass is concentrated in within-cluster destinations than spread across the adjacent-cluster band.
+#
+# The two-tier intensity (bright diagonal blocks, dim adjacent-block fringe) is the chain mixer's signature on a population's daily movements.
 
 # %% [markdown]
 # Things to notice:
@@ -614,6 +650,22 @@ ax.legend(loc="upper right", frameon=False)
 ax.grid(alpha=0.3)
 plt.tight_layout()
 plt.show()
+
+# %% [markdown]
+# ### Reading the population-flow stackplot
+#
+# A `stackplot` over 6000 ticks showing how an initial seeded population spreads through the chain. Y-axis = share of total seeded population in each cluster; x-axis = tick; each band is a cluster colored with the same viridis palette used for cluster identity throughout the tutorial.
+#
+# The seed: all population starts in cluster 0 (the leftmost cluster); the other three clusters start at zero. Then `pop_{t+1} = pop_t - k*pop_t + pop_t @ M` is iterated, which is the migration matrix acting as an operator without births, deaths, or transmission.
+#
+# What to read:
+#
+# - **At tick 0**, the entire colored area is cluster 0 (blue) — the seeded state.
+# - **Cluster 1 fills in first** as population leaks across the c0/c1 boundary.
+# - **Cluster 2 fills in only after cluster 1**, because population can reach c2 only via c1 (chain topology forbids c0→c2 directly).
+# - **Cluster 3 fills in last**, requiring the full c0→c1→c2→c3 chain traversal.
+#
+# The strict ordering — no shortcuts, propagation only along the chain — is the defining dynamical signature of the chain mixer. This same propagation pattern, with the SEIR machinery layered on top, is what creates the stochastic bottleneck at B_far in the calibration tutorial: a single subcritical cluster mid-chain can sever transmission to the downstream clusters.
 
 # %% [markdown]
 # What to read off the figure:
