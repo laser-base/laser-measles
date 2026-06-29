@@ -9,6 +9,11 @@ permissions:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    env:
+      # Redirect GADM downloads (used by tutorial-execution during mkdocs build)
+      # to the IDM Artifactory mirror so gh-pages deploys don't break when
+      # geodata.ucdavis.edu is unreachable.
+      LASER_GADM_MIRROR: https://packages.idmod.org/artifactory/idm-data
     steps:
       - uses: actions/checkout@v4
       - name: Configure Git Credentials

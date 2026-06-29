@@ -67,6 +67,15 @@ gadm = GADMShapefile(shapefile="./data/gadm41_ETH_2.shp")
 df = gadm.get_dataframe()
 ```
 
+**Mirror override.** `GADMShapefile.download` fetches from `https://geodata.ucdavis.edu` by default. If UCDavis is unreachable from your network (corporate firewall, transient outage), set the `LASER_GADM_MIRROR` environment variable to an alternate base URL that mirrors GADM's path layout. The Institute for Disease Modeling maintains a mirror at `https://packages.idmod.org/artifactory/idm-data` (read-only, no auth required); the laser-measles CI workflows use it by default. To opt in locally:
+
+```bash
+export LASER_GADM_MIRROR=https://packages.idmod.org/artifactory/idm-data
+python -c "from laser.measles.demographics import GADMShapefile; GADMShapefile.download('ETH', admin_level=1, directory='./data')"
+```
+
+The override replaces the base URL (host **and** any path prefix); the remaining path (`/gadm/gadm<VERSION>/shp/gadm<VERSION_INT>_<COUNTRY_CODE>_shp.zip`) is appended automatically and must match upstream. Empty-string and unset values both fall back to the UCDavis default.
+
 ### RasterPatchGenerator
 
 Generates patch-level demographic data by clipping rasters to administrative boundaries.
