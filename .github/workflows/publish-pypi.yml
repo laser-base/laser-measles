@@ -50,7 +50,10 @@ jobs:
             mkdocs-material-
       - run: pip install ".[docs,examples]"
       - run: python scripts/convert_tutorials.py
-      - run: mkdocs gh-deploy --force --config-file mkdocs.ci.yml
+      - env:
+          MKDOCS_EXECUTE_NOTEBOOKS: true
+          MKDOCS_ALLOW_ERRORS: false
+        run: mkdocs gh-deploy --force
 
   github-release:
     name: >-

@@ -1,6 +1,0 @@
-INHERIT: mkdocs.yml
-
-plugins:
-  - mkdocs-jupyter:
-      execute: true
-      allow_errors: false
