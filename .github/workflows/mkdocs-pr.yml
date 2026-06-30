@@ -29,6 +29,15 @@ jobs:
           MKDOCS_ALLOW_ERRORS: false
         run: mkdocs build
 
+      - name: Assert API reference content floor
+        run: |
+          ref_count=$(find site/reference -name 'index.html' 2>/dev/null | wc -l)
+          echo "rendered reference pages: $ref_count"
+          if [ "$ref_count" -lt 50 ]; then
+            echo "ERROR: site/reference is degraded (only $ref_count pages, expected 100+)"
+            exit 1
+          fi
+
       - name: Upload built site
         uses: actions/upload-artifact@v4
         with:
