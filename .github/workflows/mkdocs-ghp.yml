@@ -14,6 +14,10 @@ jobs:
       # to the IDM Artifactory mirror so gh-pages deploys don't break when
       # geodata.ucdavis.edu is unreachable.
       LASER_GADM_MIRROR: https://packages.idmod.org/artifactory/idm-data
+      # Execute notebooks for the gh-pages build (the deployed docs site
+      # shows rendered notebook outputs).
+      MKDOCS_JUPYTER_EXECUTE: "true"
+      MKDOCS_JUPYTER_ALLOW_ERRORS: "false"
     steps:
       - uses: actions/checkout@v4
       - name: Configure Git Credentials
@@ -32,4 +36,16 @@ jobs:
             mkdocs-material-
       - run: pip install ".[docs,examples]"
       - run: python scripts/convert_tutorials.py
-      - run: mkdocs gh-deploy --force --config-file mkdocs.ci.yml
+      # Build separately from gh-deploy so we can assert the content floor
+      # before publishing. (gh-deploy doesn't expose a "build to local dir,
+      # validate, then push" mode; doing it in two steps gives us the gate.)
+      - run: mkdocs build
+      - name: Assert API reference content floor (gate before deploy)
+        run: |
+          ref_count=$(find site/reference -name 'index.html' 2>/dev/null | wc -l)
+          echo "rendered reference pages: $ref_count"
+          if [ "$ref_count" -lt 50 ]; then
+            echo "ERROR: site/reference is degraded (only $ref_count pages, expected 100+); NOT deploying."
+            exit 1
+          fi
+      - run: mkdocs gh-deploy --force

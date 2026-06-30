@@ -116,8 +116,24 @@ plugins:
   - include-markdown # include other files, such as READMEs
   - table-reader # enables rendering of CSV/TSV files as tables
   - mkdocs-jupyter: # enables Jupyter notebooks to be rendered
-      execute: false
-      allow_errors: true # set to true to continue executing cells even if one fails
+      # `execute` and `allow_errors` are env-toggled so we can keep ONE
+      # authoritative mkdocs.yml with the full plugin list in both local
+      # and CI builds, and only change notebook execution between them.
+      #
+      # The previous pattern (a separate mkdocs.ci.yml inheriting from
+      # mkdocs.yml and overriding the entire `plugins:` list) was a silent
+      # content regression: MkDocs's INHERIT deep-merges dict-typed keys
+      # but REPLACES list-typed ones, so the CI build dropped mkdocstrings,
+      # gen-files, literate-nav, autorefs, include-markdown, table-reader,
+      # and exclude — producing a site with zero API reference pages and
+      # broken cross-links, with exit code 0.
+      #
+      # Local (fast):                 mkdocs build
+      # CI (notebooks executed):      MKDOCS_JUPYTER_EXECUTE=true \
+      #                               MKDOCS_JUPYTER_ALLOW_ERRORS=false \
+      #                               mkdocs build --strict
+      execute: !ENV [MKDOCS_JUPYTER_EXECUTE, false]
+      allow_errors: !ENV [MKDOCS_JUPYTER_ALLOW_ERRORS, true]
       include_source: true
       ignore: ["*.md"] # skip .md scanning to avoid jupytext→pandoc warnings on mkdocstrings autoref pages
   - gen-files:

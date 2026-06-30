@@ -12,6 +12,11 @@ jobs:
       # Artifactory mirror so PR builds don't break when geodata.ucdavis.edu
       # is unreachable.
       LASER_GADM_MIRROR: https://packages.idmod.org/artifactory/idm-data
+      # Execute notebooks during CI builds (vs the default false used locally).
+      # `allow_errors: false` fails the build on any cell error — desirable
+      # for CI; locally tutorials may be in flux and errors are acceptable.
+      MKDOCS_JUPYTER_EXECUTE: "true"
+      MKDOCS_JUPYTER_ALLOW_ERRORS: "false"
 
     steps:
       - name: Checkout code
@@ -29,4 +34,28 @@ jobs:
         run: python scripts/convert_tutorials.py
 
       - name: Build MkDocs site
-        run: mkdocs build --config-file mkdocs.ci.yml
+        run: mkdocs build
+
+      - name: Assert API reference content floor
+        # Content-floor guard against silent doc regressions. The 2026-06-03
+        # introduction of mkdocs.ci.yml dropped 7 of 8 plugins (including
+        # mkdocstrings), producing a site with zero API reference pages for
+        # nearly a month with exit code 0. This assertion would have failed
+        # that build's CI on its first run.
+        #
+        # Threshold of 50 is loose (the current main has 101 reference pages)
+        # so genuine reorganizations have headroom, but any catastrophic
+        # plugin or config regression that wipes out the API reference will
+        # fail loud here.
+        #
+        # Future improvement: `mkdocs build --strict` would catch the
+        # underlying warnings before they manifest as content loss, but
+        # currently fails on ~36 pre-existing warnings (mostly griffe
+        # type-annotation gaps). After those are cleaned up, add --strict.
+        run: |
+          ref_count=$(find site/reference -name 'index.html' 2>/dev/null | wc -l)
+          echo "rendered reference pages: $ref_count"
+          if [ "$ref_count" -lt 50 ]; then
+            echo "ERROR: site/reference is degraded (only $ref_count pages, expected 100+)"
+            exit 1
+          fi
