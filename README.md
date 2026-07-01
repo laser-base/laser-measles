@@ -54,7 +54,7 @@ Full documentation is available at [laser.idmod.org/laser-measles](https://laser
 
 `jenner-measles-mcp` is a Model Context Protocol (MCP) server that lets Claude and other MCP-compatible tools search the laser-measles documentation and generate model code from natural-language prompts. See [InstituteforDiseaseModeling/laser-mcp](https://github.com/InstituteforDiseaseModeling/laser-mcp) for setup, supported clients, and the deployed endpoint.
 
-Foundation employees can use JENNER-Measles-GPT here [here](https://chatgpt.com/g/g-678ae681f5b48191b3e91619e649e598-jenner-measles).
+Foundation employees can use JENNER-Measles-GPT [here](https://chatgpt.com/g/g-678ae681f5b48191b3e91619e649e598-jenner-measles).
 
 ## Contributing
 
