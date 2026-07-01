@@ -6,7 +6,7 @@
 
 laser-measles is a spatial epidemiological modeling toolkit that helps researchers and public health teams simulate measles transmission, evaluate vaccination strategies, and plan outbreak responses. It translates surveillance data and demographic information into projections that inform immunization planning and resource allocation — with a focus on settings where measles remains a leading cause of vaccine-preventable death.
 
-Developed by the [Institute for Disease Modeling](https://idmod.org) (IDM) at the Bill & Melinda Gates Foundation, laser-measles is built on the open-source [LASER framework](https://github.com/laser-base).
+Developed by the [Institute for Disease Modeling](https://idmod.org) (IDM) at the Gates Foundation, laser-measles is built on the open-source [LASER framework](https://github.com/laser-base).
 
 ## Installation
 
